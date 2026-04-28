@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { AnalyticsTracker } from "@/components/analytics-tracker";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -46,7 +48,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

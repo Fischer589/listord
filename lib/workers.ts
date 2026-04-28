@@ -50,8 +50,10 @@ export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
       hire_rate,
       rating_average,
       rating_count,
+      is_verified,
       created_at
     `)
+    .eq("is_verified", true)
     .order("available_now", { ascending: false })
     .order("rating_average", { ascending: false });
 

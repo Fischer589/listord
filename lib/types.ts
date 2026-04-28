@@ -37,6 +37,7 @@ export type Worker = {
   hire_rate: number;
   rating_average: number;
   rating_count: number;
+  is_verified: boolean;
   created_at?: string;
 };
 

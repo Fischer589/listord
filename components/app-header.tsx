@@ -9,7 +9,7 @@ export function AppHeader() {
         </Link>
         <nav className="flex items-center gap-2 text-sm font-semibold">
           <Link
-            href="/trabajadores/nuevo"
+            href="/trabajadores/registro"
             className="tap-target inline-flex items-center rounded-md px-3 py-2 text-ink"
           >
             Busco trabajo

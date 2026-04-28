@@ -1,0 +1,329 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { AppHeader } from "@/components/app-header";
+import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import type { WorkStyle } from "@/lib/types";
+
+const workStyles: Array<{ value: WorkStyle; label: string }> = [
+  { value: "structured", label: "Organizado y con reglas claras" },
+  { value: "creative", label: "Creativo" },
+  { value: "hands_on", label: "Fisico / practico" },
+  { value: "people_oriented", label: "Con personas" },
+  { value: "systems_oriented", label: "Procesos o sistemas" },
+  { value: "fast_paced", label: "Rapido y movido" },
+  { value: "detail_oriented", label: "Detallado" },
+  { value: "flexible", label: "Flexible" }
+];
+
+const blockedTerms = [
+  "fuck",
+  "shit",
+  "bitch",
+  "puta",
+  "puto",
+  "mierda",
+  "coño",
+  "carajo",
+  "maldito"
+];
+
+function getText(formData: FormData, key: string) {
+  return String(formData.get(key) || "").trim();
+}
+
+function getList(formData: FormData, key: string) {
+  return getText(formData, key)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeWhatsAppNumber(value: string) {
+  const digits = value.replace(/\D/g, "");
+
+  if (digits.length === 10 && /^(809|829|849)/.test(digits)) {
+    return `1${digits}`;
+  }
+
+  if (digits.length === 11 && /^1(809|829|849)/.test(digits)) {
+    return digits;
+  }
+
+  return null;
+}
+
+function hasBlockedText(values: string[]) {
+  const text = values.join(" ").toLowerCase();
+
+  return blockedTerms.some((term) => text.includes(term));
+}
+
+async function submitWorkerRegistration(formData: FormData) {
+  "use server";
+
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    redirect("/trabajadores/registro?estado=error");
+  }
+
+  const fullName = getText(formData, "full_name");
+  const city = getText(formData, "city");
+  const whatsappNumber = getText(formData, "whatsapp_number");
+  const skills = getList(formData, "skills");
+  const availability = getList(formData, "availability");
+  const desiredIncome = Number(getText(formData, "desired_income"));
+  const shortIntro = getText(formData, "short_intro");
+  const workStyle = getText(formData, "work_style") as WorkStyle;
+  const workStyleNote = getText(formData, "work_style_note");
+  const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
+
+  if (
+    fullName.length < 2 ||
+    !city ||
+    !whatsappNumber ||
+    skills.length === 0 ||
+    !Number.isFinite(desiredIncome) ||
+    desiredIncome <= 0 ||
+    availability.length === 0 ||
+    shortIntro.length < 20 ||
+    !workStyle
+  ) {
+    redirect("/trabajadores/registro?estado=incompleto");
+  }
+
+  if (!normalizedWhatsAppNumber) {
+    redirect("/trabajadores/registro?estado=telefono");
+  }
+
+  if (
+    hasBlockedText([
+      fullName,
+      city,
+      skills.join(" "),
+      availability.join(" "),
+      shortIntro,
+      workStyleNote
+    ])
+  ) {
+    redirect("/trabajadores/registro?estado=rechazado");
+  }
+
+  const { data: existingWorkers, error: duplicateCheckError } = await supabase
+    .from("workers")
+    .select("id, whatsapp_number")
+    .not("whatsapp_number", "is", null);
+
+  if (duplicateCheckError) {
+    redirect("/trabajadores/registro?estado=error");
+  }
+
+  const hasDuplicate = (existingWorkers ?? []).some((worker) => {
+    const existingNumber =
+      typeof worker.whatsapp_number === "string"
+        ? normalizeWhatsAppNumber(worker.whatsapp_number)
+        : null;
+
+    return existingNumber === normalizedWhatsAppNumber;
+  });
+
+  if (hasDuplicate) {
+    redirect("/trabajadores/registro?estado=duplicado");
+  }
+
+  const { error } = await supabase.from("workers").insert({
+    full_name: fullName,
+    city,
+    whatsapp_number: `+${normalizedWhatsAppNumber}`,
+    skills,
+    desired_income: desiredIncome,
+    income_type: "daily",
+    availability,
+    available_now: false,
+    work_style: workStyle,
+    work_style_note: workStyleNote || null,
+    job_duration_preference: availability.join(", "),
+    short_intro: shortIntro,
+    is_verified: false
+  });
+
+  if (error) {
+    redirect("/trabajadores/registro?estado=error");
+  }
+
+  redirect("/trabajadores/registro?estado=recibido");
+}
+
+export default function WorkerRegistrationPage({
+  searchParams
+}: {
+  searchParams: { estado?: string };
+}) {
+  const state = searchParams.estado;
+
+  return (
+    <>
+      <AppHeader />
+      <main className="mx-auto max-w-3xl px-4 py-6">
+        <Link href="/" className="text-sm font-bold text-hoja">
+          Volver
+        </Link>
+        <h1 className="mt-3 text-3xl font-black">Registrarme como trabajador</h1>
+        <p className="mt-2 leading-7 text-black/70">
+          Recibimos tu informacion y la revisamos antes de mostrarla
+          publicamente en ListoRD.
+        </p>
+
+        {state === "recibido" && (
+          <div className="mt-5 rounded-lg border border-hoja/30 bg-hoja/10 p-4 font-bold text-ink">
+            Registro recibido. Tu perfil queda pendiente hasta que ListoRD lo
+            verifique y apruebe.
+          </div>
+        )}
+        {state === "incompleto" && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+            Completa nombre, descripcion y todos los campos requeridos para
+            enviar tu registro.
+          </div>
+        )}
+        {state === "telefono" && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+            Usa un numero de WhatsApp valido de RD: 809, 829 o 849.
+          </div>
+        )}
+        {state === "duplicado" && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+            Ese WhatsApp ya fue registrado. No se puede enviar el mismo perfil
+            dos veces.
+          </div>
+        )}
+        {state === "rechazado" && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+            Revisa el texto del perfil. No aceptamos lenguaje ofensivo o spam.
+          </div>
+        )}
+        {state === "error" && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+            No pudimos guardar el registro. Revisa la configuracion de Supabase
+            e intenta otra vez.
+          </div>
+        )}
+
+        <form
+          action={submitWorkerRegistration}
+          className="mt-5 grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-soft"
+        >
+          <label className="grid gap-1 font-bold">
+            Nombre completo
+            <input
+              className="tap-target rounded-md border border-black/15 px-3"
+              name="full_name"
+              required
+            />
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-1 font-bold">
+              Ciudad
+              <input
+                className="tap-target rounded-md border border-black/15 px-3"
+                name="city"
+                placeholder="Santo Domingo"
+                required
+              />
+            </label>
+            <label className="grid gap-1 font-bold">
+              Numero de WhatsApp
+              <input
+                className="tap-target rounded-md border border-black/15 px-3"
+                name="whatsapp_number"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="809, 829 o 849..."
+                required
+              />
+            </label>
+          </div>
+
+          <label className="grid gap-1 font-bold">
+            Habilidades
+            <textarea
+              className="min-h-24 rounded-md border border-black/15 p-3"
+              name="skills"
+              placeholder="Limpieza, cocina, construccion"
+              required
+            />
+          </label>
+
+          <label className="grid gap-1 font-bold">
+            Ingreso deseado por dia
+            <input
+              className="tap-target rounded-md border border-black/15 px-3"
+              name="desired_income"
+              inputMode="numeric"
+              placeholder="1800"
+              required
+            />
+          </label>
+
+          <label className="grid gap-1 font-bold">
+            Disponibilidad
+            <textarea
+              className="min-h-24 rounded-md border border-black/15 p-3"
+              name="availability"
+              placeholder="Hoy, mananas, fines de semana"
+              required
+            />
+          </label>
+
+          <label className="grid gap-1 font-bold">
+            Descripcion corta
+            <textarea
+              className="min-h-28 rounded-md border border-black/15 p-3"
+              name="short_intro"
+              placeholder="Soy puntual, tengo experiencia en..."
+              minLength={20}
+              required
+            />
+          </label>
+
+          <label className="grid gap-1 font-bold">
+            Estilo de trabajo
+            <select
+              className="tap-target rounded-md border border-black/15 px-3"
+              name="work_style"
+              defaultValue=""
+              required
+            >
+              <option value="" disabled>
+                Selecciona uno
+              </option>
+              {workStyles.map((style) => (
+                <option key={style.value} value={style.value}>
+                  {style.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1 font-bold">
+            Como trabajas mejor
+            <textarea
+              className="min-h-24 rounded-md border border-black/15 p-3"
+              name="work_style_note"
+              placeholder="Ejemplo: me gusta trabajar con instrucciones claras y cumplir a tiempo."
+            />
+          </label>
+
+          <button className="tap-target rounded-md bg-hoja px-4 py-3 font-black text-white">
+            Enviar registro
+          </button>
+          <p className="text-xs font-semibold text-black/55">
+            Tu perfil se guarda como pendiente y no aparece publicamente hasta
+            que sea aprobado.
+          </p>
+        </form>
+      </main>
+    </>
+  );
+}

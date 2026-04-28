@@ -12,12 +12,12 @@ ListoRD es un marketplace mobile-first y Spanish-first para Republica Dominicana
 
 ## Funciones incluidas
 
-- Homepage con trabajadores visibles inmediatamente.
+- Homepage con solo trabajadores reales verificados.
 - Filtros por ciudad, habilidad, ingreso maximo y disponibilidad hoy.
 - Tarjetas con foto, ciudad, habilidades, ingreso deseado, duracion preferida, rating y senales de cumplimiento.
 - Capa simple de Work Style Fit para mostrar y filtrar por estilo natural de trabajo.
 - Sistema de Hiring Outcome para confirmar si el contacto termino en contratacion real.
-- Registro visual para trabajadores.
+- Registro real para trabajadores con aprobacion antes de publicacion.
 - Flujo de solicitud de contacto para empleadores.
 - Pagina de monetizacion suave: 2 contactos gratis, RD$99/semana y RD$199/mes.
 - Estado vacío seguro cuando Supabase no está configurado o no tiene datos publicados.
@@ -40,13 +40,21 @@ Abre `http://localhost:3000`.
 4. Crea un bucket de Storage para fotos de trabajadores, por ejemplo `worker-photos`.
 5. Activa Auth con el proveedor que prefieras.
 
-Para una base existente, ejecuta `supabase/migrations/202604261300_seed_initial_workers.sql` y tendrás los primeros trabajadores publicados.
+Los trabajadores nuevos se guardan con `is_verified = false`. Para aprobar un perfil real desde Supabase, actualiza el registro:
+
+```sql
+update public.workers
+set is_verified = true
+where id = 'WORKER_ID_REAL';
+```
+
+Los seeds y perfiles pendientes no se muestran publicamente hasta que sean aprobados.
 
 No uses `SUPABASE_SERVICE_ROLE_KEY` en variables `NEXT_PUBLIC_*`. La service role key nunca debe llegar al navegador.
 
 ## Stripe
 
-Configura `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_WEEKLY_PRICE_ID`, `STRIPE_MONTHLY_PRICE_ID` y `SUPABASE_SERVICE_ROLE_KEY` en variables privadas del servidor. En Stripe, apunta el webhook de `checkout.session.completed` a `/api/stripe/webhook`.
+Configura `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_WEEKLY_PRICE_ID`, `STRIPE_MONTHLY_PRICE_ID` y `SUPABASE_SERVICE_ROLE_KEY` en variables privadas del servidor. En Stripe, apunta el webhook de `checkout.session.completed` a `https://TU_DOMINIO/api/stripe/webhook`.
 
 ## Modelo de confianza
 
@@ -80,13 +88,22 @@ Estos resultados alimentan:
 
 1. Importa el repo en Vercel.
 2. Agrega las variables `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-3. Despliega.
+3. Agrega `NEXT_PUBLIC_APP_URL` con la URL publica de produccion.
+4. Despliega.
+
+## Dominio publico
+
+1. Compra el dominio en tu registrador preferido.
+2. En Vercel, abre el proyecto y ve a `Settings > Domains`.
+3. Agrega el dominio y sigue las instrucciones DNS de Vercel.
+4. Cuando Vercel marque el dominio como valido, actualiza `NEXT_PUBLIC_APP_URL` a `https://TU_DOMINIO`.
+5. En Stripe, actualiza el webhook de produccion a `https://TU_DOMINIO/api/stripe/webhook`.
+6. Redeploy en Vercel despues de cambiar variables de entorno.
 
 Antes de lanzar, revisa `PRODUCTION_CHECKLIST.md`.
 
 ## Siguientes piezas de producto
 
-- Server actions para guardar perfiles y solicitudes.
 - Integracion de pagos para RD$99/semana y RD$199/mes.
 - Panel de trabajador para aceptar o rechazar solicitudes.
 - Eventos de reputacion para show-up, pago y respuesta.

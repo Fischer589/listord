@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/app-header";
-
-const BROWSER_SESSION_STORAGE_KEY = "listord_browser_session_id";
+import {
+  BROWSER_SESSION_STORAGE_KEY,
+  trackEvent
+} from "@/lib/analytics";
 
 export default function PaymentSuccessPage() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const sessionId = new URLSearchParams(window.location.search).get(
@@ -17,7 +18,6 @@ export default function PaymentSuccessPage() {
     );
 
     if (!sessionId) {
-      setError("No pudimos verificar el pago.");
       setIsVerifying(false);
       return;
     }
@@ -34,23 +34,27 @@ export default function PaymentSuccessPage() {
           );
           const data = (await response.json()) as {
             premium?: boolean;
+            plan?: string | null;
             error?: string;
           };
 
           if (response.ok && data.premium) {
             setIsPremium(true);
+            trackEvent("checkout_success", {
+              plan: data.plan ?? null,
+              checkout_session_id: verifiedSessionId
+            });
             return;
           }
 
           if (attempt === 5) {
-            setError(data.error || "No pudimos verificar el pago.");
             return;
           }
 
           await new Promise((resolve) => setTimeout(resolve, 1500));
         }
       } catch {
-        setError("No pudimos verificar el pago.");
+        setIsPremium(false);
       } finally {
         setIsVerifying(false);
       }
@@ -71,14 +75,14 @@ export default function PaymentSuccessPage() {
             <h1 className="mt-2 text-3xl font-black text-ink">
               {isPremium
                 ? "Ya puedes contactar trabajadores"
-                : "Estamos confirmando tu acceso"}
+                : "Procesando tu acceso..."}
             </h1>
             <p className="mt-3 leading-7 text-black/70">
               {isVerifying
-                ? "Espera un momento mientras confirmamos el pago con Stripe."
+                ? "Procesando tu acceso..."
                 : isPremium
                   ? "Tu acceso quedó activo en el servidor. Vuelve a la lista y continúa contactando por WhatsApp."
-                  : error}
+                  : "Error procesando pago. Intenta de nuevo o usa WhatsApp."}
             </p>
             {isPremium && (
               <Link

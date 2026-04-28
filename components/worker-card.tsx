@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getBrowserSessionId, trackEvent } from "@/lib/analytics";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import type { Worker } from "@/lib/types";
 
@@ -10,31 +11,11 @@ const ADMIN_WHATSAPP_PHONE =
   "18090000000";
 const WHATSAPP_PAYMENT_MESSAGE =
   "Hola, quiero pagar acceso a ListoRD por transferencia.";
-const FREE_CONTACT_LIMIT = 2;
-const BROWSER_SESSION_STORAGE_KEY = "listord_browser_session_id";
-
-function getBrowserSessionId() {
-  const existing = localStorage.getItem(BROWSER_SESSION_STORAGE_KEY);
-
-  if (existing) {
-    return existing;
-  }
-
-  const id =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  localStorage.setItem(BROWSER_SESSION_STORAGE_KEY, id);
-
-  return id;
-}
 
 export function WorkerCard({
-  worker,
-  unlocked = false
+  worker
 }: {
   worker: Worker;
-  unlocked?: boolean;
 }) {
   const fullName = worker.full_name || "Trabajador ListoRD";
   const city = worker.city || "República Dominicana";
@@ -47,52 +28,58 @@ export function WorkerCard({
   const ratingAverage = worker.rating_average ?? 0;
   const ratingCount = worker.rating_count ?? 0;
   const [showPaywall, setShowPaywall] = useState(false);
-  const [clicksUsed, setClicksUsed] = useState(0);
   const [checkoutPlan, setCheckoutPlan] = useState<
     "weekly" | "monthly" | null
   >(null);
+  const [paymentError, setPaymentError] = useState("");
+  const cardRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     getBrowserSessionId();
-    const current = Number(localStorage.getItem("contact_clicks") || 0);
-    setClicksUsed(Number.isFinite(current) ? current : 0);
   }, []);
 
-  const handleContactClick = async (selectedWorker: Worker) => {
-    const browserSessionId = getBrowserSessionId();
-    const current = Number(localStorage.getItem("contact_clicks") || 0);
-    const isPremium = unlocked || (await hasActivePremiumAccess(browserSessionId));
+  useEffect(() => {
+    const card = cardRef.current;
 
-    if (!isPremium && current >= FREE_CONTACT_LIMIT) {
-      setShowPaywall(true);
+    if (!card) {
       return;
     }
 
-    if (!isPremium) {
-      const next = current + 1;
-      localStorage.setItem("contact_clicks", String(next));
-      setClicksUsed(next);
-    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) {
+          return;
+        }
 
-    await redirectToWhatsApp(selectedWorker);
+        trackEvent("worker_view", {
+          worker_id: worker.id
+        });
+        observer.disconnect();
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(card);
+
+    return () => observer.disconnect();
+  }, [worker.id]);
+
+  const handleContactClick = async (selectedWorker: Worker) => {
+    const browserSessionId = getBrowserSessionId();
+    trackEvent("contact_click", {
+      worker_id: selectedWorker.id
+    });
+
+    await redirectToWhatsApp(selectedWorker, browserSessionId);
   };
-
-  async function hasActivePremiumAccess(browserSessionId: string) {
-    try {
-      const response = await fetch(
-        `/api/premium/status?browser_session_id=${encodeURIComponent(browserSessionId)}`
-      );
-      const data = (await response.json()) as { premium?: boolean };
-
-      return response.ok && data.premium === true;
-    } catch {
-      return false;
-    }
-  }
 
   async function handleStripeCheckout(plan: "weekly" | "monthly") {
     setCheckoutPlan(plan);
+    setPaymentError("");
     const browserSessionId = getBrowserSessionId();
+    trackEvent("checkout_start", {
+      plan
+    });
 
     try {
       const response = await fetch("/api/stripe/checkout", {
@@ -109,14 +96,16 @@ export function WorkerCard({
       const data = (await response.json()) as { url?: string; error?: string };
 
       if (!response.ok || !data.url) {
-        alert(data.error || "No se pudo iniciar el pago con tarjeta.");
+        setPaymentError(
+          "Error procesando pago. Intenta de nuevo o usa WhatsApp."
+        );
+        setCheckoutPlan(null);
         return;
       }
 
       window.location.href = data.url;
     } catch {
-      alert("No se pudo iniciar el pago con tarjeta.");
-    } finally {
+      setPaymentError("Error procesando pago. Intenta de nuevo o usa WhatsApp.");
       setCheckoutPlan(null);
     }
   }
@@ -127,16 +116,35 @@ export function WorkerCard({
       `https://api.whatsapp.com/send?phone=${ADMIN_WHATSAPP_PHONE}&text=${message}`;
   }
 
-  async function redirectToWhatsApp(selectedWorker: Worker) {
+  async function redirectToWhatsApp(
+    selectedWorker: Worker,
+    browserSessionId: string
+  ) {
     try {
       const response = await fetch("/api/workers/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ workerId: selectedWorker.id })
+        body: JSON.stringify({
+          workerId: selectedWorker.id,
+          browser_session_id: browserSessionId
+        })
       });
-      const data = (await response.json()) as { url?: string; error?: string };
+      const data = (await response.json()) as {
+        url?: string;
+        error?: string;
+        reason?: string;
+      };
+
+      if (response.status === 402 || data.reason === "payment_required") {
+        trackEvent("paywall_open", {
+          worker_id: selectedWorker.id,
+          reason: data.reason ?? "payment_required"
+        });
+        setShowPaywall(true);
+        return;
+      }
 
       if (!response.ok || !data.url) {
         alert(data.error || "No pudimos abrir WhatsApp.");
@@ -150,7 +158,7 @@ export function WorkerCard({
   }
 
   return (
-    <article className="worker-card">
+    <article className="worker-card" ref={cardRef}>
       <div className="worker-photo">
         {worker.photo_url ? (
           <Image
@@ -177,6 +185,9 @@ export function WorkerCard({
             <p className="worker-income text-ink">
               💰 Quiere {formatIncomeShort(worker.desired_income, worker.income_type)}
             </p>
+            <p className="mt-2 rounded-md bg-mango/20 px-3 py-2 text-sm font-black text-ink">
+              Quedan pocos trabajadores disponibles hoy
+            </p>
           </div>
           <div className="pill-row mt-3 text-sm font-bold">
             <span
@@ -196,8 +207,11 @@ export function WorkerCard({
               }
             >
               {worker.available_now
-                ? "🔥 Responde en minutos"
+                ? "🔥 Responden en menos de 10 minutos"
                 : "Agenda con anticipación"}
+            </span>
+            <span className="rounded-md bg-cielo px-2 py-1 text-black/80">
+              Perfiles verificados
             </span>
             <span className="rounded-md bg-[#f4f1ea] px-2 py-1 text-black/75">
               {city}
@@ -240,18 +254,16 @@ export function WorkerCard({
           <button
             type="button"
             onClick={() => handleContactClick(worker)}
-            className={`tap-target flex w-full items-center justify-center gap-2 rounded-md px-4 py-3 font-black text-white ${
-              unlocked ? "bg-hoja" : "bg-ink"
-            }`}
+            className="tap-target whatsapp-cta flex w-full items-center justify-center gap-2 rounded-md bg-ink px-4 py-4 font-black text-white"
           >
             <WhatsAppIcon />
             Contactar por WhatsApp
           </button>
-          <p className="mt-2 text-center text-xs font-bold text-black/60">
-            Respuesta promedio: &lt; 10 min
+          <p className="mt-2 text-center text-xs font-black text-black/70">
+            Contacto directo por WhatsApp
           </p>
-          <p className="mt-1 text-center text-xs font-black text-black/70">
-            Clicks usados: {clicksUsed} / {FREE_CONTACT_LIMIT}
+          <p className="mt-1 text-center text-xs font-bold text-black/60">
+            Responden en menos de 10 minutos
           </p>
         </div>
 
@@ -275,11 +287,14 @@ export function WorkerCard({
                     Ya usaste tus 2 contactos gratis
                   </p>
                   <p className="mt-1 text-sm font-black text-hoja">
-                    Solo RD$6 al día para contratar más rápido
+                    Solo RD$6 al día
                   </p>
                   <p className="mt-3 rounded-md bg-mango/20 p-3 text-sm font-bold leading-6 text-black/75">
-                    Para proteger a los trabajadores, el contacto directo se
-                    desbloquea después del pago.
+                    Contacto directo por WhatsApp con perfiles verificados que
+                    responden en minutos.
+                  </p>
+                  <p className="mt-3 rounded-md bg-cielo p-3 text-sm font-black text-ink">
+                    Quedan pocos trabajadores disponibles hoy
                   </p>
                 </div>
                 <button
@@ -298,8 +313,8 @@ export function WorkerCard({
                   disabled={checkoutPlan !== null}
                   className="tap-target rounded-lg border-2 border-hoja bg-hoja p-4 text-center font-black text-white disabled:opacity-70"
                 >
-                  {checkoutPlan === "weekly"
-                    ? "Abriendo pago..."
+                  {checkoutPlan
+                    ? "Procesando pago..."
                     : "Pagar con tarjeta — RD$199 / semana"}
                 </button>
                 <button
@@ -308,11 +323,16 @@ export function WorkerCard({
                   disabled={checkoutPlan !== null}
                   className="tap-target rounded-lg border-2 border-hoja bg-hoja p-4 text-center font-black text-white disabled:opacity-70"
                 >
-                  {checkoutPlan === "monthly"
-                    ? "Abriendo pago..."
+                  {checkoutPlan
+                    ? "Procesando pago..."
                     : "Pagar con tarjeta — RD$499 / mes"}
                 </button>
               </div>
+              {paymentError && (
+                <p className="mt-3 rounded-md bg-red-50 p-3 text-center text-sm font-black text-red-700">
+                  {paymentError}
+                </p>
+              )}
               <p className="mt-5 text-center text-xs font-bold text-black/55">
                 ¿Problemas con la tarjeta? Escríbenos para ayuda con el pago
                 por transferencia.

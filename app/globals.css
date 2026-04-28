@@ -177,6 +177,12 @@ textarea {
   width: 100%;
 }
 
+.whatsapp-cta {
+  min-height: 3.5rem;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
 @media (max-width: 767px) {
   .workers-section {
     padding-bottom: 6rem;
@@ -192,6 +198,11 @@ textarea {
     background: rgba(255, 255, 255, 0.94);
     padding: 0.25rem;
     box-shadow: 0 10px 24px rgba(21, 21, 21, 0.14);
+  }
+
+  .whatsapp-cta {
+    min-height: 4rem;
+    font-size: 1.125rem;
   }
 }
 
