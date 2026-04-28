@@ -11,6 +11,10 @@ const ADMIN_WHATSAPP_PHONE =
   "18090000000";
 const WHATSAPP_PAYMENT_MESSAGE =
   "Hola, quiero pagar acceso a ListoRD por transferencia.";
+const CONTACT_ERROR_MESSAGE =
+  "No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo.";
+const PAYMENT_ERROR_MESSAGE =
+  "No pudimos iniciar el pago. Intenta de nuevo o escríbenos por WhatsApp.";
 
 function getInitials(name: string) {
   const initials = name
@@ -43,10 +47,15 @@ export function WorkerCard({
     "weekly" | "monthly" | null
   >(null);
   const [paymentError, setPaymentError] = useState("");
+  const [contactError, setContactError] = useState("");
   const cardRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    getBrowserSessionId();
+    try {
+      getBrowserSessionId();
+    } catch (error) {
+      console.warn("Browser session analytics setup failed.", error);
+    }
   }, []);
 
   useEffect(() => {
@@ -62,9 +71,13 @@ export function WorkerCard({
           return;
         }
 
-        trackEvent("worker_view", {
-          worker_id: worker.id
-        });
+        try {
+          trackEvent("worker_view", {
+            worker_id: worker.id
+          });
+        } catch (error) {
+          console.warn("Worker view analytics failed.", error);
+        }
         observer.disconnect();
       },
       { threshold: 0.5 }
@@ -76,10 +89,22 @@ export function WorkerCard({
   }, [worker.id]);
 
   const handleContactClick = async (selectedWorker: Worker) => {
-    const browserSessionId = getBrowserSessionId();
-    trackEvent("contact_click", {
-      worker_id: selectedWorker.id
-    });
+    let browserSessionId = "";
+
+    try {
+      browserSessionId = getBrowserSessionId();
+    } catch (error) {
+      console.warn("Browser session analytics lookup failed.", error);
+    }
+
+    setContactError("");
+    try {
+      trackEvent("contact_click", {
+        worker_id: selectedWorker.id
+      });
+    } catch (error) {
+      console.warn("Contact click analytics failed.", error);
+    }
 
     await redirectToWhatsApp(selectedWorker, browserSessionId);
   };
@@ -87,10 +112,21 @@ export function WorkerCard({
   async function handleStripeCheckout(plan: "weekly" | "monthly") {
     setCheckoutPlan(plan);
     setPaymentError("");
-    const browserSessionId = getBrowserSessionId();
-    trackEvent("checkout_start", {
-      plan
-    });
+    let browserSessionId = "";
+
+    try {
+      browserSessionId = getBrowserSessionId();
+    } catch (error) {
+      console.warn("Browser session analytics lookup failed.", error);
+    }
+
+    try {
+      trackEvent("checkout_start", {
+        plan
+      });
+    } catch (error) {
+      console.warn("Checkout start analytics failed.", error);
+    }
 
     try {
       const response = await fetch("/api/stripe/checkout", {
@@ -107,16 +143,14 @@ export function WorkerCard({
       const data = (await response.json()) as { url?: string; error?: string };
 
       if (!response.ok || !data.url) {
-        setPaymentError(
-          "Error procesando pago. Intenta de nuevo o usa WhatsApp."
-        );
+        setPaymentError(PAYMENT_ERROR_MESSAGE);
         setCheckoutPlan(null);
         return;
       }
 
       window.location.href = data.url;
     } catch {
-      setPaymentError("Error procesando pago. Intenta de nuevo o usa WhatsApp.");
+      setPaymentError(PAYMENT_ERROR_MESSAGE);
       setCheckoutPlan(null);
     }
   }
@@ -149,22 +183,26 @@ export function WorkerCard({
       };
 
       if (response.status === 402 || data.reason === "payment_required") {
-        trackEvent("paywall_open", {
-          worker_id: selectedWorker.id,
-          reason: data.reason ?? "payment_required"
-        });
+        try {
+          trackEvent("paywall_open", {
+            worker_id: selectedWorker.id,
+            reason: data.reason ?? "payment_required"
+          });
+        } catch (error) {
+          console.warn("Paywall analytics failed.", error);
+        }
         setShowPaywall(true);
         return;
       }
 
       if (!response.ok || !data.url) {
-        alert(data.error || "No pudimos abrir WhatsApp.");
+        setContactError(CONTACT_ERROR_MESSAGE);
         return;
       }
 
       window.location.href = data.url;
     } catch {
-      alert("No pudimos abrir WhatsApp.");
+      setContactError(CONTACT_ERROR_MESSAGE);
     }
   }
 
@@ -276,6 +314,11 @@ export function WorkerCard({
           <p className="mt-1 text-center text-xs font-bold text-black/60">
             Responden en menos de 10 minutos
           </p>
+          {contactError && (
+            <p className="mt-2 rounded-md bg-red-50 p-2 text-center text-xs font-black text-red-700">
+              {contactError}
+            </p>
+          )}
         </div>
 
         {showPaywall && (

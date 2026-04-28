@@ -1,7 +1,7 @@
 import { AppHeader } from "@/components/app-header";
 import { FilterBar } from "@/components/filter-bar";
 import { WorkerCard } from "@/components/worker-card";
-import { getWorkers } from "@/lib/workers";
+import { getWorkersResult } from "@/lib/workers";
 import Link from "next/link";
 
 export default async function Home({
@@ -15,7 +15,8 @@ export default async function Home({
     workStyle?: string;
   };
 }) {
-  const workers = await getWorkers(searchParams);
+  const workersResult = await getWorkersResult(searchParams);
+  const workers = workersResult.workers;
 
   return (
     <>
@@ -94,19 +95,38 @@ export default async function Home({
             </span>
           </div>
           <div className="worker-grid">
-            {workers.length > 0 ? (
+            {!workersResult.ok ? (
+              <div className="empty-state md:col-span-2 lg:col-span-3">
+                <p className="text-sm font-black uppercase tracking-wide text-hoja">
+                  Conexión interrumpida
+                </p>
+                <h3 className="mt-2 text-2xl font-black text-ink">
+                  No pudimos cargar los trabajadores ahora mismo.
+                </h3>
+                <p className="mx-auto mt-2 max-w-xl leading-7 text-black/70">
+                  Intenta de nuevo en unos minutos. Estamos manteniendo los
+                  perfiles seguros y verificados.
+                </p>
+                <Link
+                  href="/"
+                  className="tap-target mt-5 inline-flex items-center justify-center rounded-md bg-hoja px-6 py-3 font-black text-white shadow-soft"
+                >
+                  Intentar de nuevo
+                </Link>
+              </div>
+            ) : workers.length > 0 ? (
               workers.map((worker) => (
                 <WorkerCard key={worker.id} worker={worker} />
               ))
             ) : (
-              <div className="rounded-xl border border-black/10 bg-white p-6 shadow-soft md:col-span-2 lg:col-span-3">
+              <div className="empty-state md:col-span-2 lg:col-span-3">
                 <p className="text-sm font-black uppercase tracking-wide text-hoja">
                   Lanzamiento en progreso
                 </p>
                 <h3 className="mt-2 text-2xl font-black text-ink">
                   Estamos verificando trabajadores reales en tu zona.
                 </h3>
-                <p className="mt-2 max-w-xl leading-7 text-black/70">
+                <p className="mx-auto mt-2 max-w-xl leading-7 text-black/70">
                   ListoRD solo muestra perfiles reales aprobados. Mientras
                   completamos la verificacion, estamos recibiendo registros de
                   trabajadores para publicarlos cuando sean aprobados.
@@ -116,7 +136,7 @@ export default async function Home({
                 </p>
                 <Link
                   href="/trabajadores/registro"
-                  className="tap-target mt-4 inline-flex items-center justify-center rounded-md bg-hoja px-4 py-3 font-black text-white"
+                  className="tap-target mt-5 inline-flex items-center justify-center rounded-md bg-hoja px-6 py-3 text-lg font-black text-white shadow-soft"
                 >
                   Registrarme como trabajador
                 </Link>

@@ -9,21 +9,29 @@ type WorkerFilters = {
   workStyle?: string;
 };
 
+export type WorkersResult =
+  | { ok: true; workers: Worker[] }
+  | { ok: false; workers: []; message: string };
+
+const WORKERS_LOAD_ERROR =
+  "No pudimos cargar los trabajadores ahora mismo. Intenta de nuevo en unos minutos.";
+
 export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
+  const result = await getWorkersResult(filters);
+
+  return result.workers;
+}
+
+export async function getWorkersResult(
+  filters: WorkerFilters
+): Promise<WorkersResult> {
   const supabase = getSupabaseClient();
 
   if (!supabase) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(
-        "ListoRD workers debug: Supabase env is missing or invalid."
-      );
-      console.log("ListoRD workers count:", 0);
-    }
-
-    return [];
+    return { ok: false, workers: [], message: WORKERS_LOAD_ERROR };
   }
 
-  const query = supabase
+  let query = supabase
     .from("workers")
     .select(`
       id,
@@ -57,28 +65,40 @@ export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
     .order("available_now", { ascending: false })
     .order("rating_average", { ascending: false });
 
+  const city = filters.city?.trim();
+  const maxIncome = Number(filters.income);
+  const skill = filters.skill?.trim().toLowerCase();
+
+  if (city) {
+    query = query.ilike("city", `%${city}%`);
+  }
+
+  if (Number.isFinite(maxIncome) && maxIncome > 0) {
+    query = query.lte("desired_income", maxIncome);
+  }
+
+  if (filters.availableNow === "true") {
+    query = query.eq("available_now", true);
+  }
+
+  if (filters.workStyle) {
+    query = query.eq("work_style", filters.workStyle);
+  }
+
   const { data, error } = await query;
 
   if (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("ListoRD workers query failed:", {
-        message: error.message,
-        code: error.code
-      });
-      console.log("ListoRD workers count:", 0);
-    }
-
-    return [];
+    return { ok: false, workers: [], message: WORKERS_LOAD_ERROR };
   }
 
-  if (process.env.NODE_ENV !== "production") {
-    console.log("ListoRD workers count:", data?.length ?? 0);
-    console.log("ListoRD workers response:", {
-      count: data?.length ?? 0,
-      firstWorkerId: data?.[0]?.id ?? null
-    });
-    console.log("ListoRD workers filters ignored temporarily:", filters);
-  }
+  const workers = skill
+    ? (data ?? []).filter((worker) =>
+        (Array.isArray(worker.skills) ? worker.skills : []).some(
+          (workerSkill: string) =>
+            workerSkill.toLowerCase().includes(skill)
+        )
+      )
+    : data ?? [];
 
-  return data ?? [];
+  return { ok: true, workers };
 }

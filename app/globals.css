@@ -40,15 +40,15 @@ textarea {
   width: 100%;
   max-width: 72rem;
   margin: 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 1.125rem;
+  padding-right: 1.125rem;
 }
 
 .hero-inner {
   display: grid;
   gap: 1.25rem;
-  padding-top: 2.75rem;
-  padding-bottom: 2.75rem;
+  padding-top: 2.25rem;
+  padding-bottom: 2.25rem;
 }
 
 .hero-title {
@@ -79,8 +79,8 @@ textarea {
 }
 
 .filter-section {
-  padding-top: 1.5rem;
-  padding-bottom: 1.25rem;
+  padding-top: 1.75rem;
+  padding-bottom: 1.5rem;
 }
 
 .workers-section {
@@ -100,6 +100,15 @@ textarea {
   grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: 1.25rem;
+}
+
+.empty-state {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 1rem;
+  background: #ffffff;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(21, 21, 21, 0.08);
 }
 
 .worker-card {
@@ -184,6 +193,11 @@ textarea {
 }
 
 @media (max-width: 767px) {
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .workers-section {
     padding-bottom: 6rem;
   }
@@ -210,6 +224,8 @@ textarea {
   .hero-inner {
     grid-template-columns: 1.1fr 0.9fr;
     align-items: end;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
   }
 
   .worker-grid {

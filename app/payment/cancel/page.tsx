@@ -15,7 +15,8 @@ export default function PaymentCancelPage() {
               No se hizo ningun cargo
             </h1>
             <p className="mt-3 leading-7 text-black/70">
-              Error procesando pago. Intenta de nuevo o usa WhatsApp.
+              Puedes volver a intentar con tarjeta o escribirnos por WhatsApp
+              para ayuda con el pago.
             </p>
             <Link
               href="/"

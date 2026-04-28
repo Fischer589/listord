@@ -20,14 +20,12 @@ export async function GET(request: Request) {
       plan: premiumAccess?.plan ?? null,
       paid_access_until: premiumAccess?.paid_access_until ?? null
     });
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "No se pudo verificar el acceso premium.";
-
+  } catch {
     return NextResponse.json(
-      { error: message, premium: false },
+      {
+        error: "No pudimos verificar tu acceso todavía. Intenta de nuevo.",
+        premium: false
+      },
       { status: 500 }
     );
   }

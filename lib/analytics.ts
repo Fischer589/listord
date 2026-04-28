@@ -15,42 +15,70 @@ export type AnalyticsMetadata = Record<
 
 export const BROWSER_SESSION_STORAGE_KEY = "listord_browser_session_id";
 
+let fallbackBrowserSessionId = "";
+
 export function getBrowserSessionId() {
-  const existing = localStorage.getItem(BROWSER_SESSION_STORAGE_KEY);
+  try {
+    const existing = localStorage.getItem(BROWSER_SESSION_STORAGE_KEY);
 
-  if (existing) {
-    return existing;
+    if (existing) {
+      return existing;
+    }
+
+    const id = createBrowserSessionId();
+    localStorage.setItem(BROWSER_SESSION_STORAGE_KEY, id);
+
+    return id;
+  } catch (error) {
+    console.warn("Browser session storage failed.", error);
+
+    if (!fallbackBrowserSessionId) {
+      fallbackBrowserSessionId = createBrowserSessionId();
+    }
+
+    return fallbackBrowserSessionId;
   }
+}
 
-  const id =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  localStorage.setItem(BROWSER_SESSION_STORAGE_KEY, id);
-
-  return id;
+function createBrowserSessionId() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }
 
 export function trackEvent(
   eventName: AnalyticsEventName,
   metadata: AnalyticsMetadata = {}
 ) {
-  const sessionId = getBrowserSessionId();
+  try {
+    const sessionId = getBrowserSessionId();
 
-  void fetch("/api/analytics/events", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      event_name: eventName,
-      metadata: {
-        ...metadata,
-        session_id: sessionId
-      }
-    }),
-    keepalive: true
-  }).catch(() => {
-    // Analytics should never block the user flow.
-  });
+    void fetch("/api/analytics/events", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        event_name: eventName,
+        metadata: {
+          ...metadata,
+          session_id: sessionId
+        }
+      }),
+      keepalive: true
+    })
+      .then((response) => {
+        if (!response.ok) {
+          console.warn("Analytics event was not accepted.", {
+            eventName,
+            status: response.status
+          });
+        }
+      })
+      .catch((error) => {
+        console.warn("Analytics event request failed.", error);
+      });
+  } catch (error) {
+    console.warn("Analytics event tracking failed.", error);
+  }
 }

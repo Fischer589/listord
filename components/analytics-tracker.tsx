@@ -10,9 +10,13 @@ export function AnalyticsTracker() {
   const queryString = searchParams.toString();
 
   useEffect(() => {
-    trackEvent("page_view", {
-      path: queryString ? `${pathname}?${queryString}` : pathname
-    });
+    try {
+      trackEvent("page_view", {
+        path: queryString ? `${pathname}?${queryString}` : pathname
+      });
+    } catch (error) {
+      console.warn("Page view analytics failed.", error);
+    }
   }, [pathname, queryString]);
 
   return null;

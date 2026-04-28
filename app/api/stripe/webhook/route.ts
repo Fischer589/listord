@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   if (!stripeSecretKey || !webhookSecret) {
     return NextResponse.json(
-      { error: "Faltan STRIPE_SECRET_KEY o STRIPE_WEBHOOK_SECRET." },
+      { error: "No pudimos procesar el evento de pago." },
       { status: 500 }
     );
   }
@@ -72,14 +72,9 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ received: true });
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "No se pudo guardar el acceso premium.";
-
+  } catch {
     return NextResponse.json(
-      { error: message },
+      { error: "No pudimos procesar el evento de pago." },
       { status: 500 }
     );
   }

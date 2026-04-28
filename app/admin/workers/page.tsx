@@ -40,7 +40,6 @@ async function getPendingWorkers(): Promise<Worker[]> {
       country,
       region,
       city,
-      whatsapp_number,
       skills,
       desired_income,
       income_type,
@@ -136,11 +135,6 @@ export default async function AdminWorkersPage() {
                             worker.income_type
                           )}
                         </p>
-                        {worker.whatsapp_number && (
-                          <p className="mt-1 font-bold text-black/70">
-                            WhatsApp: {worker.whatsapp_number}
-                          </p>
-                        )}
                         <p className="mt-3 leading-7 text-black/75">
                           {worker.short_intro}
                         </p>

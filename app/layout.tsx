@@ -6,11 +6,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://listord.com"),
   title: {
-    default: "ListoRD | Trabajadores listos en RD",
+    default: "ListoRD – Trabajadores listos hoy",
     template: "%s | ListoRD"
   },
   description:
-    "Conecta con gente seria, disponible y cerca de ti en República Dominicana.",
+    "Encuentra trabajadores verificados y disponibles hoy en República Dominicana. Filtra por ciudad, habilidad, ingreso y disponibilidad.",
   applicationName: "ListoRD",
   keywords: [
     "trabajadores República Dominicana",
@@ -38,6 +38,11 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true
+  },
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png"
   }
 };
 
@@ -53,6 +58,10 @@ export default function RootLayout({
           <AnalyticsTracker />
         </Suspense>
         {children}
+        <footer className="border-t border-black/10 bg-white py-6 text-center text-sm font-bold text-black/60">
+          <p>© 2026 ListoRD</p>
+          <p className="mt-1 text-ink">Encuentra. Conecta. Listo.</p>
+        </footer>
       </body>
     </html>
   );

@@ -23,8 +23,13 @@ export default function PaymentSuccessPage() {
     }
 
     const verifiedSessionId = sessionId;
-    const browserSessionId =
-      localStorage.getItem(BROWSER_SESSION_STORAGE_KEY) || "";
+    let browserSessionId = "";
+
+    try {
+      browserSessionId = localStorage.getItem(BROWSER_SESSION_STORAGE_KEY) || "";
+    } catch (error) {
+      console.warn("Checkout success analytics session lookup failed.", error);
+    }
 
     async function verifyPayment() {
       try {
@@ -40,10 +45,14 @@ export default function PaymentSuccessPage() {
 
           if (response.ok && data.premium) {
             setIsPremium(true);
-            trackEvent("checkout_success", {
-              plan: data.plan ?? null,
-              checkout_session_id: verifiedSessionId
-            });
+            try {
+              trackEvent("checkout_success", {
+                plan: data.plan ?? null,
+                checkout_session_id: verifiedSessionId
+              });
+            } catch (error) {
+              console.warn("Checkout success analytics failed.", error);
+            }
             return;
           }
 
@@ -82,15 +91,24 @@ export default function PaymentSuccessPage() {
                 ? "Procesando tu acceso..."
                 : isPremium
                   ? "Tu acceso quedó activo en el servidor. Vuelve a la lista y continúa contactando por WhatsApp."
-                  : "Error procesando pago. Intenta de nuevo o usa WhatsApp."}
+                  : "No pudimos verificar tu pago todavía. Intenta de nuevo o escríbenos por WhatsApp."}
             </p>
-            {isPremium && (
+            {isPremium ? (
               <Link
                 href="/"
                 className="tap-target mt-6 inline-flex items-center justify-center rounded-md bg-hoja px-5 py-3 font-black text-white"
               >
                 Ver trabajadores
               </Link>
+            ) : (
+              !isVerifying && (
+                <Link
+                  href="/"
+                  className="tap-target mt-6 inline-flex items-center justify-center rounded-md bg-ink px-5 py-3 font-black text-white"
+                >
+                  Volver a intentar
+                </Link>
+              )
             )}
           </div>
         </section>

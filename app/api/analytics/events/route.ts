@@ -10,52 +10,48 @@ const allowedEvents = new Set([
   "checkout_success"
 ]);
 
+function safeAnalyticsResponse() {
+  return new NextResponse(null, { status: 204 });
+}
+
 export async function POST(request: Request) {
-  const supabase = getSupabaseAdminClient();
+  try {
+    const supabase = getSupabaseAdminClient();
 
-  if (!supabase) {
-    return NextResponse.json(
-      { error: "Supabase no está configurado para analytics." },
-      { status: 500 }
-    );
+    if (!supabase) {
+      console.warn("Analytics event skipped: Supabase is not configured.");
+      return safeAnalyticsResponse();
+    }
+
+    const body = (await request.json().catch(() => null)) as {
+      event_name?: string;
+      metadata?: Record<string, unknown>;
+    } | null;
+    const eventName = body?.event_name?.trim();
+
+    if (!eventName || !allowedEvents.has(eventName)) {
+      console.warn("Analytics event skipped: invalid event name.", eventName);
+      return safeAnalyticsResponse();
+    }
+
+    const metadata =
+      body?.metadata && typeof body.metadata === "object" ? body.metadata : {};
+
+    const { error } = await supabase
+      .from("analytics_events")
+      .insert({
+        event_name: eventName,
+        metadata
+      });
+
+    if (error) {
+      console.warn("Analytics event insert failed.", error);
+      return safeAnalyticsResponse();
+    }
+
+    return safeAnalyticsResponse();
+  } catch (error) {
+    console.error("Analytics event logging failed.", error);
+    return safeAnalyticsResponse();
   }
-
-  const body = (await request.json().catch(() => null)) as {
-    event_name?: string;
-    metadata?: Record<string, unknown>;
-  } | null;
-  const eventName = body?.event_name?.trim();
-
-  if (!eventName || !allowedEvents.has(eventName)) {
-    return NextResponse.json(
-      { error: "Evento invalido." },
-      { status: 400 }
-    );
-  }
-
-  const metadata =
-    body?.metadata && typeof body.metadata === "object" ? body.metadata : {};
-
-  const { error } = await supabase
-    .from("analytics_events")
-    .insert({
-      event_name: eventName,
-      metadata
-    });
-
-  if (error) {
-    return NextResponse.json(
-      { error: "No pudimos registrar el evento." },
-      { status: 500 }
-    );
-  }
-
-  if (process.env.NODE_ENV !== "production") {
-    console.info("ListoRD analytics event:", {
-      eventName,
-      metadata
-    });
-  }
-
-  return NextResponse.json({ ok: true });
 }

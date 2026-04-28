@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
   if (!stripeSecretKey) {
     return NextResponse.json(
-      { error: "Falta configurar STRIPE_SECRET_KEY." },
+      { error: "No pudimos iniciar el pago. Intenta de nuevo." },
       { status: 500 }
     );
   }
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
   if (!priceId) {
     return NextResponse.json(
-      { error: `Falta configurar ${planPriceEnv[plan]}.` },
+      { error: "No pudimos iniciar el pago. Intenta de nuevo." },
       { status: 500 }
     );
   }
@@ -69,17 +69,15 @@ export async function POST(request: Request) {
 
     if (!session.url) {
       return NextResponse.json(
-        { error: "Stripe no devolvio una URL de checkout." },
+        { error: "No pudimos iniciar el pago. Intenta de nuevo." },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ url: session.url });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "No se pudo crear el checkout.";
+  } catch {
     return NextResponse.json(
-      { error: message },
+      { error: "No pudimos iniciar el pago. Intenta de nuevo." },
       { status: 500 }
     );
   }
