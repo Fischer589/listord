@@ -37,7 +37,7 @@ Abre `http://localhost:3000`.
 1. Crea un proyecto en Supabase.
 2. Copia `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en `.env.local`.
 3. Ejecuta el SQL de `supabase/schema.sql` en el SQL Editor de Supabase.
-4. Crea un bucket de Storage para fotos de trabajadores, por ejemplo `worker-photos`.
+4. Crea un bucket publico de Storage para fotos de trabajadores llamado `worker-photos`, o cambia `WORKER_PHOTOS_BUCKET` si usas otro nombre.
 5. Activa Auth con el proveedor que prefieras.
 
 Los trabajadores nuevos se guardan con `is_verified = false`. Para aprobar un perfil real desde Supabase, actualiza el registro:

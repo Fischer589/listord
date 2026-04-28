@@ -12,6 +12,17 @@ const ADMIN_WHATSAPP_PHONE =
 const WHATSAPP_PAYMENT_MESSAGE =
   "Hola, quiero pagar acceso a ListoRD por transferencia.";
 
+function getInitials(name: string) {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+  return initials || "LR";
+}
+
 export function WorkerCard({
   worker
 }: {
@@ -171,7 +182,7 @@ export function WorkerCard({
           />
         ) : (
           <div className="grid h-full place-items-center text-4xl font-black text-hoja">
-            {fullName.charAt(0)}
+            {getInitials(fullName)}
           </div>
         )}
       </div>
