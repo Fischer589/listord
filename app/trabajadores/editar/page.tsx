@@ -201,7 +201,7 @@ async function updateWorkerProfile(formData: FormData) {
   const updatePayload: Record<string, unknown> = {
     full_name: fullName,
     city,
-    whatsapp_number: `+${normalizedWhatsAppNumber}`,
+    whatsapp_number: normalizedWhatsAppNumber,
     skills,
     desired_income: desiredIncome,
     availability,
@@ -285,7 +285,7 @@ export default async function EditWorkerPage({
         )}
         {state === "telefono" && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            Usa un numero de WhatsApp valido de RD: 809, 829 o 849.
+            Usa un numero de WhatsApp valido con al menos 10 digitos.
           </div>
         )}
         {state === "duplicado" && (

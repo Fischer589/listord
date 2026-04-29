@@ -23,19 +23,11 @@ const expectedWorkerInsertColumns = [
   "edit_token",
   "full_name",
   "is_verified",
-  "photo_url",
   "short_intro",
   "skills",
   "whatsapp_number",
   "work_style"
 ];
-
-function isDuplicateWhatsAppError(error: { code?: string; message?: string }) {
-  return (
-    error.code === "23505" ||
-    error.message?.toLowerCase().includes("workers_whatsapp_digits_unique_idx")
-  );
-}
 
 async function submitWorkerRegistration(formData: FormData) {
   "use server";
@@ -118,12 +110,23 @@ async function submitWorkerRegistration(formData: FormData) {
     normalizedWhatsAppNumber
   );
 
-  const insertPayload = {
+  const insertPayload: {
+    edit_token: string;
+    full_name: string;
+    city: string;
+    whatsapp_number: string;
+    skills: string[];
+    desired_income: number;
+    availability: string[];
+    short_intro: string;
+    work_style: NonNullable<typeof workStyle>;
+    is_verified: false;
+    photo_url?: string;
+  } = {
     edit_token: editToken,
     full_name: fullName,
-    photo_url: photoUrl,
     city,
-    whatsapp_number: `+${normalizedWhatsAppNumber}`,
+    whatsapp_number: normalizedWhatsAppNumber,
     skills,
     desired_income: desiredIncome,
     availability,
@@ -131,20 +134,40 @@ async function submitWorkerRegistration(formData: FormData) {
     work_style: workStyle,
     is_verified: false
   };
-  const insertPayloadKeys = Object.keys(insertPayload).sort();
 
-  console.info("Worker registration insert payload keys.", {
-    expectedKeys: expectedWorkerInsertColumns,
+  if (photoUrl) {
+    insertPayload.photo_url = photoUrl;
+  }
+
+  const insertPayloadKeys = Object.keys(insertPayload).sort();
+  const expectedPayloadKeys = photoUrl
+    ? [...expectedWorkerInsertColumns, "photo_url"].sort()
+    : expectedWorkerInsertColumns;
+
+  console.info("Worker registration insert payload comparison.", {
+    expectedKeys: expectedPayloadKeys,
     keys: insertPayloadKeys
   });
 
-  const { data: insertedWorker, error } = await supabase
+  const payload = insertPayload;
+  console.log("INSERT PAYLOAD:", payload);
+
+  const { data, error } = await supabase
     .from("workers")
-    .insert(insertPayload)
+    .insert(payload)
     .select("id")
     .single();
 
+  console.log("INSERT RESPONSE:", { data, error });
+
   if (error) {
+    console.log("SUPABASE ERROR FULL:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
+
     console.warn("Worker registration insert failed.", {
       code: error.code,
       details: error.details,
@@ -152,14 +175,15 @@ async function submitWorkerRegistration(formData: FormData) {
       message: error.message,
       payloadKeys: insertPayloadKeys
     });
-    if (isDuplicateWhatsAppError(error)) {
-      redirect("/trabajadores/registro?estado=duplicado");
-    }
 
-    redirect("/trabajadores/registro?estado=error");
+    redirect(
+      `/trabajadores/registro?estado=error&mensaje=${encodeURIComponent(
+        error.message
+      )}`
+    );
   }
 
-  if (!insertedWorker?.id || !isValidEditToken(editToken)) {
+  if (!data?.id || !isValidEditToken(editToken)) {
     console.warn("Worker registration insert returned no worker id.");
     redirect("/trabajadores/registro?estado=error");
   }
@@ -172,9 +196,10 @@ async function submitWorkerRegistration(formData: FormData) {
 export default function WorkerRegistrationPage({
   searchParams
 }: {
-  searchParams: { estado?: string };
+  searchParams: { estado?: string; mensaje?: string };
 }) {
   const state = searchParams.estado;
+  const errorMessage = searchParams.mensaje || workerProfileUnexpectedError;
 
   return (
     <>
@@ -197,7 +222,7 @@ export default function WorkerRegistrationPage({
         )}
         {state === "telefono" && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            Usa un numero de WhatsApp valido de RD: 809, 829 o 849.
+            Usa un numero de WhatsApp valido con al menos 10 digitos.
           </div>
         )}
         {state === "duplicado" && (
@@ -213,7 +238,7 @@ export default function WorkerRegistrationPage({
         )}
         {state === "error" && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            {workerProfileUnexpectedError}
+            {errorMessage}
           </div>
         )}
 
@@ -264,7 +289,7 @@ export default function WorkerRegistrationPage({
                 name="whatsapp_number"
                 inputMode="tel"
                 autoComplete="tel"
-                placeholder="809, 829 o 849..."
+                placeholder="8091234567 o +12675160983"
                 required
               />
             </label>

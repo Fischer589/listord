@@ -169,7 +169,7 @@ export function WorkerCard({
   function handleWhatsAppPayment() {
     const message = encodeURIComponent(WHATSAPP_PAYMENT_MESSAGE);
     window.location.href =
-      `https://api.whatsapp.com/send?phone=${ADMIN_WHATSAPP_PHONE}&text=${message}`;
+      `https://wa.me/${ADMIN_WHATSAPP_PHONE}?text=${message}`;
   }
 
   async function redirectToWhatsApp(
@@ -359,7 +359,7 @@ export function WorkerCard({
                     }
                     inputMode="tel"
                     autoComplete="tel"
-                    placeholder="809, 829 o 849..."
+                    placeholder="8091234567 o +12675160983"
                   />
                 </label>
                 <button

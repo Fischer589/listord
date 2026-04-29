@@ -58,17 +58,22 @@ export function getList(formData: FormData, key: string) {
 }
 
 export function normalizeWhatsAppNumber(value: string) {
+  const trimmedValue = value.trim();
   const digits = value.replace(/\D/g, "");
 
-  if (digits.length === 10 && /^(809|829|849)/.test(digits)) {
-    return `1${digits}`;
+  if (digits.length < 10) {
+    return null;
   }
 
-  if (digits.length === 11 && /^1(809|829|849)/.test(digits)) {
-    return digits;
+  if (trimmedValue.startsWith("+")) {
+    return `+${digits}`;
   }
 
-  return null;
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+
+  return `+${digits}`;
 }
 
 export function isValidEditToken(value: string) {
@@ -78,9 +83,7 @@ export function isValidEditToken(value: string) {
 }
 
 export function formatWhatsAppNumber(value: string) {
-  const normalized = normalizeWhatsAppNumber(value);
-
-  return normalized ? `+${normalized}` : null;
+  return normalizeWhatsAppNumber(value);
 }
 
 export function hasBlockedText(values: string[]) {

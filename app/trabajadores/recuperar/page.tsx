@@ -39,7 +39,7 @@ export default function RecoverWorkerEditLinkPage({
               inputMode="tel"
               autoComplete="tel"
               defaultValue={whatsappNumber}
-              placeholder="809, 829 o 849..."
+              placeholder="8091234567 o +12675160983"
               required
             />
           </label>
@@ -50,7 +50,7 @@ export default function RecoverWorkerEditLinkPage({
 
         {hasSearch && !normalizedWhatsAppNumber && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            Usa un numero de WhatsApp valido de RD: 809, 829 o 849.
+            Usa un numero de WhatsApp valido con al menos 10 digitos.
           </div>
         )}
 

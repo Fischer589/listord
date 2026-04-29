@@ -101,6 +101,6 @@ export async function POST(request: Request) {
   const message = encodeURIComponent(WORKER_CONTACT_MESSAGE);
 
   return NextResponse.json({
-    url: `https://api.whatsapp.com/send?phone=${phone}&text=${message}`
+    url: `https://wa.me/${phone}?text=${message}`
   });
 }
