@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { AnalyticsTracker } from "@/components/analytics-tracker";
 import "./globals.css";
@@ -60,7 +61,11 @@ export default function RootLayout({
         {children}
         <footer className="border-t border-black/10 bg-white py-6 text-center text-sm font-bold text-black/60">
           <p>© 2026 ListoRD</p>
-          <p className="mt-1 text-ink">Encuentra. Conecta. Listo.</p>
+          <nav className="mt-3 flex flex-wrap items-center justify-center gap-4 text-ink">
+            <Link href="/trabajadores/editar">Editar mi perfil</Link>
+            <Link href="/trabajadores/registro">Registrarme como trabajador</Link>
+          </nav>
+          <p className="mt-3 text-ink">Encuentra. Conecta. Listo.</p>
         </footer>
       </body>
     </html>

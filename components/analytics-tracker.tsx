@@ -15,7 +15,9 @@ export function AnalyticsTracker() {
         path: queryString ? `${pathname}?${queryString}` : pathname
       });
     } catch (error) {
-      console.warn("Page view analytics failed.", error);
+      console.warn("Page view analytics failed.", {
+        name: error instanceof Error ? error.name : "UnknownError"
+      });
     }
   }, [pathname, queryString]);
 

@@ -14,6 +14,7 @@ export type WorkStyle =
 export type Worker = {
   id: string;
   user_id?: string | null;
+  edit_token?: string;
   full_name: string;
   photo_url?: string | null;
   country: string;
@@ -30,6 +31,7 @@ export type Worker = {
   job_duration_preference: string;
   duration_note?: string | null;
   short_intro: string;
+  description?: string | null;
   experience?: string | null;
   show_up_count: number;
   completed_jobs_count: number;
@@ -39,6 +41,7 @@ export type Worker = {
   rating_count: number;
   is_verified: boolean;
   created_at?: string;
+  updated_at?: string;
 };
 
 export type Employer = {

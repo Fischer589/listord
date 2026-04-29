@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { upsertEmployerSession } from "@/lib/employer-sessions";
 
 type CheckoutPlan = "weekly" | "monthly";
 
@@ -22,10 +23,12 @@ export async function POST(request: Request) {
     plan?: CheckoutPlan;
     browser_session_id?: string;
     client_reference_id?: string;
+    whatsapp_number?: string;
   } | null;
   const plan = body?.plan;
   const browserSessionId = body?.browser_session_id?.trim();
   const clientReferenceId = body?.client_reference_id?.trim();
+  const whatsappNumber = body?.whatsapp_number?.trim();
 
   if (plan !== "weekly" && plan !== "monthly") {
     return NextResponse.json(
@@ -49,6 +52,11 @@ export async function POST(request: Request) {
     "http://localhost:3000";
 
   try {
+    await upsertEmployerSession({
+      browserSessionId,
+      whatsappNumber
+    });
+
     const stripe = new Stripe(stripeSecretKey);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

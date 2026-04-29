@@ -45,13 +45,17 @@ export async function POST(request: Request) {
       });
 
     if (error) {
-      console.warn("Analytics event insert failed.", error);
+      console.warn("Analytics event insert failed.", {
+        code: error.code
+      });
       return safeAnalyticsResponse();
     }
 
     return safeAnalyticsResponse();
   } catch (error) {
-    console.error("Analytics event logging failed.", error);
+    console.warn("Analytics event logging failed.", {
+      name: error instanceof Error ? error.name : "UnknownError"
+    });
     return safeAnalyticsResponse();
   }
 }

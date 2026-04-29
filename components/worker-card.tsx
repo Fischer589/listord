@@ -46,6 +46,7 @@ export function WorkerCard({
   const [checkoutPlan, setCheckoutPlan] = useState<
     "weekly" | "monthly" | null
   >(null);
+  const [employerWhatsAppNumber, setEmployerWhatsAppNumber] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const [contactError, setContactError] = useState("");
   const cardRef = useRef<HTMLElement | null>(null);
@@ -54,7 +55,9 @@ export function WorkerCard({
     try {
       getBrowserSessionId();
     } catch (error) {
-      console.warn("Browser session analytics setup failed.", error);
+      console.warn("Browser session analytics setup failed.", {
+        name: error instanceof Error ? error.name : "UnknownError"
+      });
     }
   }, []);
 
@@ -76,7 +79,9 @@ export function WorkerCard({
             worker_id: worker.id
           });
         } catch (error) {
-          console.warn("Worker view analytics failed.", error);
+          console.warn("Worker view analytics failed.", {
+            name: error instanceof Error ? error.name : "UnknownError"
+          });
         }
         observer.disconnect();
       },
@@ -94,7 +99,9 @@ export function WorkerCard({
     try {
       browserSessionId = getBrowserSessionId();
     } catch (error) {
-      console.warn("Browser session analytics lookup failed.", error);
+      console.warn("Browser session analytics lookup failed.", {
+        name: error instanceof Error ? error.name : "UnknownError"
+      });
     }
 
     setContactError("");
@@ -103,7 +110,9 @@ export function WorkerCard({
         worker_id: selectedWorker.id
       });
     } catch (error) {
-      console.warn("Contact click analytics failed.", error);
+      console.warn("Contact click analytics failed.", {
+        name: error instanceof Error ? error.name : "UnknownError"
+      });
     }
 
     await redirectToWhatsApp(selectedWorker, browserSessionId);
@@ -117,7 +126,9 @@ export function WorkerCard({
     try {
       browserSessionId = getBrowserSessionId();
     } catch (error) {
-      console.warn("Browser session analytics lookup failed.", error);
+      console.warn("Browser session analytics lookup failed.", {
+        name: error instanceof Error ? error.name : "UnknownError"
+      });
     }
 
     try {
@@ -125,7 +136,9 @@ export function WorkerCard({
         plan
       });
     } catch (error) {
-      console.warn("Checkout start analytics failed.", error);
+      console.warn("Checkout start analytics failed.", {
+        name: error instanceof Error ? error.name : "UnknownError"
+      });
     }
 
     try {
@@ -137,7 +150,8 @@ export function WorkerCard({
         body: JSON.stringify({
           plan,
           browser_session_id: browserSessionId,
-          client_reference_id: browserSessionId
+          client_reference_id: browserSessionId,
+          whatsapp_number: employerWhatsAppNumber
         })
       });
       const data = (await response.json()) as { url?: string; error?: string };
@@ -173,7 +187,8 @@ export function WorkerCard({
         },
         body: JSON.stringify({
           workerId: selectedWorker.id,
-          browser_session_id: browserSessionId
+          browser_session_id: browserSessionId,
+          whatsapp_number: employerWhatsAppNumber
         })
       });
       const data = (await response.json()) as {
@@ -189,7 +204,9 @@ export function WorkerCard({
             reason: data.reason ?? "payment_required"
           });
         } catch (error) {
-          console.warn("Paywall analytics failed.", error);
+          console.warn("Paywall analytics failed.", {
+            name: error instanceof Error ? error.name : "UnknownError"
+          });
         }
         setShowPaywall(true);
         return;
@@ -361,6 +378,19 @@ export function WorkerCard({
                 </button>
               </div>
               <div className="mt-5 grid gap-3">
+                <label className="grid gap-1 text-left text-sm font-bold text-ink">
+                  Tu WhatsApp
+                  <input
+                    className="tap-target rounded-md border border-black/15 px-3"
+                    value={employerWhatsAppNumber}
+                    onChange={(event) =>
+                      setEmployerWhatsAppNumber(event.target.value)
+                    }
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="809, 829 o 849..."
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={() => handleStripeCheckout("weekly")}

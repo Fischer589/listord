@@ -30,7 +30,9 @@ export function getBrowserSessionId() {
 
     return id;
   } catch (error) {
-    console.warn("Browser session storage failed.", error);
+    console.warn("Browser session storage failed.", {
+      name: error instanceof Error ? error.name : "UnknownError"
+    });
 
     if (!fallbackBrowserSessionId) {
       fallbackBrowserSessionId = createBrowserSessionId();
@@ -76,9 +78,13 @@ export function trackEvent(
         }
       })
       .catch((error) => {
-        console.warn("Analytics event request failed.", error);
+        console.warn("Analytics event request failed.", {
+          name: error instanceof Error ? error.name : "UnknownError"
+        });
       });
   } catch (error) {
-    console.warn("Analytics event tracking failed.", error);
+    console.warn("Analytics event tracking failed.", {
+      name: error instanceof Error ? error.name : "UnknownError"
+    });
   }
 }

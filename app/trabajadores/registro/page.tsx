@@ -2,116 +2,25 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import {
+  getList,
+  getText,
+  hasBlockedText,
+  isValidEditToken,
+  normalizeWhatsAppNumber,
+  uploadWorkerPhoto,
+  workStyles
+} from "@/lib/worker-profile";
 import type { WorkStyle } from "@/lib/types";
 
-const workStyles: Array<{ value: WorkStyle; label: string }> = [
-  { value: "structured", label: "Organizado y con reglas claras" },
-  { value: "creative", label: "Creativo" },
-  { value: "hands_on", label: "Fisico / practico" },
-  { value: "people_oriented", label: "Con personas" },
-  { value: "systems_oriented", label: "Procesos o sistemas" },
-  { value: "fast_paced", label: "Rapido y movido" },
-  { value: "detail_oriented", label: "Detallado" },
-  { value: "flexible", label: "Flexible" }
-];
+const workerProfileUnexpectedError =
+  "No pudimos completar el registro ahora. Intenta de nuevo o escríbenos por WhatsApp.";
 
-const blockedTerms = [
-  "fuck",
-  "shit",
-  "bitch",
-  "puta",
-  "puto",
-  "mierda",
-  "coño",
-  "carajo",
-  "maldito"
-];
-
-const workerPhotosBucket =
-  process.env.WORKER_PHOTOS_BUCKET?.trim() || "worker-photos";
-const maxPhotoSizeBytes = 5 * 1024 * 1024;
-const allowedPhotoTypes = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif"
-]);
-
-function getText(formData: FormData, key: string) {
-  return String(formData.get(key) || "").trim();
-}
-
-function getList(formData: FormData, key: string) {
-  return getText(formData, key)
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function normalizeWhatsAppNumber(value: string) {
-  const digits = value.replace(/\D/g, "");
-
-  if (digits.length === 10 && /^(809|829|849)/.test(digits)) {
-    return `1${digits}`;
-  }
-
-  if (digits.length === 11 && /^1(809|829|849)/.test(digits)) {
-    return digits;
-  }
-
-  return null;
-}
-
-function hasBlockedText(values: string[]) {
-  const text = values.join(" ").toLowerCase();
-
-  return blockedTerms.some((term) => text.includes(term));
-}
-
-function getPhotoExtension(file: File) {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-
-  if (extension && /^[a-z0-9]+$/.test(extension)) {
-    return extension;
-  }
-
-  return file.type.split("/").pop() || "jpg";
-}
-
-async function uploadWorkerPhoto(
-  supabase: NonNullable<ReturnType<typeof getSupabaseAdminClient>>,
-  photo: FormDataEntryValue | null,
-  normalizedWhatsAppNumber: string
-) {
-  if (!(photo instanceof File) || photo.size === 0) {
-    return null;
-  }
-
-  if (!allowedPhotoTypes.has(photo.type) || photo.size > maxPhotoSizeBytes) {
-    return null;
-  }
-
-  const path = [
-    normalizedWhatsAppNumber,
-    `${Date.now()}-${crypto.randomUUID()}.${getPhotoExtension(photo)}`
-  ].join("/");
-
-  const { error: uploadError } = await supabase.storage
-    .from(workerPhotosBucket)
-    .upload(path, photo, {
-      contentType: photo.type,
-      upsert: false
-    });
-
-  if (uploadError) {
-    return null;
-  }
-
-  const { data } = supabase.storage
-    .from(workerPhotosBucket)
-    .getPublicUrl(path);
-
-  return data.publicUrl || null;
+function isDuplicateWhatsAppError(error: { code?: string; message?: string }) {
+  return (
+    error.code === "23505" ||
+    error.message?.toLowerCase().includes("workers_whatsapp_digits_unique_idx")
+  );
 }
 
 async function submitWorkerRegistration(formData: FormData) {
@@ -120,6 +29,7 @@ async function submitWorkerRegistration(formData: FormData) {
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
+    console.warn("Worker registration skipped: Supabase admin client unavailable.");
     redirect("/trabajadores/registro?estado=error");
   }
 
@@ -129,10 +39,11 @@ async function submitWorkerRegistration(formData: FormData) {
   const skills = getList(formData, "skills");
   const availability = getList(formData, "availability");
   const desiredIncome = Number(getText(formData, "desired_income"));
-  const shortIntro = getText(formData, "short_intro");
+  const description = getText(formData, "description");
   const workStyle = getText(formData, "work_style") as WorkStyle;
   const workStyleNote = getText(formData, "work_style_note");
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
+  const editToken = crypto.randomUUID();
 
   if (
     fullName.length < 2 ||
@@ -142,7 +53,7 @@ async function submitWorkerRegistration(formData: FormData) {
     !Number.isFinite(desiredIncome) ||
     desiredIncome <= 0 ||
     availability.length === 0 ||
-    shortIntro.length < 20 ||
+    description.length < 20 ||
     !workStyle
   ) {
     redirect("/trabajadores/registro?estado=incompleto");
@@ -158,7 +69,7 @@ async function submitWorkerRegistration(formData: FormData) {
       city,
       skills.join(" "),
       availability.join(" "),
-      shortIntro,
+      description,
       workStyleNote
     ])
   ) {
@@ -171,7 +82,9 @@ async function submitWorkerRegistration(formData: FormData) {
     .not("whatsapp_number", "is", null);
 
   if (duplicateCheckError) {
-    redirect("/trabajadores/registro?estado=error");
+    console.warn("Worker registration duplicate check skipped.", {
+      code: duplicateCheckError.code
+    });
   }
 
   const hasDuplicate = (existingWorkers ?? []).some((worker) => {
@@ -193,28 +106,48 @@ async function submitWorkerRegistration(formData: FormData) {
     normalizedWhatsAppNumber
   );
 
-  const { error } = await supabase.from("workers").insert({
-    full_name: fullName,
-    photo_url: photoUrl,
-    city,
-    whatsapp_number: `+${normalizedWhatsAppNumber}`,
-    skills,
-    desired_income: desiredIncome,
-    income_type: "daily",
-    availability,
-    available_now: false,
-    work_style: workStyle,
-    work_style_note: workStyleNote || null,
-    job_duration_preference: availability.join(", "),
-    short_intro: shortIntro,
-    is_verified: false
-  });
+  const { data: insertedWorker, error } = await supabase
+    .from("workers")
+    .insert({
+      edit_token: editToken,
+      full_name: fullName,
+      photo_url: photoUrl,
+      city,
+      whatsapp_number: `+${normalizedWhatsAppNumber}`,
+      skills,
+      desired_income: desiredIncome,
+      income_type: "daily",
+      availability,
+      available_now: false,
+      work_style: workStyle,
+      work_style_note: workStyleNote || null,
+      job_duration_preference: availability.join(", "),
+      short_intro: description,
+      description,
+      is_verified: false
+    })
+    .select("id")
+    .single();
 
   if (error) {
+    console.warn("Worker registration insert failed.", {
+      code: error.code
+    });
+    if (isDuplicateWhatsAppError(error)) {
+      redirect("/trabajadores/registro?estado=duplicado");
+    }
+
     redirect("/trabajadores/registro?estado=error");
   }
 
-  redirect("/trabajadores/registro?estado=recibido");
+  if (!insertedWorker?.id || !isValidEditToken(editToken)) {
+    console.warn("Worker registration insert returned no worker id.");
+    redirect("/trabajadores/registro?estado=error");
+  }
+
+  redirect(
+    `/trabajadores/registro-exitoso?token=${encodeURIComponent(editToken)}`
+  );
 }
 
 export default function WorkerRegistrationPage({
@@ -237,12 +170,6 @@ export default function WorkerRegistrationPage({
           publicamente en ListoRD.
         </p>
 
-        {state === "recibido" && (
-          <div className="mt-5 rounded-lg border border-hoja/30 bg-hoja/10 p-4 font-bold text-ink">
-            Registro recibido. Tu perfil queda pendiente hasta que ListoRD lo
-            verifique y apruebe.
-          </div>
-        )}
         {state === "incompleto" && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             Completa nombre, descripcion y todos los campos requeridos para
@@ -267,8 +194,7 @@ export default function WorkerRegistrationPage({
         )}
         {state === "error" && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            No pudimos guardar el registro. Revisa la configuracion de Supabase
-            e intenta otra vez.
+            {workerProfileUnexpectedError}
           </div>
         )}
 
@@ -360,7 +286,7 @@ export default function WorkerRegistrationPage({
             Descripcion corta
             <textarea
               className="min-h-28 rounded-md border border-black/15 p-3"
-              name="short_intro"
+              name="description"
               placeholder="Soy puntual, tengo experiencia en..."
               minLength={20}
               required

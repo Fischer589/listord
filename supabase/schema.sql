@@ -37,6 +37,7 @@ create type public.hiring_outcome as enum ('pending', 'hired', 'not_hired');
 create table public.workers (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
+  edit_token text not null default gen_random_uuid()::text,
   full_name text not null,
   photo_url text,
   country text not null default 'Dominican Republic',
@@ -53,6 +54,7 @@ create table public.workers (
   job_duration_preference text not null,
   duration_note text,
   short_intro text not null,
+  description text not null default '',
   experience text,
   show_up_count integer not null default 0 check (show_up_count >= 0),
   completed_jobs_count integer not null default 0 check (completed_jobs_count >= 0),
@@ -61,7 +63,8 @@ create table public.workers (
   rating_average numeric(3, 2) not null default 0 check (rating_average >= 0 and rating_average <= 5),
   rating_count integer not null default 0 check (rating_count >= 0),
   is_verified boolean not null default false,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table public.employers (
@@ -93,6 +96,14 @@ create table public.premium_access (
 create table public.browser_sessions (
   id text primary key,
   free_contacts_remaining integer not null default 2 check (free_contacts_remaining >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.employer_sessions (
+  id uuid primary key default gen_random_uuid(),
+  browser_session_id text not null unique,
+  whatsapp_number text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -138,6 +149,7 @@ create index workers_city_idx on public.workers (city);
 create index workers_skills_idx on public.workers using gin (skills);
 create index workers_work_style_idx on public.workers (work_style);
 create index workers_is_verified_idx on public.workers (is_verified);
+create unique index workers_edit_token_unique_idx on public.workers (edit_token);
 create unique index workers_whatsapp_digits_unique_idx
 on public.workers ((regexp_replace(whatsapp_number, '\D', '', 'g')))
 where whatsapp_number is not null
@@ -148,6 +160,7 @@ create index contact_requests_outcome_idx on public.contact_requests (outcome);
 create index premium_access_browser_session_idx on public.premium_access (browser_session_id);
 create index premium_access_paid_until_idx on public.premium_access (paid_access_until);
 create index contact_attempts_session_created_idx on public.contact_attempts (browser_session_id, created_at desc);
+create index employer_sessions_browser_session_idx on public.employer_sessions (browser_session_id);
 create index analytics_events_event_created_idx on public.analytics_events (event_name, created_at desc);
 create index analytics_events_created_idx on public.analytics_events (created_at desc);
 
@@ -205,6 +218,16 @@ begin
       and outcome = 'hired'
   )
   where id = employer_id_to_refresh;
+end;
+$$;
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at := now();
+  return new;
 end;
 $$;
 
@@ -331,10 +354,21 @@ on public.contact_requests
 for each row
 execute function public.refresh_hiring_stats_after_request();
 
+create trigger workers_set_updated_at
+before update on public.workers
+for each row
+execute function public.set_updated_at();
+
+create trigger employer_sessions_set_updated_at
+before update on public.employer_sessions
+for each row
+execute function public.set_updated_at();
+
 alter table public.workers enable row level security;
 alter table public.employers enable row level security;
 alter table public.premium_access enable row level security;
 alter table public.browser_sessions enable row level security;
+alter table public.employer_sessions enable row level security;
 alter table public.contact_attempts enable row level security;
 alter table public.analytics_events enable row level security;
 alter table public.contact_requests enable row level security;

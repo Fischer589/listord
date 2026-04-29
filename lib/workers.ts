@@ -51,6 +51,7 @@ export async function getWorkersResult(
       job_duration_preference,
       duration_note,
       short_intro,
+      description,
       experience,
       show_up_count,
       completed_jobs_count,
@@ -59,7 +60,8 @@ export async function getWorkersResult(
       rating_average,
       rating_count,
       is_verified,
-      created_at
+      created_at,
+      updated_at
     `)
     .eq("is_verified", true)
     .order("available_now", { ascending: false })

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { upsertEmployerSession } from "@/lib/employer-sessions";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 
 const WORKER_CONTACT_MESSAGE =
@@ -17,9 +18,11 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {
     workerId?: string;
     browser_session_id?: string;
+    whatsapp_number?: string;
   } | null;
   const workerId = body?.workerId?.trim();
   const browserSessionId = body?.browser_session_id?.trim();
+  const whatsappNumber = body?.whatsapp_number?.trim();
 
   if (!workerId) {
     return NextResponse.json(
@@ -34,6 +37,11 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+
+  await upsertEmployerSession({
+    browserSessionId,
+    whatsappNumber
+  });
 
   const { data: accessRows, error: accessError } = await supabase.rpc(
     "claim_worker_contact",

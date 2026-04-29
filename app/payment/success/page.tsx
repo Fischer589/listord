@@ -28,7 +28,9 @@ export default function PaymentSuccessPage() {
     try {
       browserSessionId = localStorage.getItem(BROWSER_SESSION_STORAGE_KEY) || "";
     } catch (error) {
-      console.warn("Checkout success analytics session lookup failed.", error);
+      console.warn("Checkout success analytics session lookup failed.", {
+        name: error instanceof Error ? error.name : "UnknownError"
+      });
     }
 
     async function verifyPayment() {
@@ -51,7 +53,9 @@ export default function PaymentSuccessPage() {
                 checkout_session_id: verifiedSessionId
               });
             } catch (error) {
-              console.warn("Checkout success analytics failed.", error);
+              console.warn("Checkout success analytics failed.", {
+                name: error instanceof Error ? error.name : "UnknownError"
+              });
             }
             return;
           }
