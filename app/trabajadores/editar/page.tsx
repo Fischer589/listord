@@ -24,7 +24,6 @@ type EditableWorker = {
   skills: string[];
   desired_income: number;
   availability: string[];
-  description: string | null;
   short_intro: string;
   work_style: WorkStyle | null;
   work_style_note: string | null;
@@ -81,7 +80,6 @@ async function findWorkerByEditToken(token?: string) {
       skills,
       desired_income,
       availability,
-      description,
       short_intro,
       work_style,
       work_style_note,
@@ -117,7 +115,7 @@ async function updateWorkerProfile(formData: FormData) {
   const skills = getList(formData, "skills");
   const availability = getList(formData, "availability");
   const desiredIncome = Number(getText(formData, "desired_income"));
-  const description = getText(formData, "description");
+  const shortIntro = getText(formData, "short_intro");
   const workStyle = getText(formData, "work_style") as WorkStyle;
   const workStyleNote = getText(formData, "work_style_note");
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
@@ -135,7 +133,7 @@ async function updateWorkerProfile(formData: FormData) {
     !Number.isFinite(desiredIncome) ||
     desiredIncome <= 0 ||
     availability.length === 0 ||
-    description.length < 20 ||
+    shortIntro.length < 20 ||
     !workStyle
   ) {
     redirect(getEditRedirect(editToken, "incompleto"));
@@ -151,7 +149,7 @@ async function updateWorkerProfile(formData: FormData) {
       city,
       skills.join(" "),
       availability.join(" "),
-      description,
+      shortIntro,
       workStyleNote
     ])
   ) {
@@ -200,8 +198,7 @@ async function updateWorkerProfile(formData: FormData) {
     currentWorker.desired_income !== desiredIncome ||
     JSON.stringify(currentWorker.availability || []) !==
       JSON.stringify(availability) ||
-    (currentWorker.description || currentWorker.short_intro || "") !==
-      description ||
+    currentWorker.short_intro !== shortIntro ||
     currentWorker.work_style !== workStyle ||
     (currentWorker.work_style_note || "") !== workStyleNote;
 
@@ -215,8 +212,7 @@ async function updateWorkerProfile(formData: FormData) {
     work_style: workStyle,
     work_style_note: workStyleNote || null,
     job_duration_preference: availability.join(", "),
-    short_intro: description,
-    description,
+    short_intro: shortIntro,
     updated_at: new Date().toISOString()
   };
 
@@ -432,8 +428,8 @@ export default async function EditWorkerPage({
               Descripcion corta
               <textarea
                 className="min-h-28 rounded-md border border-black/15 p-3"
-                name="description"
-                defaultValue={worker.description || worker.short_intro}
+                name="short_intro"
+                defaultValue={worker.short_intro}
                 minLength={20}
                 required
               />

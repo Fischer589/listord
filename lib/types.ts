@@ -31,7 +31,6 @@ export type Worker = {
   job_duration_preference: string;
   duration_note?: string | null;
   short_intro: string;
-  description?: string | null;
   experience?: string | null;
   show_up_count: number;
   completed_jobs_count: number;

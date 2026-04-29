@@ -51,7 +51,6 @@ export async function getWorkersResult(
       job_duration_preference,
       duration_note,
       short_intro,
-      description,
       experience,
       show_up_count,
       completed_jobs_count,

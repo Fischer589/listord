@@ -39,7 +39,7 @@ async function submitWorkerRegistration(formData: FormData) {
   const skills = getList(formData, "skills");
   const availability = getList(formData, "availability");
   const desiredIncome = Number(getText(formData, "desired_income"));
-  const description = getText(formData, "description");
+  const shortIntro = getText(formData, "short_intro");
   const workStyle = getText(formData, "work_style") as WorkStyle;
   const workStyleNote = getText(formData, "work_style_note");
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
@@ -53,7 +53,7 @@ async function submitWorkerRegistration(formData: FormData) {
     !Number.isFinite(desiredIncome) ||
     desiredIncome <= 0 ||
     availability.length === 0 ||
-    description.length < 20 ||
+    shortIntro.length < 20 ||
     !workStyle
   ) {
     redirect("/trabajadores/registro?estado=incompleto");
@@ -69,7 +69,7 @@ async function submitWorkerRegistration(formData: FormData) {
       city,
       skills.join(" "),
       availability.join(" "),
-      description,
+      shortIntro,
       workStyleNote
     ])
   ) {
@@ -122,8 +122,7 @@ async function submitWorkerRegistration(formData: FormData) {
       work_style: workStyle,
       work_style_note: workStyleNote || null,
       job_duration_preference: availability.join(", "),
-      short_intro: description,
-      description,
+      short_intro: shortIntro,
       is_verified: false
     })
     .select("id")
@@ -286,7 +285,7 @@ export default function WorkerRegistrationPage({
             Descripcion corta
             <textarea
               className="min-h-28 rounded-md border border-black/15 p-3"
-              name="description"
+              name="short_intro"
               placeholder="Soy puntual, tengo experiencia en..."
               minLength={20}
               required

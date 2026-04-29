@@ -78,14 +78,14 @@ export function hasBlockedText(values: string[]) {
 }
 
 export function getMissingProfileQualityFields(worker: {
-  description?: string | null;
+  short_intro?: string | null;
   skills?: string[] | null;
   photo_url?: string | null;
 }) {
   const missingFields: string[] = [];
 
-  if (!worker.description?.trim()) {
-    missingFields.push("description");
+  if (!worker.short_intro?.trim()) {
+    missingFields.push("short_intro");
   }
 
   if (!Array.isArray(worker.skills) || worker.skills.length === 0) {

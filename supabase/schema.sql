@@ -54,7 +54,6 @@ create table public.workers (
   job_duration_preference text not null,
   duration_note text,
   short_intro text not null,
-  description text not null default '',
   experience text,
   show_up_count integer not null default 0 check (show_up_count >= 0),
   completed_jobs_count integer not null default 0 check (completed_jobs_count >= 0),

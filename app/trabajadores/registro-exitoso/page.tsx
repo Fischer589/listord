@@ -7,7 +7,7 @@ import {
 } from "@/lib/worker-profile";
 
 type RegisteredWorkerQuality = {
-  description: string | null;
+  short_intro: string | null;
   skills: string[] | null;
   photo_url: string | null;
 };
@@ -25,7 +25,7 @@ async function findWorkerQualityByEditToken(token: string) {
 
   const { data, error } = await supabase
     .from("workers")
-    .select("description, skills, photo_url")
+    .select("short_intro, skills, photo_url")
     .eq("edit_token", token)
     .maybeSingle();
 

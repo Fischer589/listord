@@ -1,14 +1,4 @@
 alter table public.workers
-add column if not exists description text;
-
-update public.workers
-set description = short_intro
-where description is null;
-
-alter table public.workers
-alter column description set not null;
-
-alter table public.workers
 add column if not exists updated_at timestamptz not null default now();
 
 create table if not exists public.employer_sessions (
@@ -45,4 +35,3 @@ for each row
 execute function public.set_updated_at();
 
 alter table public.employer_sessions enable row level security;
-
