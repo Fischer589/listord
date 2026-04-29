@@ -34,6 +34,17 @@ function getServerErrorDetails(error: unknown) {
   };
 }
 
+function logWorkerRegistrationServerConfig() {
+  console.info("Worker registration server config:", {
+    hasNextPublicSupabaseUrl: Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+    ),
+    hasSupabaseServiceRoleKey: Boolean(
+      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+    )
+  });
+}
+
 async function loadWorkerRegistrationDependencies() {
   try {
     const supabaseAdmin = await import("@/lib/supabase-admin");
@@ -55,6 +66,8 @@ async function submitWorkerRegistration(
   formData: FormData
 ): Promise<WorkerRegistrationActionState> {
   "use server";
+
+  logWorkerRegistrationServerConfig();
 
   const dependencies = await loadWorkerRegistrationDependencies();
 
@@ -89,6 +102,8 @@ async function submitWorkerRegistration(
 
   const insertPayloadKeys = Object.keys(insertPayload).sort();
 
+  console.info("Worker registration insert payload keys:", insertPayloadKeys);
+
   let data: { id: string } | null = null;
   let error:
     | {
@@ -111,7 +126,10 @@ async function submitWorkerRegistration(
   } catch (insertError) {
     console.error(
       "Worker registration insert threw before Supabase returned a response.",
-      getServerErrorDetails(insertError)
+      {
+        ...getServerErrorDetails(insertError),
+        payloadKeys: insertPayloadKeys
+      }
     );
 
     return {
@@ -120,7 +138,7 @@ async function submitWorkerRegistration(
   }
 
   if (error) {
-    console.error("SUPABASE ERROR FULL:", {
+    console.error("Worker registration Supabase insert error:", {
       message: error.message,
       code: error.code,
       details: error.details,
