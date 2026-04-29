@@ -7,6 +7,7 @@ import {
   getList,
   getMissingProfileQualityFields,
   getText,
+  getWorkStyleValue,
   hasBlockedText,
   isValidEditToken,
   normalizeWhatsAppNumber,
@@ -114,7 +115,7 @@ async function updateWorkerProfile(formData: FormData) {
   const availability = getList(formData, "availability");
   const desiredIncome = Number(getText(formData, "desired_income"));
   const shortIntro = getText(formData, "short_intro");
-  const workStyle = getText(formData, "work_style") as WorkStyle;
+  const workStyle = getWorkStyleValue(getText(formData, "work_style"));
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
   const currentWorker = await findWorkerByEditToken(editToken);
 

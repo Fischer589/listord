@@ -1,16 +1,24 @@
 import { getSupabaseAdminClient } from "./supabase-admin";
 import type { WorkStyle } from "./types";
 
-export const workStyles: Array<{ value: WorkStyle; label: string }> = [
-  { value: "structured", label: "Organizado y con reglas claras" },
-  { value: "creative", label: "Creativo" },
-  { value: "hands_on", label: "Fisico / practico" },
-  { value: "people_oriented", label: "Con personas" },
-  { value: "systems_oriented", label: "Procesos o sistemas" },
-  { value: "fast_paced", label: "Rapido y movido" },
-  { value: "detail_oriented", label: "Detallado" },
-  { value: "flexible", label: "Flexible" }
-];
+export const workStyleLabelToValue = {
+  Estructurado: "structured",
+  Creativo: "creative",
+  "Manual / práctico": "hands_on",
+  "Trato con personas": "people_oriented",
+  "Sistemas / técnico": "systems_oriented",
+  "Rápido / dinámico": "fast_paced",
+  Detallista: "detail_oriented",
+  Flexible: "flexible"
+} satisfies Record<string, WorkStyle>;
+
+export const workStyles: Array<{ value: WorkStyle; label: string }> =
+  Object.entries(workStyleLabelToValue).map(([label, value]) => ({
+    label,
+    value
+  }));
+
+const workStyleValues = new Set<WorkStyle>(Object.values(workStyleLabelToValue));
 
 const blockedTerms = [
   "fuck",
@@ -36,6 +44,10 @@ export const allowedPhotoTypes = new Set([
 
 export function getText(formData: FormData, key: string) {
   return String(formData.get(key) || "").trim();
+}
+
+export function getWorkStyleValue(value: string) {
+  return workStyleValues.has(value as WorkStyle) ? (value as WorkStyle) : null;
 }
 
 export function getList(formData: FormData, key: string) {

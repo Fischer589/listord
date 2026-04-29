@@ -5,13 +5,13 @@ import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import {
   getList,
   getText,
+  getWorkStyleValue,
   hasBlockedText,
   isValidEditToken,
   normalizeWhatsAppNumber,
   uploadWorkerPhoto,
   workStyles
 } from "@/lib/worker-profile";
-import type { WorkStyle } from "@/lib/types";
 
 const workerProfileUnexpectedError =
   "No pudimos completar tu registro ahora. Escríbenos por WhatsApp y te ayudamos.";
@@ -54,7 +54,7 @@ async function submitWorkerRegistration(formData: FormData) {
   const availability = getList(formData, "availability");
   const desiredIncome = Number(getText(formData, "desired_income"));
   const shortIntro = getText(formData, "short_intro");
-  const workStyle = getText(formData, "work_style") as WorkStyle;
+  const workStyle = getWorkStyleValue(getText(formData, "work_style"));
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
   const editToken = crypto.randomUUID();
 
