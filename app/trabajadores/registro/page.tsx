@@ -45,6 +45,12 @@ function logWorkerRegistrationServerConfig() {
   });
 }
 
+function getDesiredIncome(formData: FormData) {
+  const desiredIncome = Number(formData.get("desired_income"));
+
+  return Number.isFinite(desiredIncome) ? desiredIncome : 0;
+}
+
 async function loadWorkerRegistrationDependencies() {
   try {
     const supabaseAdmin = await import("@/lib/supabase-admin");
@@ -88,6 +94,7 @@ async function submitWorkerRegistration(
 
   const insertPayload: {
     city: string;
+    desired_income: number;
     edit_token: string;
     full_name: string;
     whatsapp_number: string;
@@ -97,6 +104,7 @@ async function submitWorkerRegistration(
     city: String(formData.get("city") || "").trim(),
     whatsapp_number: String(formData.get("whatsapp_number") || "").trim(),
     work_style: String(formData.get("work_style") || "flexible") as WorkStyle,
+    desired_income: getDesiredIncome(formData),
     edit_token: crypto.randomUUID()
   };
 
