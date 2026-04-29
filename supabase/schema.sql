@@ -51,7 +51,7 @@ create table public.workers (
   available_now boolean not null default false,
   work_style public.work_style,
   work_style_note text,
-  job_duration_preference text not null,
+  job_duration_preference text not null default 'flexible',
   duration_note text,
   short_intro text not null,
   experience text,

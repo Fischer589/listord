@@ -5,7 +5,6 @@ type WorkerFilters = {
   city?: string;
   skill?: string;
   income?: string;
-  availableNow?: string;
   workStyle?: string;
 };
 
@@ -35,36 +34,18 @@ export async function getWorkersResult(
     .from("workers")
     .select(`
       id,
-      user_id,
       full_name,
       photo_url,
-      country,
-      region,
       city,
+      whatsapp_number,
       skills,
       desired_income,
-      income_type,
       availability,
-      available_now,
       work_style,
-      work_style_note,
-      job_duration_preference,
-      duration_note,
       short_intro,
-      experience,
-      show_up_count,
-      completed_jobs_count,
-      hired_count,
-      hire_rate,
-      rating_average,
-      rating_count,
-      is_verified,
-      created_at,
-      updated_at
+      is_verified
     `)
-    .eq("is_verified", true)
-    .order("available_now", { ascending: false })
-    .order("rating_average", { ascending: false });
+    .eq("is_verified", true);
 
   const city = filters.city?.trim();
   const maxIncome = Number(filters.income);
@@ -76,10 +57,6 @@ export async function getWorkersResult(
 
   if (Number.isFinite(maxIncome) && maxIncome > 0) {
     query = query.lte("desired_income", maxIncome);
-  }
-
-  if (filters.availableNow === "true") {
-    query = query.eq("available_now", true);
   }
 
   if (filters.workStyle) {

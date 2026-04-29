@@ -34,34 +34,19 @@ async function getPendingWorkers(): Promise<Worker[]> {
     .from("workers")
     .select(`
       id,
-      user_id,
       full_name,
       photo_url,
-      country,
-      region,
       city,
+      whatsapp_number,
       skills,
       desired_income,
-      income_type,
       availability,
-      available_now,
       work_style,
-      work_style_note,
-      job_duration_preference,
-      duration_note,
       short_intro,
-      experience,
-      show_up_count,
-      completed_jobs_count,
-      hired_count,
-      hire_rate,
-      rating_average,
-      rating_count,
       is_verified,
-      created_at
+      edit_token
     `)
-    .eq("is_verified", false)
-    .order("created_at", { ascending: true });
+    .eq("is_verified", false);
 
   if (error) {
     return [];
@@ -130,10 +115,7 @@ export default async function AdminWorkersPage() {
                         </div>
                         <p className="mt-2 font-bold text-black/70">
                           {worker.city} ·{" "}
-                          {formatIncomeShort(
-                            worker.desired_income,
-                            worker.income_type
-                          )}
+                          {formatIncomeShort(worker.desired_income)}
                         </p>
                         <p className="mt-3 leading-7 text-black/75">
                           {worker.short_intro}

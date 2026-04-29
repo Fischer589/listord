@@ -39,9 +39,6 @@ export function WorkerCard({
     worker.work_style && worker.work_style in workStyleLabels
       ? worker.work_style
       : null;
-  const hiredCount = worker.hired_count ?? 0;
-  const ratingAverage = worker.rating_average ?? 0;
-  const ratingCount = worker.rating_count ?? 0;
   const [showPaywall, setShowPaywall] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState<
     "weekly" | "monthly" | null
@@ -249,32 +246,15 @@ export function WorkerCard({
               {fullName}
             </h2>
             <p className="worker-income text-ink">
-              💰 Quiere {formatIncomeShort(worker.desired_income, worker.income_type)}
+              💰 Quiere {formatIncomeShort(worker.desired_income)}
             </p>
             <p className="mt-2 rounded-md bg-mango/20 px-3 py-2 text-sm font-black text-ink">
               Quedan pocos trabajadores disponibles hoy
             </p>
           </div>
           <div className="pill-row mt-3 text-sm font-bold">
-            <span
-              className={
-                worker.available_now
-                  ? "rounded-md bg-hoja px-2 py-1 text-white"
-                  : "rounded-md bg-[#f4f1ea] px-2 py-1 text-black/70"
-              }
-            >
-              {worker.available_now ? "🟢 Disponible hoy" : "Disponible luego"}
-            </span>
-            <span
-              className={
-                worker.available_now
-                  ? "rounded-md bg-mango/25 px-2 py-1 text-black/80"
-                  : "rounded-md bg-[#f4f1ea] px-2 py-1 text-black/70"
-              }
-            >
-              {worker.available_now
-                ? "🔥 Responden en menos de 10 minutos"
-                : "Agenda con anticipación"}
+            <span className="rounded-md bg-mango/25 px-2 py-1 text-black/80">
+              Responden por WhatsApp
             </span>
             <span className="rounded-md bg-cielo px-2 py-1 text-black/80">
               Perfiles verificados
@@ -300,20 +280,11 @@ export function WorkerCard({
             )}
           </div>
 
-          <dl className="stats-grid mt-4 text-sm">
-            <div className="rounded-md bg-cielo p-2">
-              <dt className="font-semibold text-black/55">Ha sido contratado</dt>
-              <dd className="font-black">
-                {hiredCount} veces
-              </dd>
-            </div>
-            <div className="rounded-md bg-cielo p-2">
-              <dt className="font-semibold text-black/55">Valoración</dt>
-              <dd className="font-black">
-                {ratingAverage.toFixed(1)} ({ratingCount})
-              </dd>
-            </div>
-          </dl>
+          {worker.short_intro && (
+            <p className="worker-bio mt-4 text-sm leading-6 text-black/70">
+              {worker.short_intro}
+            </p>
+          )}
         </div>
 
         <div className="contact-cta-shell">

@@ -13,34 +13,17 @@ export type WorkStyle =
 
 export type Worker = {
   id: string;
-  user_id?: string | null;
   edit_token?: string;
   full_name: string;
   photo_url?: string | null;
-  country: string;
-  region: string;
   city: string;
   whatsapp_number?: string | null;
   skills: string[];
   desired_income: number;
-  income_type: IncomeType;
   availability: string[];
-  available_now: boolean;
   work_style?: WorkStyle | null;
-  work_style_note?: string | null;
-  job_duration_preference: string;
-  duration_note?: string | null;
   short_intro: string;
-  experience?: string | null;
-  show_up_count: number;
-  completed_jobs_count: number;
-  hired_count: number;
-  hire_rate: number;
-  rating_average: number;
-  rating_count: number;
   is_verified: boolean;
-  created_at?: string;
-  updated_at?: string;
 };
 
 export type Employer = {

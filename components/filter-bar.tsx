@@ -16,17 +16,15 @@ export function FilterBar({
   city,
   skill,
   income,
-  availableNow,
   workStyle
 }: {
   city?: string;
   skill?: string;
   income?: string;
-  availableNow?: string;
   workStyle?: string;
 }) {
   return (
-    <form className="grid gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-soft sm:grid-cols-2 lg:grid-cols-6">
+    <form className="grid gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-soft sm:grid-cols-2 lg:grid-cols-5">
       <label className="grid gap-1 text-sm font-semibold text-ink">
         Ciudad
         <input
@@ -69,16 +67,6 @@ export function FilterBar({
             </option>
           ))}
         </select>
-      </label>
-      <label className="flex items-center gap-2 rounded-md border border-black/10 px-3 py-3 text-sm font-semibold">
-        <input
-          type="checkbox"
-          name="availableNow"
-          value="true"
-          defaultChecked={availableNow === "true"}
-          className="h-5 w-5 accent-hoja"
-        />
-        Disponible hoy
       </label>
       <button className="tap-target rounded-md bg-hoja px-4 py-2 font-bold text-white">
         Filtrar

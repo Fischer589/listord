@@ -14,7 +14,21 @@ import {
 import type { WorkStyle } from "@/lib/types";
 
 const workerProfileUnexpectedError =
-  "No pudimos completar el registro ahora. Intenta de nuevo o escríbenos por WhatsApp.";
+  "No pudimos completar tu registro ahora. Escríbenos por WhatsApp y te ayudamos.";
+
+const expectedWorkerInsertColumns = [
+  "availability",
+  "city",
+  "desired_income",
+  "edit_token",
+  "full_name",
+  "is_verified",
+  "photo_url",
+  "short_intro",
+  "skills",
+  "whatsapp_number",
+  "work_style"
+];
 
 function isDuplicateWhatsAppError(error: { code?: string; message?: string }) {
   return (
@@ -41,7 +55,6 @@ async function submitWorkerRegistration(formData: FormData) {
   const desiredIncome = Number(getText(formData, "desired_income"));
   const shortIntro = getText(formData, "short_intro");
   const workStyle = getText(formData, "work_style") as WorkStyle;
-  const workStyleNote = getText(formData, "work_style_note");
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
   const editToken = crypto.randomUUID();
 
@@ -69,8 +82,7 @@ async function submitWorkerRegistration(formData: FormData) {
       city,
       skills.join(" "),
       availability.join(" "),
-      shortIntro,
-      workStyleNote
+      shortIntro
     ])
   ) {
     redirect("/trabajadores/registro?estado=rechazado");
@@ -106,31 +118,39 @@ async function submitWorkerRegistration(formData: FormData) {
     normalizedWhatsAppNumber
   );
 
+  const insertPayload = {
+    edit_token: editToken,
+    full_name: fullName,
+    photo_url: photoUrl,
+    city,
+    whatsapp_number: `+${normalizedWhatsAppNumber}`,
+    skills,
+    desired_income: desiredIncome,
+    availability,
+    short_intro: shortIntro,
+    work_style: workStyle,
+    is_verified: false
+  };
+  const insertPayloadKeys = Object.keys(insertPayload).sort();
+
+  console.info("Worker registration insert payload keys.", {
+    expectedKeys: expectedWorkerInsertColumns,
+    keys: insertPayloadKeys
+  });
+
   const { data: insertedWorker, error } = await supabase
     .from("workers")
-    .insert({
-      edit_token: editToken,
-      full_name: fullName,
-      photo_url: photoUrl,
-      city,
-      whatsapp_number: `+${normalizedWhatsAppNumber}`,
-      skills,
-      desired_income: desiredIncome,
-      income_type: "daily",
-      availability,
-      available_now: false,
-      work_style: workStyle,
-      work_style_note: workStyleNote || null,
-      job_duration_preference: availability.join(", "),
-      short_intro: shortIntro,
-      is_verified: false
-    })
+    .insert(insertPayload)
     .select("id")
     .single();
 
   if (error) {
     console.warn("Worker registration insert failed.", {
-      code: error.code
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      message: error.message,
+      payloadKeys: insertPayloadKeys
     });
     if (isDuplicateWhatsAppError(error)) {
       redirect("/trabajadores/registro?estado=duplicado");
@@ -309,15 +329,6 @@ export default function WorkerRegistrationPage({
                 </option>
               ))}
             </select>
-          </label>
-
-          <label className="grid gap-1 font-bold">
-            Como trabajas mejor
-            <textarea
-              className="min-h-24 rounded-md border border-black/15 p-3"
-              name="work_style_note"
-              placeholder="Ejemplo: me gusta trabajar con instrucciones claras y cumplir a tiempo."
-            />
           </label>
 
           <button className="tap-target rounded-md bg-hoja px-4 py-3 font-black text-white">

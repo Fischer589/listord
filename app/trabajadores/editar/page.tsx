@@ -26,7 +26,6 @@ type EditableWorker = {
   availability: string[];
   short_intro: string;
   work_style: WorkStyle | null;
-  work_style_note: string | null;
   photo_url: string | null;
 };
 
@@ -82,7 +81,6 @@ async function findWorkerByEditToken(token?: string) {
       availability,
       short_intro,
       work_style,
-      work_style_note,
       photo_url
     `)
     .eq("edit_token", editToken)
@@ -117,7 +115,6 @@ async function updateWorkerProfile(formData: FormData) {
   const desiredIncome = Number(getText(formData, "desired_income"));
   const shortIntro = getText(formData, "short_intro");
   const workStyle = getText(formData, "work_style") as WorkStyle;
-  const workStyleNote = getText(formData, "work_style_note");
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
   const currentWorker = await findWorkerByEditToken(editToken);
 
@@ -149,8 +146,7 @@ async function updateWorkerProfile(formData: FormData) {
       city,
       skills.join(" "),
       availability.join(" "),
-      shortIntro,
-      workStyleNote
+      shortIntro
     ])
   ) {
     redirect(getEditRedirect(editToken, "rechazado"));
@@ -199,8 +195,7 @@ async function updateWorkerProfile(formData: FormData) {
     JSON.stringify(currentWorker.availability || []) !==
       JSON.stringify(availability) ||
     currentWorker.short_intro !== shortIntro ||
-    currentWorker.work_style !== workStyle ||
-    (currentWorker.work_style_note || "") !== workStyleNote;
+    currentWorker.work_style !== workStyle;
 
   const updatePayload: Record<string, unknown> = {
     full_name: fullName,
@@ -210,10 +205,7 @@ async function updateWorkerProfile(formData: FormData) {
     desired_income: desiredIncome,
     availability,
     work_style: workStyle,
-    work_style_note: workStyleNote || null,
-    job_duration_preference: availability.join(", "),
-    short_intro: shortIntro,
-    updated_at: new Date().toISOString()
+    short_intro: shortIntro
   };
 
   if (photoUrl) {
@@ -452,15 +444,6 @@ export default async function EditWorkerPage({
                   </option>
                 ))}
               </select>
-            </label>
-
-            <label className="grid gap-1 font-bold">
-              Como trabajas mejor
-              <textarea
-                className="min-h-24 rounded-md border border-black/15 p-3"
-                name="work_style_note"
-                defaultValue={worker.work_style_note || ""}
-              />
             </label>
 
             <button className="tap-target rounded-md bg-hoja px-4 py-3 font-black text-white">

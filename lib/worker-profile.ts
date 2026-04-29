@@ -137,20 +137,22 @@ export async function uploadWorkerPhoto(
 
     if (uploadError) {
       console.warn("Worker profile photo upload failed.", {
-        code: uploadError.name
+        code: uploadError.name,
+        message: uploadError.message
       });
       return null;
     }
+
+    const { data } = supabase.storage
+      .from(workerPhotosBucket)
+      .getPublicUrl(path);
+
+    return data.publicUrl || null;
   } catch (error) {
     console.warn("Worker profile photo upload failed.", {
+      message: error instanceof Error ? error.message : String(error),
       name: error instanceof Error ? error.name : "UnknownError"
     });
     return null;
   }
-
-  const { data } = supabase.storage
-    .from(workerPhotosBucket)
-    .getPublicUrl(path);
-
-  return data.publicUrl || null;
 }

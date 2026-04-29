@@ -11,7 +11,6 @@ export default async function Home({
     city?: string;
     skill?: string;
     income?: string;
-    availableNow?: string;
     workStyle?: string;
   };
 }) {
@@ -71,7 +70,6 @@ export default async function Home({
             city={searchParams.city}
             skill={searchParams.skill}
             income={searchParams.income}
-            availableNow={searchParams.availableNow}
             workStyle={searchParams.workStyle}
           />
         </section>
