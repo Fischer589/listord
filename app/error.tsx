@@ -20,8 +20,7 @@ export default function ErrorPage({
             No pudimos cargar esta parte de ListoRD
           </h1>
           <p className="mt-3 max-w-xl leading-7 text-black/70">
-            Intenta otra vez. Si sigue pasando, revisa la conexión y la
-            configuración de Supabase.
+            Intenta otra vez. Si sigue pasando, vuelve en unos minutos.
           </p>
           <button
             onClick={reset}

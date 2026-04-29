@@ -2,14 +2,19 @@
 
 import { useFormState } from "react-dom";
 import type { WorkerRegistrationActionState } from "@/app/trabajadores/registro/page";
-import type { workStyles } from "@/lib/worker-profile";
+import type { WorkStyle } from "@/lib/types";
+
+type WorkStyleOption = {
+  value: WorkStyle;
+  label: string;
+};
 
 type WorkerRegistrationFormProps = {
   action: (
     previousState: WorkerRegistrationActionState,
     formData: FormData
   ) => Promise<WorkerRegistrationActionState>;
-  workStyles: typeof workStyles;
+  workStyles: WorkStyleOption[];
 };
 
 const initialState: WorkerRegistrationActionState = {};
@@ -19,29 +24,21 @@ export function WorkerRegistrationForm({
   workStyles
 }: WorkerRegistrationFormProps) {
   const [state, formAction] = useFormState(action, initialState);
+  const success = state.success;
   const supabaseError = state.supabaseError;
 
   return (
     <>
+      {success && (
+        <div className="mt-5 rounded-lg border border-green-200 bg-green-50 p-4 font-bold text-green-900">
+          Registro exitoso
+        </div>
+      )}
+
       {supabaseError && (
-        <div className="mt-5 rounded-lg border-2 border-red-700 bg-red-50 p-6 text-red-950 shadow-soft">
-          <p className="text-xl font-black">SUPABASE INSERT ERROR</p>
-          <div className="mt-4 grid gap-3 break-all font-mono text-sm font-bold">
-            <p>
-              <span className="font-black">message: </span>
-              {supabaseError.message}
-            </p>
-            {supabaseError.details && (
-              <p>
-                <span className="font-black">details: </span>
-                {supabaseError.details}
-              </p>
-            )}
-            <p>
-              <span className="font-black">code: </span>
-              {supabaseError.code}
-            </p>
-          </div>
+        <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+          No pudimos enviar tu registro ahora mismo. Intenta otra vez en unos
+          minutos.
         </div>
       )}
 

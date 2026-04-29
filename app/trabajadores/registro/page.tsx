@@ -1,39 +1,54 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { WorkerRegistrationForm } from "@/components/worker-registration-form";
-import { getSupabaseAdminClient } from "@/lib/supabase-admin";
-import {
-  getList,
-  getText,
-  getWorkStyleValue,
-  hasBlockedText,
-  isValidEditToken,
-  normalizeWhatsAppNumber,
-  uploadWorkerPhoto,
-  workStyles
-} from "@/lib/worker-profile";
+import type { WorkStyle } from "@/lib/types";
 
 export type WorkerRegistrationActionState = {
-  supabaseError?: {
-    message: string;
-    details?: string | null;
-    code?: string | null;
-  };
+  success?: true;
+  supabaseError?: true;
 };
 
-const expectedWorkerInsertColumns = [
-  "availability",
-  "city",
-  "desired_income",
-  "edit_token",
-  "full_name",
-  "is_verified",
-  "short_intro",
-  "skills",
-  "whatsapp_number",
-  "work_style"
+const fallbackWorkStyles: Array<{ value: WorkStyle; label: string }> = [
+  { label: "Estructurado", value: "structured" },
+  { label: "Creativo", value: "creative" },
+  { label: "Manual / práctico", value: "hands_on" },
+  { label: "Trato con personas", value: "people_oriented" },
+  { label: "Sistemas / técnico", value: "systems_oriented" },
+  { label: "Rápido / dinámico", value: "fast_paced" },
+  { label: "Detallista", value: "detail_oriented" },
+  { label: "Flexible", value: "flexible" }
 ];
+
+function getServerErrorDetails(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    };
+  }
+
+  return {
+    message: String(error),
+    name: "UnknownError"
+  };
+}
+
+async function loadWorkerRegistrationDependencies() {
+  try {
+    const supabaseAdmin = await import("@/lib/supabase-admin");
+
+    return {
+      getSupabaseAdminClient: supabaseAdmin.getSupabaseAdminClient
+    };
+  } catch (error) {
+    console.error(
+      "Worker registration dependencies failed to load.",
+      getServerErrorDetails(error)
+    );
+    return null;
+  }
+}
 
 async function submitWorkerRegistration(
   _previousState: WorkerRegistrationActionState,
@@ -41,167 +56,115 @@ async function submitWorkerRegistration(
 ): Promise<WorkerRegistrationActionState> {
   "use server";
 
-  const supabase = getSupabaseAdminClient();
+  const dependencies = await loadWorkerRegistrationDependencies();
+
+  if (!dependencies) {
+    return {
+      supabaseError: true
+    };
+  }
+
+  let supabase: ReturnType<typeof dependencies.getSupabaseAdminClient>;
+
+  try {
+    supabase = dependencies.getSupabaseAdminClient();
+  } catch (error) {
+    console.error(
+      "Worker registration Supabase admin client failed to initialize.",
+      getServerErrorDetails(error)
+    );
+    return {
+      supabaseError: true
+    };
+  }
 
   if (!supabase) {
     console.warn("Worker registration skipped: Supabase admin client unavailable.");
-    redirect("/trabajadores/registro?estado=error");
+    return {
+      supabaseError: true
+    };
   }
-
-  const fullName = getText(formData, "full_name");
-  const city = getText(formData, "city");
-  const whatsappNumber = getText(formData, "whatsapp_number");
-  const skills = getList(formData, "skills");
-  const availability = getList(formData, "availability");
-  const desiredIncome = Number(getText(formData, "desired_income"));
-  const shortIntro = getText(formData, "short_intro");
-  const workStyle = getWorkStyleValue(getText(formData, "work_style"));
-  const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
-  const editToken = crypto.randomUUID();
-
-  if (
-    fullName.length < 2 ||
-    !city ||
-    !whatsappNumber ||
-    skills.length === 0 ||
-    !Number.isFinite(desiredIncome) ||
-    desiredIncome <= 0 ||
-    availability.length === 0 ||
-    shortIntro.length < 20 ||
-    !workStyle
-  ) {
-    redirect("/trabajadores/registro?estado=incompleto");
-  }
-
-  if (!normalizedWhatsAppNumber) {
-    redirect("/trabajadores/registro?estado=telefono");
-  }
-
-  if (
-    hasBlockedText([
-      fullName,
-      city,
-      skills.join(" "),
-      availability.join(" "),
-      shortIntro
-    ])
-  ) {
-    redirect("/trabajadores/registro?estado=rechazado");
-  }
-
-  const { data: existingWorkers, error: duplicateCheckError } = await supabase
-    .from("workers")
-    .select("id, whatsapp_number")
-    .not("whatsapp_number", "is", null);
-
-  if (duplicateCheckError) {
-    console.warn("Worker registration duplicate check skipped.", {
-      code: duplicateCheckError.code
-    });
-  }
-
-  const hasDuplicate = (existingWorkers ?? []).some((worker) => {
-    const existingNumber =
-      typeof worker.whatsapp_number === "string"
-        ? normalizeWhatsAppNumber(worker.whatsapp_number)
-        : null;
-
-    return existingNumber === normalizedWhatsAppNumber;
-  });
-
-  if (hasDuplicate) {
-    redirect("/trabajadores/registro?estado=duplicado");
-  }
-
-  const photoUrl = await uploadWorkerPhoto(
-    supabase,
-    formData.get("profile_photo"),
-    normalizedWhatsAppNumber
-  );
 
   const insertPayload: {
+    availability: string[];
+    city: string;
+    desired_income: number;
     edit_token: string;
     full_name: string;
-    city: string;
-    whatsapp_number: string;
-    skills: string[];
-    desired_income: number;
-    availability: string[];
-    short_intro: string;
-    work_style: NonNullable<typeof workStyle>;
     is_verified: false;
-    photo_url?: string;
+    short_intro: string;
+    skills: string[];
+    whatsapp_number: string;
+    work_style: "flexible";
   } = {
-    edit_token: editToken,
-    full_name: fullName,
-    city,
-    whatsapp_number: normalizedWhatsAppNumber,
-    skills,
-    desired_income: desiredIncome,
-    availability,
-    short_intro: shortIntro,
-    work_style: workStyle,
+    full_name: String(formData.get("full_name") || "").trim(),
+    city: String(formData.get("city") || "").trim(),
+    whatsapp_number: String(formData.get("whatsapp_number") || "").trim(),
+    work_style: "flexible",
+    edit_token: crypto.randomUUID(),
+    skills: [],
+    availability: [],
+    desired_income: 0,
+    short_intro: "",
     is_verified: false
   };
 
-  if (photoUrl) {
-    insertPayload.photo_url = photoUrl;
+  const insertPayloadKeys = Object.keys(insertPayload).sort();
+
+  let data: { id: string } | null = null;
+  let error:
+    | {
+        message: string;
+        code?: string;
+        details?: string | null;
+        hint?: string | null;
+      }
+    | null = null;
+
+  try {
+    const response = await supabase
+      .from("workers")
+      .insert(insertPayload)
+      .select("id")
+      .single();
+
+    data = response.data;
+    error = response.error;
+  } catch (insertError) {
+    console.error(
+      "Worker registration insert threw before Supabase returned a response.",
+      getServerErrorDetails(insertError)
+    );
+
+    return {
+      supabaseError: true
+    };
   }
 
-  const insertPayloadKeys = Object.keys(insertPayload).sort();
-  const expectedPayloadKeys = photoUrl
-    ? [...expectedWorkerInsertColumns, "photo_url"].sort()
-    : expectedWorkerInsertColumns;
-
-  console.info("Worker registration insert payload comparison.", {
-    expectedKeys: expectedPayloadKeys,
-    keys: insertPayloadKeys
-  });
-
-  const payload = insertPayload;
-  console.log("INSERT PAYLOAD:", payload);
-
-  const { data, error } = await supabase
-    .from("workers")
-    .insert(payload)
-    .select("id")
-    .single();
-
-  console.log("INSERT RESPONSE:", { data, error });
-
   if (error) {
-    console.log("SUPABASE ERROR FULL:", {
+    console.error("SUPABASE ERROR FULL:", {
       message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint
-    });
-
-    console.warn("Worker registration insert failed.", {
       code: error.code,
       details: error.details,
       hint: error.hint,
-      message: error.message,
       payloadKeys: insertPayloadKeys
     });
 
     return {
-      supabaseError: {
-        message: error.message,
-        details: error.details,
-        code: error.code
-      }
+      supabaseError: true
     };
   }
 
-  if (!data?.id || !isValidEditToken(editToken)) {
+  if (!data?.id) {
     console.warn("Worker registration insert returned no worker id.");
-    redirect("/trabajadores/registro?estado=error");
+    return {
+      supabaseError: true
+    };
   }
 
-  redirect(
-    `/trabajadores/registro-exitoso?token=${encodeURIComponent(editToken)}`
-  );
+  return {
+    success: true
+  };
 }
 
 export default function WorkerRegistrationPage({
@@ -246,9 +209,15 @@ export default function WorkerRegistrationPage({
             Revisa el texto del perfil. No aceptamos lenguaje ofensivo o spam.
           </div>
         )}
+        {state === "error" && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+            No pudimos enviar tu registro ahora mismo. Intenta otra vez en unos
+            minutos.
+          </div>
+        )}
         <WorkerRegistrationForm
           action={submitWorkerRegistration}
-          workStyles={workStyles}
+          workStyles={fallbackWorkStyles}
         />
       </main>
     </>
