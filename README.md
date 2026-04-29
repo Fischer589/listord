@@ -88,8 +88,9 @@ Estos resultados alimentan:
 
 1. Importa el repo en Vercel.
 2. Agrega las variables `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-3. Agrega `NEXT_PUBLIC_APP_URL` con la URL publica de produccion.
-4. Despliega.
+3. Agrega `SUPABASE_SERVICE_ROLE_KEY` como variable privada de servidor en Vercel. No uses prefijo `NEXT_PUBLIC_`.
+4. Agrega `NEXT_PUBLIC_APP_URL` con la URL publica de produccion.
+5. Despliega.
 
 ## Dominio publico
 

@@ -39,7 +39,7 @@ async function loadWorkerRegistrationDependencies() {
     const supabaseAdmin = await import("@/lib/supabase-admin");
 
     return {
-      getSupabaseAdminClient: supabaseAdmin.getSupabaseAdminClient
+      supabaseAdmin: supabaseAdmin.supabaseAdmin
     };
   } catch (error) {
     console.error(
@@ -64,19 +64,7 @@ async function submitWorkerRegistration(
     };
   }
 
-  let supabase: ReturnType<typeof dependencies.getSupabaseAdminClient>;
-
-  try {
-    supabase = dependencies.getSupabaseAdminClient();
-  } catch (error) {
-    console.error(
-      "Worker registration Supabase admin client failed to initialize.",
-      getServerErrorDetails(error)
-    );
-    return {
-      supabaseError: true
-    };
-  }
+  const supabase = dependencies.supabaseAdmin;
 
   if (!supabase) {
     console.warn("Worker registration skipped: Supabase admin client unavailable.");
@@ -86,27 +74,17 @@ async function submitWorkerRegistration(
   }
 
   const insertPayload: {
-    availability: string[];
     city: string;
-    desired_income: number;
     edit_token: string;
     full_name: string;
-    is_verified: false;
-    short_intro: string;
-    skills: string[];
     whatsapp_number: string;
-    work_style: "flexible";
+    work_style: WorkStyle;
   } = {
     full_name: String(formData.get("full_name") || "").trim(),
     city: String(formData.get("city") || "").trim(),
     whatsapp_number: String(formData.get("whatsapp_number") || "").trim(),
-    work_style: "flexible",
-    edit_token: crypto.randomUUID(),
-    skills: [],
-    availability: [],
-    desired_income: 0,
-    short_intro: "",
-    is_verified: false
+    work_style: String(formData.get("work_style") || "flexible") as WorkStyle,
+    edit_token: crypto.randomUUID()
   };
 
   const insertPayloadKeys = Object.keys(insertPayload).sort();

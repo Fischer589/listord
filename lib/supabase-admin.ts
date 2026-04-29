@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-export function getSupabaseAdminClient() {
+function createSupabaseAdminClient() {
   const supabaseUrl = (
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
   )?.trim();
@@ -29,4 +29,10 @@ export function getSupabaseAdminClient() {
     console.warn("Supabase admin client has invalid server config.");
     return null;
   }
+}
+
+export const supabaseAdmin = createSupabaseAdminClient();
+
+export function getSupabaseAdminClient() {
+  return supabaseAdmin;
 }
