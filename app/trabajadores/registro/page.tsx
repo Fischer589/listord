@@ -51,6 +51,12 @@ function getDesiredIncome(formData: FormData) {
   return Number.isFinite(desiredIncome) ? desiredIncome : 0;
 }
 
+function getShortIntro(formData: FormData) {
+  const shortIntro = String(formData.get("short_intro") || "").trim();
+
+  return shortIntro || "Disponible para trabajar.";
+}
+
 async function loadWorkerRegistrationDependencies() {
   try {
     const supabaseAdmin = await import("@/lib/supabase-admin");
@@ -97,6 +103,7 @@ async function submitWorkerRegistration(
     desired_income: number;
     edit_token: string;
     full_name: string;
+    short_intro: string;
     whatsapp_number: string;
     work_style: WorkStyle;
   } = {
@@ -104,6 +111,7 @@ async function submitWorkerRegistration(
     city: String(formData.get("city") || "").trim(),
     whatsapp_number: String(formData.get("whatsapp_number") || "").trim(),
     work_style: String(formData.get("work_style") || "flexible") as WorkStyle,
+    short_intro: getShortIntro(formData),
     desired_income: getDesiredIncome(formData),
     edit_token: crypto.randomUUID()
   };
