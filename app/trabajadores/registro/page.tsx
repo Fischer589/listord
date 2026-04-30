@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { AppHeader } from "@/components/app-header";
 import { WorkerRegistrationForm } from "@/components/worker-registration-form";
 import type { WorkStyle } from "@/lib/types";
@@ -173,6 +174,8 @@ async function submitWorkerRegistration(
       supabaseError: true
     };
   }
+
+  revalidatePath("/admin/workers");
 
   return {
     success: true

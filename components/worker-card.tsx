@@ -59,6 +59,13 @@ export function WorkerCard({
   }, []);
 
   useEffect(() => {
+    console.info("Paywall state:", {
+      worker_id: worker.id,
+      open: showPaywall
+    });
+  }, [showPaywall, worker.id]);
+
+  useEffect(() => {
     const card = cardRef.current;
 
     if (!card) {
@@ -192,7 +199,16 @@ export function WorkerCard({
         url?: string;
         error?: string;
         reason?: string;
+        free_contacts_remaining?: number;
       };
+
+      console.info("Contact API response:", {
+        worker_id: selectedWorker.id,
+        status: response.status,
+        reason: data.reason ?? null,
+        free_contacts_remaining: data.free_contacts_remaining ?? null,
+        has_url: Boolean(data.url)
+      });
 
       if (response.status === 402 || data.reason === "payment_required") {
         try {

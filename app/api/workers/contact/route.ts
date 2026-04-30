@@ -60,6 +60,14 @@ export async function POST(request: Request) {
 
   const access = Array.isArray(accessRows) ? accessRows[0] : accessRows;
 
+  console.info("Contact API response:", {
+    workerId,
+    browserSessionId,
+    allowed: Boolean(access?.allowed),
+    reason: access?.reason ?? null,
+    free_contacts_remaining: access?.free_contacts_remaining ?? null
+  });
+
   if (!access?.allowed) {
     const isRateLimited = access?.reason === "rate_limited";
 

@@ -1,8 +1,11 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { AppHeader } from "@/components/app-header";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { Worker } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 async function approveWorker(formData: FormData) {
   "use server";
@@ -14,23 +17,134 @@ async function approveWorker(formData: FormData) {
     return;
   }
 
-  await supabase
+  const { error } = await supabase
     .from("workers")
     .update({ is_verified: true })
     .eq("id", workerId);
+
+  if (error) {
+    console.warn("Worker approval failed.", {
+      code: error.code,
+      workerId
+    });
+  }
 
   revalidatePath("/admin/workers");
   revalidatePath("/");
 }
 
-async function getPendingWorkers(): Promise<Worker[]> {
+async function approveLocalTestWorker() {
+  "use server";
+
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
-    return [];
+    return;
   }
 
-  const { data, error } = await supabase
+  const testWorker = {
+    full_name: "Trabajador Prueba Local ListoRD",
+    city: "Santo Domingo",
+    whatsapp_number: "+18090000999",
+    work_style: "flexible",
+    desired_income: 1500,
+    short_intro: "Perfil de prueba local para validar listado y contacto.",
+    skills: [] as string[],
+    availability: [] as string[],
+    is_verified: true
+  };
+
+  const { data: existingWorker, error: lookupError } = await supabase
+    .from("workers")
+    .select("id")
+    .eq("whatsapp_number", testWorker.whatsapp_number)
+    .maybeSingle();
+
+  if (lookupError) {
+    console.warn("Local test worker lookup failed.", {
+      code: lookupError.code
+    });
+    return;
+  }
+
+  const response = existingWorker?.id
+    ? await supabase
+        .from("workers")
+        .update(testWorker)
+        .eq("id", existingWorker.id)
+    : await supabase.from("workers").insert(testWorker);
+
+  if (response.error) {
+    console.warn("Local test worker approval failed.", {
+      code: response.error.code
+    });
+  }
+
+  revalidatePath("/admin/workers");
+  revalidatePath("/");
+}
+
+type AdminWorkersResult = {
+  approvedCount: number;
+  pendingCount: number;
+  supabaseProjectRef: string;
+  workers: Worker[];
+};
+
+function getWorkerCounts(workers: Worker[]) {
+  return workers.reduce(
+    (counts, worker) => {
+      if (worker.is_verified) {
+        counts.approvedCount += 1;
+      } else {
+        counts.pendingCount += 1;
+      }
+
+      return counts;
+    },
+    {
+      approvedCount: 0,
+      pendingCount: 0
+    }
+  );
+}
+
+function getSupabaseProjectRef() {
+  const supabaseUrl = (
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+  )?.trim();
+
+  if (!supabaseUrl) {
+    return "sin-configurar";
+  }
+
+  try {
+    return new URL(supabaseUrl).hostname.split(".")[0] || "desconocido";
+  } catch {
+    return "url-invalida";
+  }
+}
+
+async function getAdminWorkers(): Promise<AdminWorkersResult> {
+  noStore();
+
+  const supabase = getSupabaseAdminClient();
+  const supabaseProjectRef = getSupabaseProjectRef();
+
+  if (!supabase) {
+    return {
+      approvedCount: 0,
+      pendingCount: 0,
+      supabaseProjectRef,
+      workers: []
+    };
+  }
+
+  const workersQuery = supabase
     .from("workers")
     .select(`
       id,
@@ -44,19 +158,61 @@ async function getPendingWorkers(): Promise<Worker[]> {
       work_style,
       short_intro,
       is_verified,
+      created_at,
       edit_token
     `)
+    .order("created_at", { ascending: false });
+
+  const pendingCountQuery = supabase
+    .from("workers")
+    .select("id", { count: "exact", head: true })
     .eq("is_verified", false);
 
+  const approvedCountQuery = supabase
+    .from("workers")
+    .select("id", { count: "exact", head: true })
+    .eq("is_verified", true);
+
+  const [
+    { data, error },
+    { count: pendingCount, error: pendingCountError },
+    { count: approvedCount, error: approvedCountError }
+  ] = await Promise.all([workersQuery, pendingCountQuery, approvedCountQuery]);
+
   if (error) {
-    return [];
+    console.warn("Admin workers query failed.", {
+      code: error.code
+    });
+    return {
+      approvedCount: 0,
+      pendingCount: 0,
+      supabaseProjectRef,
+      workers: []
+    };
   }
 
-  return data ?? [];
+  const workers = data ?? [];
+  const fallbackCounts = getWorkerCounts(workers);
+
+  if (pendingCountError || approvedCountError) {
+    console.warn("Admin worker count query failed.", {
+      approvedCountCode: approvedCountError?.code,
+      pendingCountCode: pendingCountError?.code
+    });
+  }
+
+  return {
+    approvedCount: approvedCount ?? fallbackCounts.approvedCount,
+    pendingCount: pendingCount ?? fallbackCounts.pendingCount,
+    supabaseProjectRef,
+    workers
+  };
 }
 
 export default async function AdminWorkersPage() {
-  const workers = await getPendingWorkers();
+  const { approvedCount, pendingCount, supabaseProjectRef, workers } =
+    await getAdminWorkers();
+  const showLocalTestWorkerAction = process.env.NODE_ENV !== "production";
 
   return (
     <>
@@ -68,20 +224,52 @@ export default async function AdminWorkersPage() {
               Admin
             </p>
             <h1 className="mt-2 text-3xl font-black text-ink">
-              Trabajadores pendientes
+              Trabajadores registrados
             </h1>
             <p className="mt-2 font-bold text-black/60">
-              {workers.length} perfiles esperando aprobacion.
+              {workers.length} perfiles cargados, ordenados del mas nuevo al
+              mas antiguo.
             </p>
+          </div>
+
+          <div className="mb-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-black/10 bg-white p-4 shadow-soft">
+              <p className="text-xs font-black uppercase tracking-wide text-black/50">
+                Pendientes
+              </p>
+              <p className="mt-1 text-3xl font-black text-ink">
+                {pendingCount}
+              </p>
+            </div>
+            <div className="rounded-xl border border-black/10 bg-white p-4 shadow-soft">
+              <p className="text-xs font-black uppercase tracking-wide text-black/50">
+                Aprobados
+              </p>
+              <p className="mt-1 text-3xl font-black text-ink">
+                {approvedCount}
+              </p>
+            </div>
+            <div className="rounded-xl border border-black/10 bg-white p-4 shadow-soft">
+              <p className="text-xs font-black uppercase tracking-wide text-black/50">
+                Supabase
+              </p>
+              <p className="mt-1 break-all font-black text-ink">
+                {supabaseProjectRef}
+              </p>
+              <p className="mt-1 text-xs font-bold text-black/50">
+                Mismo cliente servidor y env que registro
+              </p>
+            </div>
           </div>
 
           {workers.length === 0 ? (
             <div className="rounded-xl border border-black/10 bg-white p-6 shadow-soft">
               <h2 className="text-xl font-black text-ink">
-                No hay trabajadores pendientes
+                No hay trabajadores cargados
               </h2>
               <p className="mt-2 font-bold text-black/60">
-                Cuando lleguen nuevos registros apareceran aqui.
+                Cuando lleguen registros apareceran aqui aunque les falten
+                campos opcionales.
               </p>
             </div>
           ) : (
@@ -97,6 +285,9 @@ export default async function AdminWorkersPage() {
                   worker.work_style && worker.work_style in workStyleLabels
                     ? workStyleLabels[worker.work_style]
                     : null;
+                const statusLabel = worker.is_verified
+                  ? "Aprobado"
+                  : "Pendiente";
 
                 return (
                   <article
@@ -107,18 +298,31 @@ export default async function AdminWorkersPage() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <h2 className="text-2xl font-black text-ink">
-                            {worker.full_name}
+                            {worker.full_name || "Sin nombre"}
                           </h2>
-                          <span className="rounded-md bg-mango/25 px-2 py-1 text-xs font-black text-ink">
-                            Pendiente
+                          <span
+                            className={
+                              worker.is_verified
+                                ? "rounded-md bg-hoja/15 px-2 py-1 text-xs font-black text-hoja"
+                                : "rounded-md bg-mango/25 px-2 py-1 text-xs font-black text-ink"
+                            }
+                          >
+                            {statusLabel}
                           </span>
                         </div>
                         <p className="mt-2 font-bold text-black/70">
-                          {worker.city} ·{" "}
-                          {formatIncomeShort(worker.desired_income)}
+                          {worker.city || "Sin ciudad"} ·{" "}
+                          {worker.desired_income !== null &&
+                          worker.desired_income !== undefined &&
+                          worker.desired_income !== ""
+                            ? formatIncomeShort(worker.desired_income)
+                            : "Ingreso no especificado"}
                         </p>
                         <p className="mt-3 leading-7 text-black/75">
-                          {worker.short_intro}
+                          {worker.short_intro || "Sin descripcion."}
+                        </p>
+                        <p className="mt-2 text-xs font-bold text-black/45">
+                          Creado: {worker.created_at ?? "sin fecha"}
                         </p>
 
                         <div className="mt-3 flex flex-wrap gap-2 text-sm font-bold">
@@ -146,23 +350,45 @@ export default async function AdminWorkersPage() {
                         </div>
                       </div>
 
-                      <form action={approveWorker}>
-                        <input
-                          type="hidden"
-                          name="worker_id"
-                          value={worker.id}
-                        />
-                        <button
-                          type="submit"
-                          className="tap-target w-full rounded-md bg-hoja px-5 py-3 font-black text-white md:w-auto"
-                        >
-                          Aprobar trabajador
-                        </button>
-                      </form>
+                      {!worker.is_verified && (
+                        <form action={approveWorker}>
+                          <input
+                            type="hidden"
+                            name="worker_id"
+                            value={worker.id}
+                          />
+                          <button
+                            type="submit"
+                            className="tap-target w-full rounded-md bg-hoja px-5 py-3 font-black text-white md:w-auto"
+                          >
+                            Aprobar trabajador
+                          </button>
+                        </form>
+                      )}
                     </div>
                   </article>
                 );
               })}
+            </div>
+          )}
+
+          {showLocalTestWorkerAction && (
+            <div className="mt-6 rounded-xl border border-dashed border-black/20 bg-white p-4 shadow-soft">
+              <h2 className="text-lg font-black text-ink">
+                Prueba local
+              </h2>
+              <p className="mt-1 font-bold text-black/60">
+                Crea o aprueba un trabajador de prueba obvio para validar el
+                listado y el flujo de contacto en desarrollo.
+              </p>
+              <form action={approveLocalTestWorker} className="mt-3">
+                <button
+                  type="submit"
+                  className="tap-target rounded-md bg-ink px-5 py-3 font-black text-white"
+                >
+                  Aprobar trabajador de prueba local
+                </button>
+              </form>
             </div>
           )}
         </section>

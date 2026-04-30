@@ -125,9 +125,8 @@ export default async function Home({
                   Estamos verificando trabajadores reales en tu zona.
                 </h3>
                 <p className="mx-auto mt-2 max-w-xl leading-7 text-black/70">
-                  ListoRD solo muestra perfiles reales aprobados. Mientras
-                  completamos la verificacion, estamos recibiendo registros de
-                  trabajadores para publicarlos cuando sean aprobados.
+                  Estamos verificando trabajadores reales. Déjanos saber qué
+                  necesitas y te ayudamos.
                 </p>
                 <p className="mt-4 text-lg font-black text-ink">
                   ¿Quieres registrarte para aparecer en ListoRD?

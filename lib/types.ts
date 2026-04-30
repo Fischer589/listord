@@ -18,12 +18,13 @@ export type Worker = {
   photo_url?: string | null;
   city: string;
   whatsapp_number?: string | null;
-  skills: string[];
-  desired_income: number;
-  availability: string[];
+  skills?: string[] | null;
+  desired_income?: number | string | null;
+  availability?: string[] | null;
   work_style?: WorkStyle | null;
   short_intro: string;
   is_verified: boolean;
+  created_at?: string;
 };
 
 export type Employer = {

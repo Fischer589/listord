@@ -66,8 +66,13 @@ export async function getWorkersResult(
   const { data, error } = await query;
 
   if (error) {
+    console.warn("Worker listing query failed.", {
+      code: error.code
+    });
     return { ok: false, workers: [], message: WORKERS_LOAD_ERROR };
   }
+
+  console.info("Worker count loaded:", data?.length ?? 0);
 
   const workers = skill
     ? (data ?? []).filter((worker) =>
@@ -77,6 +82,8 @@ export async function getWorkersResult(
         )
       )
     : data ?? [];
+
+  console.info("Filtered worker count:", workers.length);
 
   return { ok: true, workers };
 }
