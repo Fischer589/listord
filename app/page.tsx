@@ -4,6 +4,9 @@ import { WorkerCard } from "@/components/worker-card";
 import { getWorkersResult } from "@/lib/workers";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function Home({
   searchParams
 }: {
@@ -16,6 +19,7 @@ export default async function Home({
 }) {
   const workersResult = await getWorkersResult(searchParams);
   const workers = workersResult.workers;
+  const verifiedWorkerCount = workersResult.verifiedWorkerCount;
 
   return (
     <>
@@ -86,6 +90,9 @@ export default async function Home({
               <h2 className="text-xl font-black">Personas disponibles ahora</h2>
               <p className="mt-1 text-sm font-bold text-black/55">
                 Quedan pocos trabajadores disponibles hoy
+              </p>
+              <p className="mt-2 rounded-md bg-mango/20 px-3 py-2 text-xs font-black text-ink">
+                Debug: verified worker count loaded: {verifiedWorkerCount}
               </p>
             </div>
             <span className="text-sm font-bold text-black/55">
