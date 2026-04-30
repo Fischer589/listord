@@ -19,7 +19,6 @@ export default async function Home({
 }) {
   const workersResult = await getWorkersResult(searchParams);
   const workers = workersResult.workers;
-  const verifiedWorkerCount = workersResult.verifiedWorkerCount;
 
   return (
     <>
@@ -92,7 +91,7 @@ export default async function Home({
                 Quedan pocos trabajadores disponibles hoy
               </p>
               <p className="mt-2 rounded-md bg-mango/20 px-3 py-2 text-xs font-black text-ink">
-                Debug: verified worker count loaded: {verifiedWorkerCount}
+                Verified workers loaded: {workers.length}
               </p>
             </div>
             <span className="text-sm font-bold text-black/55">

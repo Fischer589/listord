@@ -14,15 +14,15 @@ export type WorkStyle =
 export type Worker = {
   id: string;
   edit_token?: string;
-  full_name: string;
+  full_name?: string | null;
   photo_url?: string | null;
-  city: string;
+  city?: string | null;
   whatsapp_number?: string | null;
   skills?: string[] | null;
   desired_income?: number | string | null;
   availability?: string[] | null;
   work_style?: WorkStyle | null;
-  short_intro: string;
+  short_intro?: string | null;
   is_verified: boolean;
   created_at?: string;
 };

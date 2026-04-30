@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseClient } from "./supabase";
-import type { WorkStyle, Worker } from "./types";
+import type { Worker } from "./types";
 
 type WorkerFilters = {
   city?: string;
@@ -20,20 +20,6 @@ export type WorkersResult =
 
 const WORKERS_LOAD_ERROR =
   "No pudimos cargar los trabajadores ahora mismo. Intenta de nuevo en unos minutos.";
-const workStyles = new Set<WorkStyle>([
-  "structured",
-  "creative",
-  "hands_on",
-  "people_oriented",
-  "systems_oriented",
-  "fast_paced",
-  "detail_oriented",
-  "flexible"
-]);
-
-function isWorkStyle(value: string | undefined): value is WorkStyle {
-  return Boolean(value && workStyles.has(value as WorkStyle));
-}
 
 export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
   const result = await getWorkersResult(filters);
@@ -42,7 +28,7 @@ export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
 }
 
 export async function getWorkersResult(
-  filters: WorkerFilters
+  _filters: WorkerFilters
 ): Promise<WorkersResult> {
   noStore();
 
@@ -62,7 +48,7 @@ export async function getWorkersResult(
     .select("id", { count: "exact", head: true })
     .eq("is_verified", true);
 
-  let query = supabase
+  const query = supabase
     .from("workers")
     .select(`
       id,
@@ -80,23 +66,6 @@ export async function getWorkersResult(
     `)
     .eq("is_verified", true)
     .order("created_at", { ascending: false });
-
-  const city = filters.city?.trim();
-  const maxIncome = Number(filters.income);
-  const skill = filters.skill?.trim().toLowerCase();
-  const workStyle = filters.workStyle?.trim();
-
-  if (city) {
-    query = query.ilike("city", `%${city}%`);
-  }
-
-  if (Number.isFinite(maxIncome) && maxIncome > 0) {
-    query = query.lte("desired_income", maxIncome);
-  }
-
-  if (isWorkStyle(workStyle)) {
-    query = query.eq("work_style", workStyle);
-  }
 
   const [
     { count: verifiedWorkerCount, error: verifiedCountError },
@@ -122,18 +91,11 @@ export async function getWorkersResult(
   }
 
   console.info("Verified worker count loaded:", verifiedWorkerCount ?? 0);
-  console.info("Worker count loaded after database filters:", data?.length ?? 0);
+  console.info("Verified workers returned:", data?.length ?? 0);
 
-  const workers = skill
-    ? (data ?? []).filter((worker) =>
-        (Array.isArray(worker.skills) ? worker.skills : []).some(
-          (workerSkill: string) =>
-            workerSkill.toLowerCase().includes(skill)
-        )
-      )
-    : data ?? [];
-
-  console.info("Filtered worker count:", workers.length);
-
-  return { ok: true, workers, verifiedWorkerCount: verifiedWorkerCount ?? 0 };
+  return {
+    ok: true,
+    workers: data ?? [],
+    verifiedWorkerCount: verifiedWorkerCount ?? 0
+  };
 }
