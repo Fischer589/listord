@@ -19,6 +19,7 @@ export default async function Home({
 }) {
   const workersResult = await getWorkersResult(searchParams);
   const workers = workersResult.workers;
+  const diagnostics = workersResult.diagnostics;
 
   return (
     <>
@@ -93,6 +94,51 @@ export default async function Home({
               <p className="mt-2 rounded-md bg-mango/20 px-3 py-2 text-xs font-black text-ink">
                 Verified workers loaded: {workers.length}
               </p>
+              <div className="mt-3 rounded-lg border border-mango/40 bg-white p-3 text-left text-xs font-bold text-ink shadow-soft">
+                <p className="font-black uppercase tracking-wide text-hoja">
+                  Temporary homepage diagnostics
+                </p>
+                <dl className="mt-2 grid gap-1">
+                  <div>
+                    <dt className="inline font-black">Supabase host: </dt>
+                    <dd className="inline">{diagnostics.supabaseUrlHost}</dd>
+                  </div>
+                  <div>
+                    <dt className="inline font-black">
+                      Public total workers count:{" "}
+                    </dt>
+                    <dd className="inline">{diagnostics.totalWorkerCount}</dd>
+                  </div>
+                  <div>
+                    <dt className="inline font-black">
+                      Verified workers count:{" "}
+                    </dt>
+                    <dd className="inline">
+                      {diagnostics.verifiedWorkerCount}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="inline font-black">
+                      First 5 homepage query names:{" "}
+                    </dt>
+                    <dd className="inline">
+                      {diagnostics.homepageWorkerNames.length > 0
+                        ? diagnostics.homepageWorkerNames.join(", ")
+                        : "none"}
+                    </dd>
+                  </div>
+                  {diagnostics.queryErrorMessage ? (
+                    <div>
+                      <dt className="inline font-black text-red-700">
+                        Query error:{" "}
+                      </dt>
+                      <dd className="inline text-red-700">
+                        {diagnostics.queryErrorMessage}
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </div>
             </div>
             <span className="text-sm font-bold text-black/55">
               {workers.length} resultados
