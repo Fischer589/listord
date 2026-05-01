@@ -31,10 +31,40 @@ export type HomepageWorkerDiagnostics = {
   verifiedWorkerCount: number;
   homepageWorkerNames: string[];
   queryErrorMessage?: string;
+  queryErrorCode?: string;
+  queryErrorDetails?: string;
+  queryErrorHint?: string;
 };
 
 const WORKERS_LOAD_ERROR =
   "No pudimos cargar los trabajadores ahora mismo. Intenta de nuevo en unos minutos.";
+const HOMEPAGE_WORKER_SELECT = `
+  id,
+  full_name,
+  city,
+  whatsapp_number,
+  work_style,
+  desired_income,
+  short_intro
+`;
+
+type HomepageWorkerRow = Pick<
+  Worker,
+  | "id"
+  | "full_name"
+  | "city"
+  | "whatsapp_number"
+  | "work_style"
+  | "desired_income"
+  | "short_intro"
+>;
+
+type SupabaseErrorDetails = {
+  message?: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+};
 
 function getSupabaseUrlHost() {
   const publicEnv = getPublicEnv();
@@ -84,94 +114,109 @@ export async function getWorkersResult(
     };
   }
 
-  const totalCountQuery = supabase
-    .from("workers")
-    .select("id", { count: "exact", head: true });
+  try {
+    const { data, error } = await supabase
+      .from("workers")
+      .select(HOMEPAGE_WORKER_SELECT)
+      .eq("is_verified", true);
 
-  const verifiedCountQuery = supabase
-    .from("workers")
-    .select("id", { count: "exact", head: true })
-    .eq("is_verified", true);
+    if (error) {
+      logHomepageWorkerQueryError(error);
 
-  const query = supabase
-    .from("workers")
-    .select(`
-      id,
-      full_name,
-      photo_url,
-      city,
-      whatsapp_number,
-      skills,
-      desired_income,
-      availability,
-      work_style,
-      short_intro,
-      is_verified,
-      created_at
-    `)
-    .eq("is_verified", true)
-    .order("created_at", { ascending: false });
+      const diagnostics = getErrorDiagnostics(supabaseUrlHost, error);
 
-  const [
-    { count: totalWorkerCount, error: totalCountError },
-    { count: verifiedWorkerCount, error: verifiedCountError },
-    { data, error }
-  ] = await Promise.all([totalCountQuery, verifiedCountQuery, query]);
+      return {
+        ok: false,
+        workers: [],
+        message: error.message || WORKERS_LOAD_ERROR,
+        verifiedWorkerCount: 0,
+        diagnostics
+      };
+    }
 
-  console.info("Homepage workers raw total count:", totalWorkerCount);
-  console.info("Homepage workers raw verified count:", verifiedWorkerCount);
+    const rows = (data ?? []) as HomepageWorkerRow[];
+    const workers = rows.map((worker) => ({
+      ...worker,
+      is_verified: true
+    }));
+    const verifiedWorkerCount = workers.length;
+    const diagnostics = {
+      supabaseUrlHost,
+      totalWorkerCount: verifiedWorkerCount,
+      verifiedWorkerCount,
+      homepageWorkerNames: workers
+        .slice(0, 5)
+        .map((worker) => worker.full_name || "(sin nombre)")
+    };
 
-  if (totalCountError) {
-    console.warn("Homepage total worker count query failed.", {
-      message: totalCountError.message,
-      code: totalCountError.code,
-      details: totalCountError.details
-    });
-  }
+    console.info("Verified workers returned:", verifiedWorkerCount);
 
-  if (verifiedCountError) {
-    console.warn("Homepage verified worker count query failed.", {
-      message: verifiedCountError.message,
-      code: verifiedCountError.code,
-      details: verifiedCountError.details
-    });
-  }
+    return {
+      ok: true,
+      workers,
+      verifiedWorkerCount,
+      diagnostics
+    };
+  } catch (error) {
+    const normalizedError = normalizeUnknownError(error);
+    logHomepageWorkerQueryError(normalizedError);
 
-  const queryError =
-    error?.message ?? verifiedCountError?.message ?? totalCountError?.message;
+    const diagnostics = getErrorDiagnostics(supabaseUrlHost, normalizedError);
 
-  const diagnostics = {
-    supabaseUrlHost,
-    totalWorkerCount: totalWorkerCount ?? 0,
-    verifiedWorkerCount: verifiedWorkerCount ?? 0,
-    homepageWorkerNames:
-      data?.slice(0, 5).map((worker) => worker.full_name || "(sin nombre)") ??
-      [],
-    queryErrorMessage: queryError
-  };
-
-  if (error) {
-    console.warn("Homepage worker listing query failed.", {
-      message: error.message,
-      code: error.code,
-      details: error.details
-    });
     return {
       ok: false,
       workers: [],
-      message: error.message || WORKERS_LOAD_ERROR,
-      verifiedWorkerCount: verifiedWorkerCount ?? 0,
+      message: normalizedError.message || WORKERS_LOAD_ERROR,
+      verifiedWorkerCount: 0,
       diagnostics
     };
   }
+}
 
-  console.info("Verified worker count loaded:", verifiedWorkerCount ?? 0);
-  console.info("Verified workers returned:", data?.length ?? 0);
+function getErrorDiagnostics(
+  supabaseUrlHost: string,
+  error: SupabaseErrorDetails
+): HomepageWorkerDiagnostics {
+  return {
+    supabaseUrlHost,
+    totalWorkerCount: 0,
+    verifiedWorkerCount: 0,
+    homepageWorkerNames: [],
+    queryErrorMessage: error.message,
+    queryErrorCode: error.code,
+    queryErrorDetails: error.details,
+    queryErrorHint: error.hint
+  };
+}
+
+function logHomepageWorkerQueryError(error: SupabaseErrorDetails) {
+  console.error("Homepage worker listing query failed.", {
+    message: error.message,
+    code: error.code,
+    details: error.details,
+    hint: error.hint
+  });
+}
+
+function normalizeUnknownError(error: unknown): SupabaseErrorDetails {
+  if (error instanceof Error) {
+    return {
+      message: error.message
+    };
+  }
+
+  if (error && typeof error === "object") {
+    const maybeError = error as SupabaseErrorDetails;
+
+    return {
+      message: maybeError.message,
+      code: maybeError.code,
+      details: maybeError.details,
+      hint: maybeError.hint
+    };
+  }
 
   return {
-    ok: true,
-    workers: data ?? [],
-    verifiedWorkerCount: verifiedWorkerCount ?? 0,
-    diagnostics
+    message: String(error)
   };
 }

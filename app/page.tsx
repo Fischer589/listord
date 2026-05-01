@@ -137,6 +137,36 @@ export default async function Home({
                       </dd>
                     </div>
                   ) : null}
+                  {diagnostics.queryErrorCode ? (
+                    <div>
+                      <dt className="inline font-black text-red-700">
+                        Query code:{" "}
+                      </dt>
+                      <dd className="inline text-red-700">
+                        {diagnostics.queryErrorCode}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {diagnostics.queryErrorDetails ? (
+                    <div>
+                      <dt className="inline font-black text-red-700">
+                        Query details:{" "}
+                      </dt>
+                      <dd className="inline text-red-700">
+                        {diagnostics.queryErrorDetails}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {diagnostics.queryErrorHint ? (
+                    <div>
+                      <dt className="inline font-black text-red-700">
+                        Query hint:{" "}
+                      </dt>
+                      <dd className="inline text-red-700">
+                        {diagnostics.queryErrorHint}
+                      </dd>
+                    </div>
+                  ) : null}
                 </dl>
               </div>
             </div>
