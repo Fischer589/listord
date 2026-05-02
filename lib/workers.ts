@@ -1,5 +1,4 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { getPublicEnvDiagnostics } from "./env";
 import { getSupabaseClient } from "./supabase";
 import type { Worker } from "./types";
 
@@ -15,28 +14,13 @@ export type WorkersResult =
       ok: true;
       workers: Worker[];
       verifiedWorkerCount: number;
-      diagnostics: HomepageWorkerDiagnostics;
     }
   | {
       ok: false;
       workers: [];
       message: string;
       verifiedWorkerCount: number;
-      diagnostics: HomepageWorkerDiagnostics;
     };
-
-export type HomepageWorkerDiagnostics = {
-  hasNextPublicSupabaseUrl: boolean;
-  hasNextPublicSupabaseAnonKey: boolean;
-  supabaseUrlHost: string;
-  totalWorkerCount: number;
-  verifiedWorkerCount: number;
-  homepageWorkerNames: string[];
-  queryErrorMessage?: string;
-  queryErrorCode?: string;
-  queryErrorDetails?: string;
-  queryErrorHint?: string;
-};
 
 const WORKERS_LOAD_ERROR =
   "No pudimos cargar los trabajadores ahora mismo. Intenta de nuevo en unos minutos.";
@@ -80,27 +64,13 @@ export async function getWorkersResult(
   noStore();
 
   const supabase = getSupabaseClient();
-  const publicEnvDiagnostics = getPublicEnvDiagnostics();
-  const supabaseUrlHost = publicEnvDiagnostics.supabaseUrlHost;
-
-  console.info("Homepage workers Supabase diagnostics:", publicEnvDiagnostics);
 
   if (!supabase) {
-    const diagnostics = {
-      ...publicEnvDiagnostics,
-      supabaseUrlHost,
-      totalWorkerCount: 0,
-      verifiedWorkerCount: 0,
-      homepageWorkerNames: [],
-      queryErrorMessage: "Supabase public client is not configured."
-    };
-
     return {
       ok: false,
       workers: [],
       message: WORKERS_LOAD_ERROR,
-      verifiedWorkerCount: 0,
-      diagnostics
+      verifiedWorkerCount: 0
     };
   }
 
@@ -113,18 +83,11 @@ export async function getWorkersResult(
     if (error) {
       logHomepageWorkerQueryError(error);
 
-      const diagnostics = getErrorDiagnostics(
-        publicEnvDiagnostics,
-        supabaseUrlHost,
-        error
-      );
-
       return {
         ok: false,
         workers: [],
         message: error.message || WORKERS_LOAD_ERROR,
-        verifiedWorkerCount: 0,
-        diagnostics
+        verifiedWorkerCount: 0
       };
     }
 
@@ -134,60 +97,22 @@ export async function getWorkersResult(
       is_verified: true
     }));
     const verifiedWorkerCount = workers.length;
-    const diagnostics = {
-      ...publicEnvDiagnostics,
-      supabaseUrlHost,
-      totalWorkerCount: verifiedWorkerCount,
-      verifiedWorkerCount,
-      homepageWorkerNames: workers
-        .slice(0, 5)
-        .map((worker) => worker.full_name || "(sin nombre)")
-    };
-
-    console.info("Verified workers returned:", verifiedWorkerCount);
-
     return {
       ok: true,
       workers,
-      verifiedWorkerCount,
-      diagnostics
+      verifiedWorkerCount
     };
   } catch (error) {
     const normalizedError = normalizeUnknownError(error);
     logHomepageWorkerQueryError(normalizedError);
 
-    const diagnostics = getErrorDiagnostics(
-      publicEnvDiagnostics,
-      supabaseUrlHost,
-      normalizedError
-    );
-
     return {
       ok: false,
       workers: [],
       message: normalizedError.message || WORKERS_LOAD_ERROR,
-      verifiedWorkerCount: 0,
-      diagnostics
+      verifiedWorkerCount: 0
     };
   }
-}
-
-function getErrorDiagnostics(
-  publicEnvDiagnostics: ReturnType<typeof getPublicEnvDiagnostics>,
-  supabaseUrlHost: string,
-  error: SupabaseErrorDetails
-): HomepageWorkerDiagnostics {
-  return {
-    ...publicEnvDiagnostics,
-    supabaseUrlHost,
-    totalWorkerCount: 0,
-    verifiedWorkerCount: 0,
-    homepageWorkerNames: [],
-    queryErrorMessage: error.message,
-    queryErrorCode: error.code,
-    queryErrorDetails: error.details,
-    queryErrorHint: error.hint
-  };
 }
 
 function logHomepageWorkerQueryError(error: SupabaseErrorDetails) {

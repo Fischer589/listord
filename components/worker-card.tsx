@@ -199,19 +199,24 @@ export function WorkerCard({
           whatsapp_number: employerWhatsAppNumber
         })
       });
-      const data = (await response.json()) as {
+      let data: {
         url?: string;
         error?: string;
         reason?: string;
         free_contacts_remaining?: number;
       };
 
+      try {
+        data = (await response.json()) as typeof data;
+      } catch {
+        data = {
+          error: "La API no devolvió JSON válido."
+        };
+      }
+
       console.info("Contact API response:", {
-        worker_id: selectedWorker.id,
         status: response.status,
-        reason: data.reason ?? null,
-        free_contacts_remaining: data.free_contacts_remaining ?? null,
-        has_url: Boolean(data.url)
+        body: data
       });
 
       if (response.status === 402 || data.reason === "payment_required") {
@@ -232,13 +237,15 @@ export function WorkerCard({
       const contactUrl = data.url;
 
       if (!response.ok || !contactUrl || !isValidWhatsAppUrl(contactUrl)) {
-        setContactError(CONTACT_ERROR_MESSAGE);
+        setContactError(data.error || data.reason || CONTACT_ERROR_MESSAGE);
         return;
       }
 
       window.open(contactUrl, "_blank");
-    } catch {
-      setContactError(CONTACT_ERROR_MESSAGE);
+    } catch (error) {
+      setContactError(
+        error instanceof Error ? error.message : CONTACT_ERROR_MESSAGE
+      );
     }
   }
 

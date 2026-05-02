@@ -22,6 +22,10 @@ export async function POST(request: Request) {
   const browserSessionId = body?.browser_session_id?.trim();
   const whatsappNumber = body?.whatsapp_number?.trim();
 
+  console.info("Contact API workerId received:", {
+    workerId: workerId || null
+  });
+
   if (!workerId) {
     return NextResponse.json(
       { error: "Falta workerId." },
@@ -41,54 +45,45 @@ export async function POST(request: Request) {
     whatsappNumber
   });
 
-  const { data: accessRows, error: accessError } = await supabase.rpc(
-    "claim_worker_contact",
-    {
-      p_browser_session_id: browserSessionId,
-      p_worker_id: workerId
-    }
-  );
+  const { data, error } = await supabase
+    .from("workers")
+    .select("whatsapp_number, is_verified")
+    .eq("id", workerId)
+    .maybeSingle();
 
-  if (accessError) {
+  console.info("Contact API worker lookup:", {
+    workerId,
+    worker_found: Boolean(data),
+    raw_whatsapp_number: data?.whatsapp_number ?? null,
+    is_verified: data?.is_verified ?? null
+  });
+
+  if (error) {
+    console.info("Contact API access decision:", {
+      workerId,
+      allowed: false,
+      blocked: true,
+      reason: "worker_lookup_error"
+    });
+
     return NextResponse.json(
-      { error: "No pudimos validar tu acceso." },
+      { error: "No pudimos preparar el contacto." },
       { status: 500 }
     );
   }
 
-  const access = Array.isArray(accessRows) ? accessRows[0] : accessRows;
+  if (!data) {
+    console.info("Contact API normalized WhatsApp URL:", {
+      workerId,
+      url: null
+    });
+    console.info("Contact API access decision:", {
+      workerId,
+      allowed: false,
+      blocked: true,
+      reason: "worker_not_found"
+    });
 
-  console.info("Contact API response:", {
-    workerId,
-    browserSessionId,
-    allowed: Boolean(access?.allowed),
-    reason: access?.reason ?? null,
-    free_contacts_remaining: access?.free_contacts_remaining ?? null
-  });
-
-  if (!access?.allowed) {
-    const isRateLimited = access?.reason === "rate_limited";
-
-    return NextResponse.json(
-      {
-        error: isRateLimited
-          ? "Demasiados intentos. Intenta de nuevo en un minuto."
-          : "Ya usaste tus contactos gratis.",
-        reason: access?.reason ?? "payment_required",
-        free_contacts_remaining: access?.free_contacts_remaining ?? 0
-      },
-      { status: isRateLimited ? 429 : 402 }
-    );
-  }
-
-  const { data, error } = await supabase
-    .from("workers")
-    .select("whatsapp_number")
-    .eq("id", workerId)
-    .eq("is_verified", true)
-    .single();
-
-  if (error) {
     return NextResponse.json(
       { error: "No pudimos preparar el contacto." },
       { status: 404 }
@@ -97,12 +92,46 @@ export async function POST(request: Request) {
 
   const url = buildWhatsAppUrl(data.whatsapp_number);
 
+  console.info("Contact API normalized WhatsApp URL:", {
+    workerId,
+    raw_whatsapp_number: data.whatsapp_number,
+    url
+  });
+
+  if (!data.is_verified) {
+    console.info("Contact API access decision:", {
+      workerId,
+      allowed: false,
+      blocked: true,
+      reason: "worker_not_verified"
+    });
+
+    return NextResponse.json(
+      { error: "Este trabajador todavía no está aprobado." },
+      { status: 403 }
+    );
+  }
+
   if (!url) {
+    console.info("Contact API access decision:", {
+      workerId,
+      allowed: false,
+      blocked: true,
+      reason: "missing_whatsapp_url"
+    });
+
     return NextResponse.json(
       { error: "Este trabajador no tiene WhatsApp disponible." },
       { status: 404 }
     );
   }
+
+  console.info("Contact API access decision:", {
+    workerId,
+    allowed: true,
+    blocked: false,
+    reason: "temporary_verified_worker_bypass"
+  });
 
   return NextResponse.json({
     url
