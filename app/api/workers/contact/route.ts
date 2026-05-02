@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { upsertEmployerSession } from "@/lib/employer-sessions";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
-
-const WORKER_CONTACT_MESSAGE =
-  "Hola, vi tu perfil en ListoRD. ¿Estás disponible hoy para trabajar?";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 export async function POST(request: Request) {
   const supabase = getSupabaseAdminClient();
@@ -97,18 +95,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const phone = data.whatsapp_number?.replace(/\D/g, "");
+  const url = buildWhatsAppUrl(data.whatsapp_number);
 
-  if (!phone) {
+  if (!url) {
     return NextResponse.json(
       { error: "Este trabajador no tiene WhatsApp disponible." },
       { status: 404 }
     );
   }
 
-  const message = encodeURIComponent(WORKER_CONTACT_MESSAGE);
-
   return NextResponse.json({
-    url: `https://wa.me/${phone}?text=${message}`
+    url
   });
 }

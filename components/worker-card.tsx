@@ -5,12 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import { getBrowserSessionId, trackEvent } from "@/lib/analytics";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import type { Worker } from "@/lib/types";
+import { buildWhatsAppUrl, isValidWhatsAppUrl } from "@/lib/whatsapp";
 
 const ADMIN_WHATSAPP_PHONE =
   process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE?.replace(/\D/g, "") ||
   "18090000000";
-const WHATSAPP_PAYMENT_MESSAGE =
-  "Hola, quiero pagar acceso a ListoRD por transferencia.";
 const CONTACT_ERROR_MESSAGE =
   "No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo.";
 const PAYMENT_ERROR_MESSAGE =
@@ -174,9 +173,14 @@ export function WorkerCard({
   }
 
   function handleWhatsAppPayment() {
-    const message = encodeURIComponent(WHATSAPP_PAYMENT_MESSAGE);
-    window.location.href =
-      `https://wa.me/${ADMIN_WHATSAPP_PHONE}?text=${message}`;
+    const url = buildWhatsAppUrl(ADMIN_WHATSAPP_PHONE);
+
+    if (!url || !isValidWhatsAppUrl(url)) {
+      setPaymentError(PAYMENT_ERROR_MESSAGE);
+      return;
+    }
+
+    window.open(url, "_blank");
   }
 
   async function redirectToWhatsApp(
@@ -225,12 +229,14 @@ export function WorkerCard({
         return;
       }
 
-      if (!response.ok || !data.url) {
+      const contactUrl = data.url;
+
+      if (!response.ok || !contactUrl || !isValidWhatsAppUrl(contactUrl)) {
         setContactError(CONTACT_ERROR_MESSAGE);
         return;
       }
 
-      window.location.href = data.url;
+      window.open(contactUrl, "_blank");
     } catch {
       setContactError(CONTACT_ERROR_MESSAGE);
     }
