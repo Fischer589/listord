@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { getPublicEnv } from "./env";
+import { getPublicEnvDiagnostics } from "./env";
 import { getSupabaseClient } from "./supabase";
 import type { Worker } from "./types";
 
@@ -26,6 +26,8 @@ export type WorkersResult =
     };
 
 export type HomepageWorkerDiagnostics = {
+  hasNextPublicSupabaseUrl: boolean;
+  hasNextPublicSupabaseAnonKey: boolean;
   supabaseUrlHost: string;
   totalWorkerCount: number;
   verifiedWorkerCount: number;
@@ -66,20 +68,6 @@ type SupabaseErrorDetails = {
   hint?: string;
 };
 
-function getSupabaseUrlHost() {
-  const publicEnv = getPublicEnv();
-
-  if (!publicEnv.isConfigured) {
-    return "not configured";
-  }
-
-  try {
-    return new URL(publicEnv.env.supabaseUrl).host;
-  } catch {
-    return "invalid URL";
-  }
-}
-
 export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
   const result = await getWorkersResult(filters);
 
@@ -92,12 +80,14 @@ export async function getWorkersResult(
   noStore();
 
   const supabase = getSupabaseClient();
-  const supabaseUrlHost = getSupabaseUrlHost();
+  const publicEnvDiagnostics = getPublicEnvDiagnostics();
+  const supabaseUrlHost = publicEnvDiagnostics.supabaseUrlHost;
 
-  console.info("Homepage workers Supabase URL host:", supabaseUrlHost);
+  console.info("Homepage workers Supabase diagnostics:", publicEnvDiagnostics);
 
   if (!supabase) {
     const diagnostics = {
+      ...publicEnvDiagnostics,
       supabaseUrlHost,
       totalWorkerCount: 0,
       verifiedWorkerCount: 0,
@@ -123,7 +113,11 @@ export async function getWorkersResult(
     if (error) {
       logHomepageWorkerQueryError(error);
 
-      const diagnostics = getErrorDiagnostics(supabaseUrlHost, error);
+      const diagnostics = getErrorDiagnostics(
+        publicEnvDiagnostics,
+        supabaseUrlHost,
+        error
+      );
 
       return {
         ok: false,
@@ -141,6 +135,7 @@ export async function getWorkersResult(
     }));
     const verifiedWorkerCount = workers.length;
     const diagnostics = {
+      ...publicEnvDiagnostics,
       supabaseUrlHost,
       totalWorkerCount: verifiedWorkerCount,
       verifiedWorkerCount,
@@ -161,7 +156,11 @@ export async function getWorkersResult(
     const normalizedError = normalizeUnknownError(error);
     logHomepageWorkerQueryError(normalizedError);
 
-    const diagnostics = getErrorDiagnostics(supabaseUrlHost, normalizedError);
+    const diagnostics = getErrorDiagnostics(
+      publicEnvDiagnostics,
+      supabaseUrlHost,
+      normalizedError
+    );
 
     return {
       ok: false,
@@ -174,10 +173,12 @@ export async function getWorkersResult(
 }
 
 function getErrorDiagnostics(
+  publicEnvDiagnostics: ReturnType<typeof getPublicEnvDiagnostics>,
   supabaseUrlHost: string,
   error: SupabaseErrorDetails
 ): HomepageWorkerDiagnostics {
   return {
+    ...publicEnvDiagnostics,
     supabaseUrlHost,
     totalWorkerCount: 0,
     verifiedWorkerCount: 0,

@@ -7,6 +7,12 @@ type PublicEnvResult =
   | { isConfigured: true; env: PublicEnv }
   | { isConfigured: false; reason: string };
 
+export type PublicEnvDiagnostics = {
+  hasNextPublicSupabaseUrl: boolean;
+  hasNextPublicSupabaseAnonKey: boolean;
+  supabaseUrlHost: string;
+};
+
 export function getPublicEnv(): PublicEnvResult {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
@@ -34,14 +40,6 @@ export function getPublicEnv(): PublicEnvResult {
     };
   }
 
-  if (looksLikeServiceRoleKey(supabaseAnonKey)) {
-    return {
-      isConfigured: false,
-      reason:
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY no puede ser una service role key."
-    };
-  }
-
   return {
     isConfigured: true,
     env: {
@@ -51,20 +49,25 @@ export function getPublicEnv(): PublicEnvResult {
   };
 }
 
-function looksLikeServiceRoleKey(key: string) {
-  const parts = key.split(".");
-  if (parts.length < 2) {
-    return false;
+export function getPublicEnvDiagnostics(): PublicEnvDiagnostics {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+
+  return {
+    hasNextPublicSupabaseUrl: Boolean(supabaseUrl),
+    hasNextPublicSupabaseAnonKey: Boolean(supabaseAnonKey),
+    supabaseUrlHost: getSupabaseUrlHost(supabaseUrl)
+  };
+}
+
+function getSupabaseUrlHost(supabaseUrl: string | undefined) {
+  if (!supabaseUrl) {
+    return "not configured";
   }
 
   try {
-    const payload = JSON.parse(
-      Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64")
-        .toString("utf8")
-    ) as { role?: string };
-
-    return payload.role === "service_role";
+    return new URL(supabaseUrl).host;
   } catch {
-    return false;
+    return "invalid URL";
   }
 }

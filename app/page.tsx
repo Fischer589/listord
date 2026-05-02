@@ -100,6 +100,22 @@ export default async function Home({
                 </p>
                 <dl className="mt-2 grid gap-1">
                   <div>
+                    <dt className="inline font-black">
+                      has NEXT_PUBLIC_SUPABASE_URL:{" "}
+                    </dt>
+                    <dd className="inline">
+                      {String(diagnostics.hasNextPublicSupabaseUrl)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="inline font-black">
+                      has NEXT_PUBLIC_SUPABASE_ANON_KEY:{" "}
+                    </dt>
+                    <dd className="inline">
+                      {String(diagnostics.hasNextPublicSupabaseAnonKey)}
+                    </dd>
+                  </div>
+                  <div>
                     <dt className="inline font-black">Supabase host: </dt>
                     <dd className="inline">{diagnostics.supabaseUrlHost}</dd>
                   </div>
