@@ -31,7 +31,8 @@ const HOMEPAGE_WORKER_SELECT = `
   whatsapp_number,
   work_style,
   desired_income,
-  short_intro
+  short_intro,
+  photo_url
 `;
 
 type HomepageWorkerRow = Pick<
@@ -43,6 +44,7 @@ type HomepageWorkerRow = Pick<
   | "work_style"
   | "desired_income"
   | "short_intro"
+  | "photo_url"
 >;
 
 type SupabaseErrorDetails = {

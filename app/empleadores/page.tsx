@@ -15,7 +15,7 @@ export default function EmployersPage() {
               Consigue trabajadores mas rapido
             </h1>
             <p className="mt-3 max-w-xl leading-7 text-black/70">
-              Puedes navegar gratis y usar 2 contactos sin pagar. El acceso de
+              Puedes navegar gratis y usar 1 contacto diario sin pagar. El acceso de
               pago desbloquea WhatsApp instantaneo, prioridad y senales de
               confianza sin bloquear empleo.
             </p>
@@ -43,7 +43,7 @@ export default function EmployersPage() {
 
         <section className="mt-8 grid gap-3 sm:grid-cols-3">
           <TrustCard title="No bloqueamos empleo" text="El pago compra velocidad y prioridad, no permiso para trabajar." />
-          <TrustCard title="Gratis para empezar" text="2 contactos gratis ayudan a validar la necesidad antes de pagar." />
+          <TrustCard title="Gratis para empezar" text="1 contacto gratis al día ayuda a validar la necesidad antes de pagar." />
           <TrustCard title="Confianza visible" text="La reputacion se basa en presentarse, pagar y responder." />
         </section>
       </main>

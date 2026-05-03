@@ -1,7 +1,45 @@
 import { NextResponse } from "next/server";
 import { upsertEmployerSession } from "@/lib/employer-sessions";
+import { getActivePremiumAccess } from "@/lib/premium-access";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+
+const FREE_CONTACTS_PER_DAY = 1;
+
+function getTodayStartIso() {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  ).toISOString();
+}
+
+function logContactAccessDecision({
+  workerId,
+  browserSessionId,
+  freeContactCount,
+  premium,
+  paywallTriggered,
+  workerUrlReturned,
+  reason
+}: {
+  workerId: string;
+  browserSessionId: string;
+  freeContactCount: number;
+  premium: boolean;
+  paywallTriggered: boolean;
+  workerUrlReturned: boolean;
+  reason: string;
+}) {
+  console.info("Contact API paywall decision:", {
+    workerId,
+    browserSessionId,
+    free_contact_count: freeContactCount,
+    premium,
+    paywall_triggered: paywallTriggered,
+    worker_url_returned: workerUrlReturned,
+    reason
+  });
+}
 
 export async function POST(request: Request) {
   const supabase = getSupabaseAdminClient();
@@ -21,10 +59,6 @@ export async function POST(request: Request) {
   const workerId = body?.workerId?.trim();
   const browserSessionId = body?.browser_session_id?.trim();
   const whatsappNumber = body?.whatsapp_number?.trim();
-
-  console.info("Contact API workerId received:", {
-    workerId: workerId || null
-  });
 
   if (!workerId) {
     return NextResponse.json(
@@ -54,15 +88,18 @@ export async function POST(request: Request) {
   console.info("Contact API worker lookup:", {
     workerId,
     worker_found: Boolean(data),
-    raw_whatsapp_number: data?.whatsapp_number ?? null,
+    has_whatsapp_number: Boolean(data?.whatsapp_number?.trim()),
     is_verified: data?.is_verified ?? null
   });
 
   if (error) {
-    console.info("Contact API access decision:", {
+    logContactAccessDecision({
       workerId,
-      allowed: false,
-      blocked: true,
+      browserSessionId,
+      freeContactCount: 0,
+      premium: false,
+      paywallTriggered: false,
+      workerUrlReturned: false,
       reason: "worker_lookup_error"
     });
 
@@ -73,14 +110,13 @@ export async function POST(request: Request) {
   }
 
   if (!data) {
-    console.info("Contact API normalized WhatsApp URL:", {
+    logContactAccessDecision({
       workerId,
-      url: null
-    });
-    console.info("Contact API access decision:", {
-      workerId,
-      allowed: false,
-      blocked: true,
+      browserSessionId,
+      freeContactCount: 0,
+      premium: false,
+      paywallTriggered: false,
+      workerUrlReturned: false,
       reason: "worker_not_found"
     });
 
@@ -92,17 +128,14 @@ export async function POST(request: Request) {
 
   const url = buildWhatsAppUrl(data.whatsapp_number);
 
-  console.info("Contact API normalized WhatsApp URL:", {
-    workerId,
-    raw_whatsapp_number: data.whatsapp_number,
-    url
-  });
-
   if (!data.is_verified) {
-    console.info("Contact API access decision:", {
+    logContactAccessDecision({
       workerId,
-      allowed: false,
-      blocked: true,
+      browserSessionId,
+      freeContactCount: 0,
+      premium: false,
+      paywallTriggered: false,
+      workerUrlReturned: false,
       reason: "worker_not_verified"
     });
 
@@ -113,10 +146,13 @@ export async function POST(request: Request) {
   }
 
   if (!url) {
-    console.info("Contact API access decision:", {
+    logContactAccessDecision({
       workerId,
-      allowed: false,
-      blocked: true,
+      browserSessionId,
+      freeContactCount: 0,
+      premium: false,
+      paywallTriggered: false,
+      workerUrlReturned: false,
       reason: "missing_whatsapp_url"
     });
 
@@ -126,14 +162,107 @@ export async function POST(request: Request) {
     );
   }
 
-  console.info("Contact API access decision:", {
+  const premiumAccess = await getActivePremiumAccess(browserSessionId).catch(
+    (premiumError) => {
+      console.warn("Contact API premium lookup failed.", {
+        workerId,
+        browserSessionId,
+        message:
+          premiumError instanceof Error
+            ? premiumError.message
+            : String(premiumError)
+      });
+      return null;
+    }
+  );
+  const isPremium = Boolean(premiumAccess);
+
+  const todayStartIso = getTodayStartIso();
+  const { count: dailyContactCount, error: countError } = await supabase
+    .from("contact_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("browser_session_id", browserSessionId)
+    .gte("created_at", todayStartIso);
+
+  if (countError) {
+    logContactAccessDecision({
+      workerId,
+      browserSessionId,
+      freeContactCount: 0,
+      premium: isPremium,
+      paywallTriggered: false,
+      workerUrlReturned: false,
+      reason: "contact_count_error"
+    });
+
+    return NextResponse.json(
+      { error: "No pudimos preparar el contacto." },
+      { status: 500 }
+    );
+  }
+
+  const freeContactCount = dailyContactCount ?? 0;
+
+  if (!isPremium && freeContactCount >= FREE_CONTACTS_PER_DAY) {
+    logContactAccessDecision({
+      workerId,
+      browserSessionId,
+      freeContactCount,
+      premium: false,
+      paywallTriggered: true,
+      workerUrlReturned: false,
+      reason: "paywall_required"
+    });
+
+    return NextResponse.json(
+      {
+        error: "Ya usaste tu contacto gratis de hoy.",
+        reason: "paywall_required",
+        free_contacts_remaining: 0
+      },
+      { status: 402 }
+    );
+  }
+
+  const { error: attemptError } = await supabase
+    .from("contact_attempts")
+    .insert({
+      browser_session_id: browserSessionId,
+      worker_id: workerId
+    });
+
+  if (attemptError) {
+    logContactAccessDecision({
+      workerId,
+      browserSessionId,
+      freeContactCount,
+      premium: isPremium,
+      paywallTriggered: false,
+      workerUrlReturned: false,
+      reason: "contact_attempt_insert_error"
+    });
+
+    return NextResponse.json(
+      { error: "No pudimos preparar el contacto." },
+      { status: 500 }
+    );
+  }
+
+  logContactAccessDecision({
     workerId,
-    allowed: true,
-    blocked: false,
-    reason: "temporary_verified_worker_bypass"
+    browserSessionId,
+    freeContactCount: isPremium ? freeContactCount : freeContactCount + 1,
+    premium: isPremium,
+    paywallTriggered: false,
+    workerUrlReturned: true,
+    reason: isPremium ? "premium" : "free_contact"
   });
 
   return NextResponse.json({
-    url
+    url,
+    reason: isPremium ? "premium" : "free_contact",
+    free_contacts_remaining: isPremium
+      ? null
+      : Math.max(0, FREE_CONTACTS_PER_DAY - freeContactCount - 1)
   });
 }

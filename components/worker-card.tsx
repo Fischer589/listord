@@ -219,11 +219,15 @@ export function WorkerCard({
         body: data
       });
 
-      if (response.status === 402 || data.reason === "payment_required") {
+      if (
+        response.status === 402 ||
+        data.reason === "paywall_required" ||
+        data.reason === "payment_required"
+      ) {
         try {
           trackEvent("paywall_open", {
             worker_id: selectedWorker.id,
-            reason: data.reason ?? "payment_required"
+            reason: data.reason ?? "paywall_required"
           });
         } catch (error) {
           console.warn("Paywall analytics failed.", {
@@ -237,7 +241,7 @@ export function WorkerCard({
       const contactUrl = data.url;
 
       if (!response.ok || !contactUrl || !isValidWhatsAppUrl(contactUrl)) {
-        setContactError(data.error || data.reason || CONTACT_ERROR_MESSAGE);
+        setContactError(data.error || CONTACT_ERROR_MESSAGE);
         return;
       }
 
@@ -355,7 +359,7 @@ export function WorkerCard({
                     Habla con trabajadores ahora
                   </h3>
                   <p className="mt-2 text-sm font-bold text-black/65">
-                    Ya usaste tus 2 contactos gratis
+                    Ya usaste tu contacto gratis de hoy
                   </p>
                   <p className="mt-1 text-sm font-black text-hoja">
                     Solo RD$6 al día

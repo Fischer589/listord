@@ -3,6 +3,10 @@ import { revalidatePath } from "next/cache";
 import { AppHeader } from "@/components/app-header";
 import { WorkerRegistrationForm } from "@/components/worker-registration-form";
 import type { WorkStyle } from "@/lib/types";
+import {
+  normalizeWhatsAppNumber,
+  uploadWorkerPhoto
+} from "@/lib/worker-profile";
 
 export type WorkerRegistrationActionState = {
   success?: true;
@@ -175,6 +179,32 @@ async function submitWorkerRegistration(
     };
   }
 
+  const normalizedWhatsAppNumber =
+    normalizeWhatsAppNumber(insertPayload.whatsapp_number) ||
+    insertPayload.whatsapp_number.replace(/\D/g, "") ||
+    data.id;
+  const photoUrl = await uploadWorkerPhoto(
+    supabase,
+    formData.get("profile_photo"),
+    normalizedWhatsAppNumber
+  );
+
+  if (photoUrl) {
+    const { error: photoUpdateError } = await supabase
+      .from("workers")
+      .update({ photo_url: photoUrl })
+      .eq("id", data.id);
+
+    if (photoUpdateError) {
+      console.warn("Worker registration photo URL update failed.", {
+        workerId: data.id,
+        code: photoUpdateError.code,
+        message: photoUpdateError.message
+      });
+    }
+  }
+
+  revalidatePath("/");
   revalidatePath("/admin/workers");
 
   return {
