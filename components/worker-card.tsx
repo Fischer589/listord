@@ -15,6 +15,13 @@ const CONTACT_ERROR_MESSAGE =
 const PAYMENT_ERROR_MESSAGE =
   "No pudimos iniciar el pago. Intenta de nuevo o escríbenos por WhatsApp.";
 
+type ContactDebugState = {
+  browser_session_id: string;
+  free_contact_count: number | null;
+  premium_status: string;
+  paywall_required: boolean | null;
+};
+
 function getInitials(name: string) {
   const initials = name
     .split(/\s+/)
@@ -45,11 +52,21 @@ export function WorkerCard({
   const [employerWhatsAppNumber, setEmployerWhatsAppNumber] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const [contactError, setContactError] = useState("");
+  const [contactDebug, setContactDebug] = useState<ContactDebugState>({
+    browser_session_id: "",
+    free_contact_count: null,
+    premium_status: "unknown",
+    paywall_required: null
+  });
   const cardRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     try {
-      getBrowserSessionId();
+      const browserSessionId = getBrowserSessionId();
+      setContactDebug((debug) => ({
+        ...debug,
+        browser_session_id: browserSessionId
+      }));
     } catch (error) {
       console.warn("Browser session analytics setup failed.", {
         name: error instanceof Error ? error.name : "UnknownError"
@@ -204,6 +221,10 @@ export function WorkerCard({
         error?: string;
         reason?: string;
         free_contacts_remaining?: number;
+        browser_session_id?: string;
+        free_contact_count?: number;
+        premium_status?: string;
+        paywall_required?: boolean;
       };
 
       try {
@@ -217,6 +238,21 @@ export function WorkerCard({
       console.info("Contact API response:", {
         status: response.status,
         body: data
+      });
+
+      setContactDebug({
+        browser_session_id: data.browser_session_id ?? browserSessionId,
+        free_contact_count:
+          typeof data.free_contact_count === "number"
+            ? data.free_contact_count
+            : null,
+        premium_status: data.premium_status ?? "unknown",
+        paywall_required:
+          typeof data.paywall_required === "boolean"
+            ? data.paywall_required
+            : response.status === 402 ||
+              data.reason === "paywall_required" ||
+              data.reason === "payment_required"
       });
 
       if (
@@ -340,6 +376,22 @@ export function WorkerCard({
               {contactError}
             </p>
           )}
+          <div className="mt-2 rounded-md border border-black/10 bg-black/[0.03] p-2 text-left text-[11px] font-bold leading-5 text-black/65">
+            <div>browser_session_id: {contactDebug.browser_session_id || "missing"}</div>
+            <div>
+              free_contact_count:{" "}
+              {contactDebug.free_contact_count === null
+                ? "unknown"
+                : contactDebug.free_contact_count}
+            </div>
+            <div>premium_status: {contactDebug.premium_status}</div>
+            <div>
+              paywall_required:{" "}
+              {contactDebug.paywall_required === null
+                ? "unknown"
+                : String(contactDebug.paywall_required)}
+            </div>
+          </div>
         </div>
 
         {showPaywall && (

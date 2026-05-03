@@ -41,6 +41,25 @@ function logContactAccessDecision({
   });
 }
 
+function contactDebugPayload({
+  browserSessionId,
+  freeContactCount,
+  premium,
+  paywallRequired
+}: {
+  browserSessionId: string;
+  freeContactCount: number;
+  premium: boolean;
+  paywallRequired: boolean;
+}) {
+  return {
+    browser_session_id: browserSessionId,
+    free_contact_count: freeContactCount,
+    premium_status: premium ? "premium" : "unpaid",
+    paywall_required: paywallRequired
+  };
+}
+
 export async function POST(request: Request) {
   const supabase = getSupabaseAdminClient();
 
@@ -218,10 +237,40 @@ export async function POST(request: Request) {
       {
         error: "Ya usaste tu contacto gratis de hoy.",
         reason: "paywall_required",
-        free_contacts_remaining: 0
+        free_contacts_remaining: 0,
+        ...contactDebugPayload({
+          browserSessionId,
+          freeContactCount,
+          premium: false,
+          paywallRequired: true
+        })
       },
       { status: 402 }
     );
+  }
+
+  if (isPremium) {
+    logContactAccessDecision({
+      workerId,
+      browserSessionId,
+      freeContactCount,
+      premium: true,
+      paywallTriggered: false,
+      workerUrlReturned: true,
+      reason: "premium"
+    });
+
+    return NextResponse.json({
+      url,
+      reason: "premium",
+      free_contacts_remaining: null,
+      ...contactDebugPayload({
+        browserSessionId,
+        freeContactCount,
+        premium: true,
+        paywallRequired: false
+      })
+    });
   }
 
   const { error: attemptError } = await supabase
@@ -251,18 +300,25 @@ export async function POST(request: Request) {
   logContactAccessDecision({
     workerId,
     browserSessionId,
-    freeContactCount: isPremium ? freeContactCount : freeContactCount + 1,
-    premium: isPremium,
+    freeContactCount: freeContactCount + 1,
+    premium: false,
     paywallTriggered: false,
     workerUrlReturned: true,
-    reason: isPremium ? "premium" : "free_contact"
+    reason: "free_contact"
   });
 
   return NextResponse.json({
     url,
-    reason: isPremium ? "premium" : "free_contact",
-    free_contacts_remaining: isPremium
-      ? null
-      : Math.max(0, FREE_CONTACTS_PER_DAY - freeContactCount - 1)
+    reason: "free_contact",
+    free_contacts_remaining: Math.max(
+      0,
+      FREE_CONTACTS_PER_DAY - freeContactCount - 1
+    ),
+    ...contactDebugPayload({
+      browserSessionId,
+      freeContactCount: freeContactCount + 1,
+      premium: false,
+      paywallRequired: false
+    })
   });
 }

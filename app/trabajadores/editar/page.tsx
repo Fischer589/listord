@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -97,6 +98,52 @@ async function findWorkerByEditToken(token?: string) {
   return (data as EditableWorker | null) ?? null;
 }
 
+async function findWorkerByWhatsAppNumber(whatsappNumber?: string) {
+  const normalizedWhatsAppNumber = normalizeWhatsAppNumber(
+    whatsappNumber?.trim() || ""
+  );
+
+  if (!normalizedWhatsAppNumber) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    console.warn("Worker edit link lookup skipped: Supabase admin client unavailable.");
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("workers")
+    .select("edit_token, whatsapp_number")
+    .not("whatsapp_number", "is", null);
+
+  if (error) {
+    console.warn("Worker edit link lookup failed.", {
+      code: error.code
+    });
+    return null;
+  }
+
+  const worker = (data ?? []).find((row) => {
+    const existingNumber =
+      typeof row.whatsapp_number === "string"
+        ? normalizeWhatsAppNumber(row.whatsapp_number)
+        : null;
+
+    return existingNumber === normalizedWhatsAppNumber;
+  });
+
+  if (!worker?.edit_token || !isValidEditToken(worker.edit_token)) {
+    return null;
+  }
+
+  return {
+    editToken: worker.edit_token
+  };
+}
+
 async function updateWorkerProfile(formData: FormData) {
   "use server";
 
@@ -186,7 +233,7 @@ async function updateWorkerProfile(formData: FormData) {
     normalizedWhatsAppNumber
   );
 
-  const profileContentChanged =
+  const majorProfileFieldsChanged =
     currentWorker.full_name !== fullName ||
     currentWorker.city !== city ||
     normalizeWhatsAppNumber(currentWorker.whatsapp_number || "") !==
@@ -195,7 +242,6 @@ async function updateWorkerProfile(formData: FormData) {
     currentWorker.desired_income !== desiredIncome ||
     JSON.stringify(currentWorker.availability || []) !==
       JSON.stringify(availability) ||
-    currentWorker.short_intro !== shortIntro ||
     currentWorker.work_style !== workStyle;
 
   const updatePayload: Record<string, unknown> = {
@@ -213,7 +259,7 @@ async function updateWorkerProfile(formData: FormData) {
     updatePayload.photo_url = photoUrl;
   }
 
-  if (currentWorker.is_verified && (profileContentChanged || photoUrl)) {
+  if (currentWorker.is_verified && majorProfileFieldsChanged) {
     updatePayload.is_verified = false;
   }
 
@@ -244,17 +290,30 @@ async function updateWorkerProfile(formData: FormData) {
     redirect(getEditRedirect(editToken, "error"));
   }
 
+  revalidatePath("/");
+  revalidatePath("/admin/workers");
+
   redirect(getEditRedirect(editToken, "actualizado"));
 }
 
 export default async function EditWorkerPage({
   searchParams
 }: {
-  searchParams: { token?: string; estado?: string };
+  searchParams: { token?: string; estado?: string; whatsapp?: string };
 }) {
   const token = searchParams.token?.trim() || "";
   const state = searchParams.estado;
   const worker = await findWorkerByEditToken(token);
+  const whatsappNumber = searchParams.whatsapp?.trim() || "";
+  const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
+  const editLinkRecovery = !worker
+    ? await findWorkerByWhatsAppNumber(whatsappNumber)
+    : null;
+  const recoveredEditLink = editLinkRecovery
+    ? `/trabajadores/editar?token=${encodeURIComponent(
+        editLinkRecovery.editToken
+      )}`
+    : null;
   const missingProfileQualityFields = worker
     ? getMissingProfileQualityFields(worker)
     : [];
@@ -274,8 +333,8 @@ export default async function EditWorkerPage({
 
         {state === "actualizado" && (
           <div className="mt-5 rounded-lg border border-hoja/30 bg-hoja/10 p-4 font-bold text-ink">
-            Perfil actualizado. Lo revisaremos otra vez y te avisaremos por
-            WhatsApp cuando sea aprobado.
+            Perfil actualizado. Si hiciste cambios importantes, lo revisaremos
+            otra vez y te avisaremos por WhatsApp cuando sea aprobado.
           </div>
         )}
         {state === "incompleto" && (
@@ -310,15 +369,63 @@ export default async function EditWorkerPage({
           </div>
         )}
 
-        {!worker && (
+        {!worker && token && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-red-900">
             <p className="font-bold">Enlace inválido</p>
-            <Link
-              href="/trabajadores/recuperar"
-              className="mt-3 inline-flex tap-target rounded-md bg-ink px-4 py-2 font-black text-white"
-            >
-              Recuperar enlace
-            </Link>
+            <p className="mt-1 text-sm font-semibold">
+              Revisa el enlace o busca tu perfil con tu numero de WhatsApp.
+            </p>
+          </div>
+        )}
+
+        {!worker && (
+          <div className="mt-5 rounded-lg border border-black/10 bg-white p-4 shadow-soft">
+            <p className="font-black text-ink">Busca tu enlace de edicion</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-black/65">
+              Escribe el WhatsApp de tu perfil para recuperar el enlace.
+            </p>
+            <form className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+              <label className="grid gap-1 font-bold">
+                Numero de WhatsApp
+                <input
+                  className="tap-target rounded-md border border-black/15 px-3"
+                  name="whatsapp"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  defaultValue={whatsappNumber}
+                  placeholder="8091234567 o +12675160983"
+                  required
+                />
+              </label>
+              <button className="tap-target self-end rounded-md bg-ink px-4 py-3 font-black text-white">
+                Buscar
+              </button>
+            </form>
+            {whatsappNumber && !normalizedWhatsAppNumber && (
+              <p className="mt-3 rounded-md bg-red-50 p-3 text-sm font-bold text-red-900">
+                Usa un numero de WhatsApp valido con al menos 10 digitos.
+              </p>
+            )}
+            {normalizedWhatsAppNumber && (
+              <div className="mt-4 rounded-md border border-hoja/25 bg-hoja/10 p-3">
+                <p className="font-bold text-ink">
+                  Te enviaremos o mostraremos tu enlace de edición.
+                </p>
+                {recoveredEditLink ? (
+                  <Link
+                    href={recoveredEditLink}
+                    className="mt-3 inline-flex tap-target rounded-md bg-hoja px-4 py-2 font-black text-white"
+                  >
+                    Abrir enlace de edicion
+                  </Link>
+                ) : (
+                  <p className="mt-2 text-sm font-semibold text-black/65">
+                    Si existe un perfil con ese WhatsApp, podremos ayudarte a
+                    recuperar el enlace.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -355,11 +462,11 @@ export default async function EditWorkerPage({
                 className="rounded-md border border-black/15 bg-white px-3 py-2 text-sm font-semibold"
                 name="profile_photo"
                 type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
+                accept="image/png,image/jpeg,image/webp"
               />
               <span className="text-xs font-semibold text-black/55">
-                Si subes una nueva foto, reemplaza la anterior despues de
-                guardar.
+                PNG, JPG o WEBP. Maximo 5 MB. Si falla la subida, conservamos
+                la foto anterior.
               </span>
             </label>
 
@@ -451,7 +558,8 @@ export default async function EditWorkerPage({
               Guardar cambios
             </button>
             <p className="text-xs font-semibold text-black/55">
-              Al guardar, tu perfil queda pendiente de aprobacion otra vez.
+              Solo cambios importantes pueden dejar el perfil pendiente de
+              aprobacion otra vez.
             </p>
             </form>
           </>

@@ -65,10 +65,10 @@ export function WorkerRegistrationForm({
             className="rounded-md border border-black/15 bg-white px-3 py-2 text-sm font-semibold"
             name="profile_photo"
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
+            accept="image/png,image/jpeg,image/webp"
           />
           <span className="text-xs font-semibold text-black/55">
-            PNG, JPG, WEBP o GIF. Maximo 5 MB.
+            PNG, JPG o WEBP. Maximo 5 MB.
           </span>
         </label>
 

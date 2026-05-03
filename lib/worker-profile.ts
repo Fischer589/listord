@@ -38,8 +38,7 @@ export const maxPhotoSizeBytes = 5 * 1024 * 1024;
 export const allowedPhotoTypes = new Set([
   "image/jpeg",
   "image/png",
-  "image/webp",
-  "image/gif"
+  "image/webp"
 ]);
 
 export function getText(formData: FormData, key: string) {
