@@ -91,7 +91,6 @@ async function approveLocalTestWorker() {
 type AdminWorkersResult = {
   approvedCount: number;
   pendingCount: number;
-  supabaseProjectRef: string;
   workers: Worker[];
 };
 
@@ -113,33 +112,15 @@ function getWorkerCounts(workers: Worker[]) {
   );
 }
 
-function getSupabaseProjectRef() {
-  const supabaseUrl = (
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
-  )?.trim();
-
-  if (!supabaseUrl) {
-    return "sin-configurar";
-  }
-
-  try {
-    return new URL(supabaseUrl).hostname.split(".")[0] || "desconocido";
-  } catch {
-    return "url-invalida";
-  }
-}
-
 async function getAdminWorkers(): Promise<AdminWorkersResult> {
   noStore();
 
   const supabase = getSupabaseAdminClient();
-  const supabaseProjectRef = getSupabaseProjectRef();
 
   if (!supabase) {
     return {
       approvedCount: 0,
       pendingCount: 0,
-      supabaseProjectRef,
       workers: []
     };
   }
@@ -186,7 +167,6 @@ async function getAdminWorkers(): Promise<AdminWorkersResult> {
     return {
       approvedCount: 0,
       pendingCount: 0,
-      supabaseProjectRef,
       workers: []
     };
   }
@@ -204,14 +184,12 @@ async function getAdminWorkers(): Promise<AdminWorkersResult> {
   return {
     approvedCount: approvedCount ?? fallbackCounts.approvedCount,
     pendingCount: pendingCount ?? fallbackCounts.pendingCount,
-    supabaseProjectRef,
     workers
   };
 }
 
 export default async function AdminWorkersPage() {
-  const { approvedCount, pendingCount, supabaseProjectRef, workers } =
-    await getAdminWorkers();
+  const { approvedCount, pendingCount, workers } = await getAdminWorkers();
   const showLocalTestWorkerAction = process.env.NODE_ENV !== "production";
 
   return (
@@ -226,13 +204,9 @@ export default async function AdminWorkersPage() {
             <h1 className="mt-2 text-3xl font-black text-ink">
               Trabajadores registrados
             </h1>
-            <p className="mt-2 font-bold text-black/60">
-              {workers.length} perfiles cargados, ordenados del mas nuevo al
-              mas antiguo.
-            </p>
           </div>
 
-          <div className="mb-5 grid gap-3 md:grid-cols-3">
+          <div className="mb-5 grid gap-3 md:grid-cols-2">
             <div className="rounded-xl border border-black/10 bg-white p-4 shadow-soft">
               <p className="text-xs font-black uppercase tracking-wide text-black/50">
                 Pendientes
@@ -247,17 +221,6 @@ export default async function AdminWorkersPage() {
               </p>
               <p className="mt-1 text-3xl font-black text-ink">
                 {approvedCount}
-              </p>
-            </div>
-            <div className="rounded-xl border border-black/10 bg-white p-4 shadow-soft">
-              <p className="text-xs font-black uppercase tracking-wide text-black/50">
-                Supabase
-              </p>
-              <p className="mt-1 break-all font-black text-ink">
-                {supabaseProjectRef}
-              </p>
-              <p className="mt-1 text-xs font-bold text-black/50">
-                Mismo cliente servidor y env que registro
               </p>
             </div>
           </div>

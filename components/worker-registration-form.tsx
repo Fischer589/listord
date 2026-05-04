@@ -18,6 +18,9 @@ type WorkerRegistrationFormProps = {
 };
 
 const initialState: WorkerRegistrationActionState = {};
+const shareText = encodeURIComponent(
+  "Mira mi perfil en ListoRD 👇\nhttps://listordapp.com\nEstoy registrado en ListoRD para recibir oportunidades de trabajo."
+);
 
 export function WorkerRegistrationForm({
   action,
@@ -30,8 +33,19 @@ export function WorkerRegistrationForm({
   return (
     <>
       {success && (
-        <div className="mt-5 rounded-lg border border-green-200 bg-green-50 p-4 font-bold text-green-900">
-          Registro exitoso
+        <div className="mt-5 grid gap-3 rounded-lg border border-green-200 bg-green-50 p-4 font-bold text-green-900">
+          <p>Registro exitoso</p>
+          <p className="font-semibold">
+            Comparte tu perfil para que más personas te vean.
+          </p>
+          <a
+            href={`https://wa.me/?text=${shareText}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="tap-target inline-flex w-fit items-center justify-center rounded-md bg-ink px-4 py-3 font-black text-white"
+          >
+            Compartir mi perfil
+          </a>
         </div>
       )}
 

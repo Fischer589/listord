@@ -19,6 +19,7 @@ export default async function Home({
 }) {
   const workersResult = await getWorkersResult(searchParams);
   const workers = workersResult.workers;
+  const hasWorkers = workers.length > 0;
 
   return (
     <>
@@ -34,12 +35,26 @@ export default async function Home({
                 Trabajadores listos para trabajar hoy
               </h1>
               <p className="hero-copy">
-                Personas reales, disponibles ahora mismo en tu ciudad. Mira
+                Trabajadores reales, disponibles ahora mismo en tu ciudad. Mira
                 cuánto quieren ganar, cuándo pueden trabajar y qué saben hacer.
               </p>
               <p className="mt-3 text-lg font-bold text-ink">
-                Personas disponibles ahora. Responden en menos de 10 minutos.
+                Trabajadores disponibles ahora. Responden en menos de 10 minutos.
               </p>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/empleadores"
+                  className="tap-target inline-flex items-center justify-center rounded-md bg-ink px-6 py-4 text-base font-black text-white shadow-soft"
+                >
+                  Necesito gente
+                </Link>
+                <Link
+                  href="/trabajadores/registro"
+                  className="tap-target inline-flex items-center justify-center rounded-md bg-white px-6 py-4 text-base font-black text-ink shadow-soft"
+                >
+                  Busco trabajo
+                </Link>
+              </div>
               <div className="mt-5 flex flex-wrap gap-2 text-sm font-black text-ink">
                 <span className="rounded-md bg-white px-3 py-2 shadow-soft">
                   Perfiles verificados
@@ -67,7 +82,7 @@ export default async function Home({
 
         <section className="container filter-section">
           <div className="mb-4 rounded-xl bg-hoja px-4 py-3 text-sm font-black text-white shadow-soft">
-            Personas disponibles ahora. Responden en menos de 10 minutos.
+            Trabajadores disponibles ahora. Responden en menos de 10 minutos.
           </div>
           <FilterBar
             city={searchParams.city}
@@ -84,17 +99,18 @@ export default async function Home({
             <div className="rounded-lg bg-[#f4f1ea] px-3 py-3">Respondió</div>
             <div className="rounded-lg bg-[#f4f1ea] px-3 py-3">Fue contratado</div>
           </div>
-          <div className="section-heading">
-            <div>
-              <h2 className="text-xl font-black">Personas disponibles ahora</h2>
-              <p className="mt-1 text-sm font-bold text-black/55">
-                Quedan pocos trabajadores disponibles hoy
-              </p>
+          {(!workersResult.ok || hasWorkers) && (
+            <div className="section-heading">
+              <div>
+                <h2 className="text-xl font-black">
+                  Trabajadores disponibles ahora
+                </h2>
+                <p className="mt-1 text-sm font-bold text-black/55">
+                  Quedan pocos trabajadores disponibles hoy
+                </p>
+              </div>
             </div>
-            <span className="text-sm font-bold text-black/55">
-              {workers.length} resultados
-            </span>
-          </div>
+          )}
           <div className="worker-grid">
             {!workersResult.ok ? (
               <div className="empty-state md:col-span-2 lg:col-span-3">
@@ -115,24 +131,18 @@ export default async function Home({
                   Intentar de nuevo
                 </Link>
               </div>
-            ) : workers.length > 0 ? (
+            ) : hasWorkers ? (
               workers.map((worker) => (
                 <WorkerCard key={worker.id} worker={worker} />
               ))
             ) : (
               <div className="empty-state md:col-span-2 lg:col-span-3">
-                <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                  Lanzamiento en progreso
-                </p>
                 <h3 className="mt-2 text-2xl font-black text-ink">
-                  Estamos verificando trabajadores reales en tu zona.
+                  Estamos agregando trabajadores verificados en RD.
                 </h3>
                 <p className="mx-auto mt-2 max-w-xl leading-7 text-black/70">
-                  Estamos verificando trabajadores reales. Déjanos saber qué
-                  necesitas y te ayudamos.
-                </p>
-                <p className="mt-4 text-lg font-black text-ink">
-                  ¿Quieres registrarte para aparecer en ListoRD?
+                  ¿Buscas trabajo? Regístrate gratis para aparecer en ListoRD y
+                  recibir oportunidades por WhatsApp.
                 </p>
                 <Link
                   href="/trabajadores/registro"

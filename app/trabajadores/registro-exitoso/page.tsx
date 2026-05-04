@@ -50,7 +50,7 @@ export default async function WorkerRegistrationSuccessPage({
     ? `/trabajadores/editar?token=${encodeURIComponent(editToken)}`
     : "";
   const shareText = encodeURIComponent(
-    "ListoRD esta recibiendo perfiles de trabajadores. Registrate aqui: /trabajadores/registro"
+    "Mira mi perfil en ListoRD 👇\nhttps://listordapp.com\nEstoy registrado en ListoRD para recibir oportunidades de trabajo."
   );
 
   return (
@@ -89,13 +89,15 @@ export default async function WorkerRegistrationSuccessPage({
 
           <div className="mt-5 grid gap-3 rounded-md border border-mango/40 bg-mango/15 p-4">
             <p className="font-bold">
-              Comparte esto con otros que busquen trabajo
+              Comparte tu perfil para que más personas te vean.
             </p>
             <a
               href={`https://wa.me/?text=${shareText}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex tap-target w-fit items-center rounded-md bg-ink px-4 py-3 font-black text-white"
             >
-              Compartir por WhatsApp
+              Compartir mi perfil
             </a>
           </div>
 
