@@ -6,6 +6,7 @@ import {
   upsertPremiumAccess,
   type PremiumPlan
 } from "@/lib/premium-access";
+import { normalizeWhatsAppNumber } from "@/lib/whatsapp";
 
 function getStripeCustomerId(customer: Stripe.Checkout.Session["customer"]) {
   if (!customer) {
@@ -13,6 +14,16 @@ function getStripeCustomerId(customer: Stripe.Checkout.Session["customer"]) {
   }
 
   return typeof customer === "string" ? customer : customer.id;
+}
+
+function getStripeSubscriptionId(
+  subscription: Stripe.Checkout.Session["subscription"]
+) {
+  if (!subscription) {
+    return null;
+  }
+
+  return typeof subscription === "string" ? subscription : subscription.id;
 }
 
 export async function GET(request: Request) {
@@ -53,6 +64,9 @@ export async function GET(request: Request) {
           ? session.client_reference_id.trim()
           : "");
       const requestedBrowserId = browserSessionId || sessionBrowserId;
+      const whatsappNumber = normalizeWhatsAppNumber(
+        session.metadata?.whatsapp_number
+      );
       const isMatchingBrowserSession =
         !browserSessionId || browserSessionId === sessionBrowserId;
 
@@ -67,14 +81,18 @@ export async function GET(request: Request) {
 
         await upsertPremiumAccess({
           browser_session_id: requestedBrowserId,
+          whatsapp_number: whatsappNumber,
           stripe_checkout_session_id: session.id,
           stripe_customer_id: getStripeCustomerId(session.customer),
+          stripe_subscription_id: getStripeSubscriptionId(session.subscription),
           plan: plan as PremiumPlan,
+          status: "active",
           paid_access_until: paidAccessUntil
         });
 
         premiumAccess = {
           browser_session_id: requestedBrowserId,
+          whatsapp_number: whatsappNumber,
           plan: plan as PremiumPlan,
           paid_access_until: paidAccessUntil
         };

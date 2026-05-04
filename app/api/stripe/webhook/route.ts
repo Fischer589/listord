@@ -5,6 +5,7 @@ import {
   upsertPremiumAccess,
   type PremiumPlan
 } from "@/lib/premium-access";
+import { normalizeWhatsAppNumber } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,16 @@ function getStripeCustomerId(customer: Stripe.Checkout.Session["customer"]) {
   }
 
   return typeof customer === "string" ? customer : customer.id;
+}
+
+function getStripeSubscriptionId(
+  subscription: Stripe.Checkout.Session["subscription"]
+) {
+  if (!subscription) {
+    return null;
+  }
+
+  return typeof subscription === "string" ? subscription : subscription.id;
 }
 
 export async function POST(request: Request) {
@@ -65,9 +76,12 @@ export async function POST(request: Request) {
   try {
     await upsertPremiumAccess({
       browser_session_id: session.metadata?.browser_session_id?.trim() || null,
+      whatsapp_number: normalizeWhatsAppNumber(session.metadata?.whatsapp_number),
       stripe_checkout_session_id: session.id,
       stripe_customer_id: getStripeCustomerId(session.customer),
+      stripe_subscription_id: getStripeSubscriptionId(session.subscription),
       plan: plan as PremiumPlan,
+      status: "active",
       paid_access_until: getPaidAccessUntil(plan).toISOString()
     });
 

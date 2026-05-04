@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { upsertEmployerSession } from "@/lib/employer-sessions";
+import { normalizeWhatsAppNumber } from "@/lib/whatsapp";
 
 type CheckoutPlan = "weekly" | "monthly";
 
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
   const plan = body?.plan;
   const browserSessionId = body?.browser_session_id?.trim();
   const clientReferenceId = body?.client_reference_id?.trim();
-  const whatsappNumber = body?.whatsapp_number?.trim();
+  const whatsappNumber = normalizeWhatsAppNumber(body?.whatsapp_number);
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
   const selectedPriceId =
     plan === "weekly" || plan === "monthly"
@@ -86,6 +87,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!whatsappNumber) {
+    return NextResponse.json(
+      { error: "Falta un WhatsApp valido para activar el acceso premium." },
+      { status: 400 }
+    );
+  }
+
   const origin =
     request.headers.get("origin") ||
     nextPublicAppUrl ||
@@ -108,7 +116,8 @@ export async function POST(request: Request) {
       ],
       metadata: {
         plan,
-        browser_session_id: browserSessionId || ""
+        browser_session_id: browserSessionId || "",
+        whatsapp_number: whatsappNumber
       },
       client_reference_id: clientReferenceId || browserSessionId || undefined,
       success_url: `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,

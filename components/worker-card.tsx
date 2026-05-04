@@ -5,7 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import { getBrowserSessionId, trackEvent } from "@/lib/analytics";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import type { Worker } from "@/lib/types";
-import { buildWhatsAppUrl, isValidWhatsAppUrl } from "@/lib/whatsapp";
+import {
+  buildWhatsAppUrl,
+  isValidWhatsAppUrl,
+  normalizeWhatsAppNumber
+} from "@/lib/whatsapp";
 
 const ADMIN_WHATSAPP_PHONE =
   process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE?.replace(/\D/g, "") ||
@@ -14,6 +18,8 @@ const CONTACT_ERROR_MESSAGE =
   "No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo.";
 const PAYMENT_ERROR_MESSAGE =
   "No pudimos iniciar el pago. Intenta de nuevo o escríbenos por WhatsApp.";
+const INVALID_WHATSAPP_MESSAGE =
+  "Escribe un WhatsApp valido para activar tu acceso.";
 
 type ContactDebugState = {
   browser_session_id: string;
@@ -139,8 +145,17 @@ export function WorkerCard({
   };
 
   async function handleStripeCheckout(plan: "weekly" | "monthly") {
-    setCheckoutPlan(plan);
     setPaymentError("");
+    const normalizedEmployerWhatsApp = normalizeWhatsAppNumber(
+      employerWhatsAppNumber
+    );
+
+    if (!normalizedEmployerWhatsApp) {
+      setPaymentError(INVALID_WHATSAPP_MESSAGE);
+      return;
+    }
+
+    setCheckoutPlan(plan);
     let browserSessionId = "";
 
     try {
@@ -162,6 +177,27 @@ export function WorkerCard({
     }
 
     try {
+      const statusResponse = await fetch(
+        `/api/premium/status?browser_session_id=${encodeURIComponent(
+          browserSessionId
+        )}&whatsapp_number=${encodeURIComponent(normalizedEmployerWhatsApp)}`
+      );
+      const statusData = (await statusResponse.json().catch(() => null)) as {
+        premium?: boolean;
+      } | null;
+
+      if (statusResponse.ok && statusData?.premium) {
+        setEmployerWhatsAppNumber(normalizedEmployerWhatsApp);
+        setCheckoutPlan(null);
+        setShowPaywall(false);
+        await redirectToWhatsApp(
+          worker,
+          browserSessionId,
+          normalizedEmployerWhatsApp
+        );
+        return;
+      }
+
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
@@ -171,7 +207,7 @@ export function WorkerCard({
           plan,
           browser_session_id: browserSessionId,
           client_reference_id: browserSessionId,
-          whatsapp_number: employerWhatsAppNumber
+          whatsapp_number: normalizedEmployerWhatsApp
         })
       });
       const data = (await response.json()) as { url?: string; error?: string };
@@ -202,7 +238,8 @@ export function WorkerCard({
 
   async function redirectToWhatsApp(
     selectedWorker: Worker,
-    browserSessionId: string
+    browserSessionId: string,
+    whatsappNumber = employerWhatsAppNumber
   ) {
     try {
       const response = await fetch("/api/workers/contact", {
@@ -213,7 +250,7 @@ export function WorkerCard({
         body: JSON.stringify({
           workerId: selectedWorker.id,
           browser_session_id: browserSessionId,
-          whatsapp_number: employerWhatsAppNumber
+          whatsapp_number: whatsappNumber
         })
       });
       let data: {

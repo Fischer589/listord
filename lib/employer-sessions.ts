@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient } from "./supabase-admin";
+import { normalizeWhatsAppNumber } from "./whatsapp";
 
 export async function upsertEmployerSession({
   browserSessionId,
@@ -19,7 +20,7 @@ export async function upsertEmployerSession({
     return;
   }
 
-  const normalizedWhatsAppNumber = whatsappNumber?.trim();
+  const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
   const payload: {
     browser_session_id: string;
     updated_at: string;

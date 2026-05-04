@@ -1,12 +1,16 @@
 import { getSupabaseAdminClient } from "./supabase-admin";
+import { normalizeWhatsAppNumber } from "./whatsapp";
 
 export type PremiumPlan = "weekly" | "monthly";
 
 export type PremiumAccessRecord = {
   browser_session_id: string | null;
+  whatsapp_number: string | null;
   stripe_checkout_session_id: string;
   stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
   plan: PremiumPlan;
+  status: "active";
   paid_access_until: string;
 };
 
@@ -27,16 +31,37 @@ export async function upsertPremiumAccess(record: PremiumAccessRecord) {
     );
   }
 
+  const normalizedRecord = {
+    ...record,
+    browser_session_id: record.browser_session_id?.trim() || null,
+    whatsapp_number: normalizeWhatsAppNumber(record.whatsapp_number)
+  };
+
   const { error } = await supabase
     .from("premium_access")
-    .upsert(record, { onConflict: "stripe_checkout_session_id" });
+    .upsert(normalizedRecord, { onConflict: "stripe_checkout_session_id" });
 
   if (error) {
     throw new Error(error.message);
   }
 }
 
-export async function getActivePremiumAccess(browserSessionId: string) {
+type PremiumLookup = {
+  browserSessionId?: string | null;
+  whatsappNumber?: string | null;
+};
+
+function normalizePremiumLookup({
+  browserSessionId,
+  whatsappNumber
+}: PremiumLookup) {
+  return {
+    browserSessionId: browserSessionId?.trim() || null,
+    whatsappNumber: normalizeWhatsAppNumber(whatsappNumber)
+  };
+}
+
+export async function getActivePremiumAccess(lookup: PremiumLookup) {
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
@@ -45,10 +70,41 @@ export async function getActivePremiumAccess(browserSessionId: string) {
     );
   }
 
+  const { browserSessionId, whatsappNumber } = normalizePremiumLookup(lookup);
+
+  if (!browserSessionId && !whatsappNumber) {
+    return null;
+  }
+
+  if (browserSessionId) {
+    const { data, error } = await supabase
+      .from("premium_access")
+      .select("plan, paid_access_until, browser_session_id, whatsapp_number")
+      .eq("browser_session_id", browserSessionId)
+      .eq("status", "active")
+      .gt("paid_access_until", new Date().toISOString())
+      .order("paid_access_until", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data) {
+      return data;
+    }
+  }
+
+  if (!whatsappNumber) {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("premium_access")
-    .select("plan, paid_access_until")
-    .eq("browser_session_id", browserSessionId)
+    .select("plan, paid_access_until, browser_session_id, whatsapp_number")
+    .eq("whatsapp_number", whatsappNumber)
+    .eq("status", "active")
     .gt("paid_access_until", new Date().toISOString())
     .order("paid_access_until", { ascending: false })
     .limit(1)
@@ -75,8 +131,9 @@ export async function getPremiumAccessByCheckoutSession(
 
   let query = supabase
     .from("premium_access")
-    .select("plan, paid_access_until, browser_session_id")
+    .select("plan, paid_access_until, browser_session_id, whatsapp_number")
     .eq("stripe_checkout_session_id", stripeCheckoutSessionId)
+    .eq("status", "active")
     .gt("paid_access_until", new Date().toISOString());
 
   if (browserSessionId) {

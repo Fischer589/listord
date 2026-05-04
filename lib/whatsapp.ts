@@ -1,5 +1,25 @@
 const DEFAULT_COUNTRY_CODE = "1";
 
+export function normalizeWhatsAppNumber(value?: string | null) {
+  const rawValue = String(value || "");
+  const trimmedValue = rawValue.trim();
+  const digits = rawValue.replace(/\D/g, "");
+
+  if (digits.length < 10) {
+    return null;
+  }
+
+  if (trimmedValue.startsWith("+")) {
+    return `+${digits}`;
+  }
+
+  if (digits.length === 10) {
+    return `+${DEFAULT_COUNTRY_CODE}${digits}`;
+  }
+
+  return `+${digits}`;
+}
+
 export function normalizeWhatsAppUrlPhoneNumber(value?: string | null) {
   const digits = String(value || "").replace(/[+\s-]/g, "").replace(/\D/g, "");
 

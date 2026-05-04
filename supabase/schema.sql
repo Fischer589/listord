@@ -77,7 +77,7 @@ create table public.employers (
   whatsapp_number text not null,
   is_paid_employer boolean not null default false,
   paid_access_until timestamptz,
-  free_contacts_remaining integer not null default 2 check (free_contacts_remaining >= 0),
+  free_contacts_remaining integer not null default 1 check (free_contacts_remaining >= 0),
   successful_hires_count integer not null default 0 check (successful_hires_count >= 0),
   created_at timestamptz not null default now()
 );
@@ -85,16 +85,19 @@ create table public.employers (
 create table public.premium_access (
   id uuid primary key default gen_random_uuid(),
   browser_session_id text,
+  whatsapp_number text,
   stripe_checkout_session_id text not null unique,
   stripe_customer_id text,
+  stripe_subscription_id text,
   plan text not null check (plan in ('weekly', 'monthly')),
+  status text not null default 'active' check (status in ('active', 'inactive', 'canceled', 'past_due')),
   paid_access_until timestamptz not null,
   created_at timestamptz not null default now()
 );
 
 create table public.browser_sessions (
   id text primary key,
-  free_contacts_remaining integer not null default 2 check (free_contacts_remaining >= 0),
+  free_contacts_remaining integer not null default 1 check (free_contacts_remaining >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -157,6 +160,8 @@ create index workers_rating_idx on public.workers (rating_average desc);
 create index contact_requests_worker_idx on public.contact_requests (worker_id);
 create index contact_requests_outcome_idx on public.contact_requests (outcome);
 create index premium_access_browser_session_idx on public.premium_access (browser_session_id);
+create index premium_access_whatsapp_number_idx on public.premium_access (whatsapp_number);
+create index premium_access_status_idx on public.premium_access (status);
 create index premium_access_paid_until_idx on public.premium_access (paid_access_until);
 create index contact_attempts_session_created_idx on public.contact_attempts (browser_session_id, created_at desc);
 create index employer_sessions_browser_session_idx on public.employer_sessions (browser_session_id);
@@ -303,14 +308,15 @@ begin
     select 1
     from public.premium_access
     where browser_session_id = p_browser_session_id
+      and status = 'active'
       and paid_access_until > now()
   ) then
-    select coalesce(bs.free_contacts_remaining, 2)
+    select coalesce(bs.free_contacts_remaining, 1)
     into remaining_contacts
     from public.browser_sessions bs
     where bs.id = p_browser_session_id;
 
-    return query select true, 'premium', coalesce(remaining_contacts, 2);
+    return query select true, 'premium', coalesce(remaining_contacts, 1);
     return;
   end if;
 

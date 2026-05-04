@@ -4,16 +4,20 @@ import { getActivePremiumAccess } from "@/lib/premium-access";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const browserSessionId = url.searchParams.get("browser_session_id")?.trim();
+  const whatsappNumber = url.searchParams.get("whatsapp_number")?.trim();
 
-  if (!browserSessionId) {
+  if (!browserSessionId && !whatsappNumber) {
     return NextResponse.json(
-      { error: "Falta browser_session_id.", premium: false },
+      { error: "Falta browser_session_id o whatsapp_number.", premium: false },
       { status: 400 }
     );
   }
 
   try {
-    const premiumAccess = await getActivePremiumAccess(browserSessionId);
+    const premiumAccess = await getActivePremiumAccess({
+      browserSessionId,
+      whatsappNumber
+    });
 
     return NextResponse.json({
       premium: Boolean(premiumAccess),

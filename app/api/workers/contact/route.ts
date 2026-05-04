@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { upsertEmployerSession } from "@/lib/employer-sessions";
 import { getActivePremiumAccess } from "@/lib/premium-access";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { buildWhatsAppUrl, normalizeWhatsAppNumber } from "@/lib/whatsapp";
 
 const FREE_CONTACTS_PER_DAY = 1;
 
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   } | null;
   const workerId = body?.workerId?.trim();
   const browserSessionId = body?.browser_session_id?.trim();
-  const whatsappNumber = body?.whatsapp_number?.trim();
+  const whatsappNumber = normalizeWhatsAppNumber(body?.whatsapp_number);
 
   if (!workerId) {
     return NextResponse.json(
@@ -181,7 +181,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const premiumAccess = await getActivePremiumAccess(browserSessionId).catch(
+  const premiumAccess = await getActivePremiumAccess({
+    browserSessionId,
+    whatsappNumber
+  }).catch(
     (premiumError) => {
       console.warn("Contact API premium lookup failed.", {
         workerId,

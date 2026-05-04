@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient } from "./supabase-admin";
 import type { WorkStyle } from "./types";
+import { normalizeWhatsAppNumber as normalizeSharedWhatsAppNumber } from "./whatsapp";
 
 export const workStyleLabelToValue = {
   Estructurado: "structured",
@@ -57,22 +58,7 @@ export function getList(formData: FormData, key: string) {
 }
 
 export function normalizeWhatsAppNumber(value: string) {
-  const trimmedValue = value.trim();
-  const digits = value.replace(/\D/g, "");
-
-  if (digits.length < 10) {
-    return null;
-  }
-
-  if (trimmedValue.startsWith("+")) {
-    return `+${digits}`;
-  }
-
-  if (digits.length === 10) {
-    return `+1${digits}`;
-  }
-
-  return `+${digits}`;
+  return normalizeSharedWhatsAppNumber(value);
 }
 
 export function isValidEditToken(value: string) {
