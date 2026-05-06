@@ -59,7 +59,7 @@ export default function RootLayout({
           <AnalyticsTracker />
         </Suspense>
         {children}
-        <footer className="border-t border-black/10 bg-white py-6 text-center text-sm font-bold text-black/60">
+        <footer className="border-t border-hoja/15 bg-card py-7 text-center text-sm font-bold text-ink/60">
           <p>© 2026 ListoRD</p>
           <nav className="mt-3 flex flex-wrap items-center justify-center gap-4 text-ink">
             <Link href="/trabajadores/editar">Editar mi perfil</Link>

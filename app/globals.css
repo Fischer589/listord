@@ -12,9 +12,10 @@
 
 body {
   margin: 0;
-  background: #fbfaf7;
-  color: #151515;
+  background: #f5f2ea;
+  color: #1f1f1c;
   overflow-x: hidden;
+  text-rendering: optimizeLegibility;
 }
 
 button,
@@ -23,6 +24,36 @@ select,
 textarea {
   font: inherit;
   max-width: 100%;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+input,
+select,
+textarea {
+  background: #fffdf8;
+  color: #1f1f1c;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(31, 31, 28, 0.42);
 }
 
 .tap-target {
@@ -34,8 +65,10 @@ textarea {
 }
 
 .hero-section {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  background: #e6f3ff;
+  border-bottom: 1px solid rgba(111, 127, 91, 0.16);
+  background:
+    radial-gradient(circle at top left, rgba(168, 181, 154, 0.28), transparent 34rem),
+    linear-gradient(180deg, #fbfaf5 0%, #f5f2ea 100%);
 }
 
 .container {
@@ -48,45 +81,46 @@ textarea {
 
 .hero-inner {
   display: grid;
-  gap: 1.25rem;
-  padding-top: 2.25rem;
-  padding-bottom: 2.25rem;
+  gap: 1.75rem;
+  padding-top: 2.75rem;
+  padding-bottom: 2.75rem;
 }
 
 .hero-title {
   max-width: 48rem;
-  margin-top: 0.5rem;
+  margin-top: 0.625rem;
   font-size: clamp(2.25rem, 8vw, 3.75rem);
-  line-height: 1;
+  line-height: 0.98;
   font-weight: 900;
+  letter-spacing: 0;
 }
 
 .hero-copy {
   max-width: 42rem;
-  margin-top: 0.75rem;
-  color: rgba(0, 0, 0, 0.7);
+  margin-top: 1rem;
+  color: rgba(31, 31, 28, 0.68);
   line-height: 1.75;
 }
 
 .trust-panel,
 .worker-card {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: #ffffff;
-  box-shadow: 0 10px 30px rgba(21, 21, 21, 0.08);
+  border: 1px solid rgba(111, 127, 91, 0.14);
+  background: #faf8f3;
+  box-shadow: 0 16px 42px rgba(31, 31, 28, 0.07);
 }
 
 .trust-panel {
-  border-radius: 0.75rem;
-  padding: 1rem;
+  border-radius: 1rem;
+  padding: 1.125rem;
 }
 
 .filter-section {
-  padding-top: 1.75rem;
-  padding-bottom: 1.5rem;
+  padding-top: 2.25rem;
+  padding-bottom: 1.75rem;
 }
 
 .workers-section {
-  padding-bottom: 4rem;
+  padding-bottom: 4.5rem;
 }
 
 .section-heading {
@@ -94,23 +128,23 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .worker-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
-  gap: 1.25rem;
+  gap: 1.35rem;
 }
 
 .empty-state {
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(111, 127, 91, 0.14);
   border-radius: 1rem;
-  background: #ffffff;
-  padding: 2rem 1.25rem;
+  background: #faf8f3;
+  padding: 2.25rem 1.5rem;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(21, 21, 21, 0.08);
+  box-shadow: 0 16px 42px rgba(31, 31, 28, 0.07);
 }
 
 .worker-card {
@@ -119,7 +153,7 @@ textarea {
   min-width: 0;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 1rem;
+  border-radius: 1.125rem;
   padding: 0;
 }
 
@@ -129,7 +163,7 @@ textarea {
   height: 8.5rem;
   flex: 0 0 auto;
   overflow: hidden;
-  background: #e6f3ff;
+  background: #edf1e7;
 }
 
 .worker-photo img {
@@ -142,7 +176,7 @@ textarea {
 .worker-main {
   min-width: 0;
   flex: 1;
-  padding: 1rem;
+  padding: 1.125rem;
 }
 
 .worker-name {
@@ -150,7 +184,7 @@ textarea {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 1.125rem;
-  line-height: 1.4;
+  line-height: 1.35;
   font-weight: 900;
 }
 
@@ -170,7 +204,7 @@ textarea {
 
 .worker-bio {
   margin-top: 0.875rem;
-  color: rgba(0, 0, 0, 0.75);
+  color: rgba(31, 31, 28, 0.7);
   font-size: 0.925rem;
   line-height: 1.6;
 }
@@ -180,7 +214,7 @@ textarea {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
   padding-top: 0.875rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(111, 127, 91, 0.13);
 }
 
 .contact-cta-shell {
@@ -210,10 +244,10 @@ textarea {
     z-index: 10;
     margin-left: -0.25rem;
     margin-right: -0.25rem;
-    border-radius: 0.75rem;
-    background: rgba(255, 255, 255, 0.94);
+    border-radius: 0.875rem;
+    background: rgba(250, 248, 243, 0.96);
     padding: 0.25rem;
-    box-shadow: 0 10px 24px rgba(21, 21, 21, 0.14);
+    box-shadow: 0 16px 34px rgba(31, 31, 28, 0.16);
   }
 
   .whatsapp-cta {
@@ -226,8 +260,8 @@ textarea {
   .hero-inner {
     grid-template-columns: 1.1fr 0.9fr;
     align-items: end;
-    padding-top: 3rem;
-    padding-bottom: 3rem;
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
   }
 
   .worker-grid {

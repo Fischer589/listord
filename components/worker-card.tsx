@@ -296,18 +296,18 @@ export function WorkerCard({
             <p className="worker-income text-ink">
               💰 Quiere {formatIncomeShort(worker.desired_income)}
             </p>
-            <p className="mt-2 rounded-md bg-mango/20 px-3 py-2 text-sm font-black text-ink">
+            <p className="mt-2 rounded-lg bg-hoja/10 px-3 py-2 text-sm font-black text-ink">
               Quedan pocos trabajadores disponibles hoy
             </p>
           </div>
           <div className="pill-row mt-3 text-sm font-bold">
-            <span className="rounded-md bg-mango/25 px-2 py-1 text-black/80">
+            <span className="rounded-lg bg-hoja/15 px-2.5 py-1.5 text-ink/80">
               Responden por WhatsApp
             </span>
-            <span className="rounded-md bg-cielo px-2 py-1 text-black/80">
+            <span className="rounded-lg bg-cielo px-2.5 py-1.5 text-ink/80">
               Perfiles verificados
             </span>
-            <span className="rounded-md bg-[#f4f1ea] px-2 py-1 text-black/75">
+            <span className="rounded-lg bg-crema px-2.5 py-1.5 text-ink/75">
               {city}
             </span>
           </div>
@@ -316,20 +316,20 @@ export function WorkerCard({
             {skills.slice(0, 3).map((skill) => (
               <span
                 key={skill}
-                className="rounded-md bg-mango/20 px-2 py-1 text-xs font-bold text-ink"
+                className="rounded-lg bg-sage/20 px-2.5 py-1.5 text-xs font-bold text-ink"
               >
                 {skill}
               </span>
             ))}
             {workStyle && (
-              <span className="rounded-md bg-cielo px-2 py-1 text-xs font-bold text-ink">
+              <span className="rounded-lg bg-cielo px-2.5 py-1.5 text-xs font-bold text-ink">
                 Estilo: {workStyleLabels[workStyle]}
               </span>
             )}
           </div>
 
           {worker.short_intro && (
-            <p className="worker-bio mt-4 text-sm leading-6 text-black/70">
+            <p className="worker-bio mt-4 text-sm leading-6 text-ink/70">
               {worker.short_intro}
             </p>
           )}
@@ -339,15 +339,15 @@ export function WorkerCard({
           <button
             type="button"
             onClick={() => handleContactClick(worker)}
-            className="tap-target whatsapp-cta flex w-full items-center justify-center gap-2 rounded-md bg-ink px-4 py-4 font-black text-white"
+            className="tap-target whatsapp-cta flex w-full items-center justify-center gap-2 rounded-xl bg-[#1f7a4c] px-4 py-4 font-black text-white shadow-soft hover:bg-[#17613c]"
           >
             <WhatsAppIcon />
             Contactar por WhatsApp
           </button>
-          <p className="mt-2 text-center text-xs font-black text-black/70">
+          <p className="mt-2 text-center text-xs font-black text-ink/70">
             Contacto directo por WhatsApp
           </p>
-          <p className="mt-1 text-center text-xs font-bold text-black/60">
+          <p className="mt-1 text-center text-xs font-bold text-ink/60">
             Responden en menos de 10 minutos
           </p>
           {contactError && (
@@ -364,7 +364,7 @@ export function WorkerCard({
             aria-modal="true"
             aria-labelledby={`paywall-title-${worker.id}`}
           >
-            <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-soft">
+            <div className="w-full max-w-md rounded-2xl border border-hoja/15 bg-card p-5 shadow-lift">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 text-center">
                   <h3
@@ -373,24 +373,24 @@ export function WorkerCard({
                   >
                     Habla con trabajadores ahora
                   </h3>
-                  <p className="mt-2 text-sm font-bold text-black/65">
+                  <p className="mt-2 text-sm font-bold text-ink/65">
                     Ya usaste tu contacto gratis de hoy
                   </p>
                   <p className="mt-1 text-sm font-black text-hoja">
                     Solo RD$6 al día
                   </p>
-                  <p className="mt-3 rounded-md bg-mango/20 p-3 text-sm font-bold leading-6 text-black/75">
+                  <p className="mt-3 rounded-xl bg-hoja/10 p-3 text-sm font-bold leading-6 text-ink/75">
                     Contacto directo por WhatsApp con perfiles verificados que
                     responden en minutos.
                   </p>
-                  <p className="mt-3 rounded-md bg-cielo p-3 text-sm font-black text-ink">
+                  <p className="mt-3 rounded-xl bg-cielo p-3 text-sm font-black text-ink">
                     Quedan pocos trabajadores disponibles hoy
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowPaywall(false)}
-                  className="tap-target rounded-md px-3 text-2xl font-black text-black/55"
+                  className="tap-target rounded-lg px-3 text-2xl font-black text-ink/55 hover:bg-crema"
                   aria-label="Cerrar"
                 >
                   ×
@@ -400,7 +400,7 @@ export function WorkerCard({
                 <label className="grid gap-1 text-left text-sm font-bold text-ink">
                   Tu WhatsApp
                   <input
-                    className="tap-target rounded-md border border-black/15 px-3"
+                    className="tap-target rounded-lg border border-hoja/20 px-3 outline-none transition focus:border-hoja focus:ring-2 focus:ring-hoja/15"
                     value={employerWhatsAppNumber}
                     onChange={(event) =>
                       setEmployerWhatsAppNumber(event.target.value)
@@ -414,7 +414,7 @@ export function WorkerCard({
                   type="button"
                   onClick={() => handleStripeCheckout("weekly")}
                   disabled={checkoutPlan !== null}
-                  className="tap-target rounded-lg border-2 border-hoja bg-hoja p-4 text-center font-black text-white disabled:opacity-70"
+                  className="tap-target rounded-xl border border-hoja bg-hoja p-4 text-center font-black text-white shadow-soft hover:bg-ink disabled:opacity-70"
                 >
                   {checkoutPlan
                     ? "Procesando pago..."
@@ -424,7 +424,7 @@ export function WorkerCard({
                   type="button"
                   onClick={() => handleStripeCheckout("monthly")}
                   disabled={checkoutPlan !== null}
-                  className="tap-target rounded-lg border-2 border-hoja bg-hoja p-4 text-center font-black text-white disabled:opacity-70"
+                  className="tap-target rounded-xl border border-hoja bg-hoja p-4 text-center font-black text-white shadow-soft hover:bg-ink disabled:opacity-70"
                 >
                   {checkoutPlan
                     ? "Procesando pago..."
@@ -436,18 +436,18 @@ export function WorkerCard({
                   {paymentError}
                 </p>
               )}
-              <p className="mt-5 text-center text-xs font-bold text-black/55">
+              <p className="mt-5 text-center text-xs font-bold text-ink/55">
                 ¿Problemas con la tarjeta? Escríbenos para ayuda con el pago
                 por transferencia.
               </p>
               <button
                 type="button"
                 onClick={handleWhatsAppPayment}
-                className="tap-target mt-3 flex w-full items-center justify-center rounded-md border-2 border-black/10 bg-[#f4f1ea] px-4 py-3 font-black text-ink"
+                className="tap-target mt-3 flex w-full items-center justify-center rounded-xl border border-hoja/15 bg-crema px-4 py-3 font-black text-ink hover:border-hoja/30 hover:bg-white"
               >
                 Pagar por WhatsApp
               </button>
-              <p className="mt-3 text-center text-xs font-bold text-black/55">
+              <p className="mt-3 text-center text-xs font-bold text-ink/55">
                 Sin compromiso. Cancela cuando quieras.
               </p>
             </div>

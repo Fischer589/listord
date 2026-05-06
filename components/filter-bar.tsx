@@ -24,41 +24,41 @@ export function FilterBar({
   workStyle?: string;
 }) {
   return (
-    <form className="grid gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-soft sm:grid-cols-2 lg:grid-cols-5">
-      <label className="grid gap-1 text-sm font-semibold text-ink">
+    <form className="grid gap-3 rounded-2xl border border-hoja/15 bg-card p-3.5 shadow-soft sm:grid-cols-2 sm:p-4 lg:grid-cols-5">
+      <label className="grid gap-1.5 text-sm font-bold text-ink">
         Ciudad
         <input
           name="city"
           defaultValue={city}
           placeholder="Santo Domingo"
-          className="tap-target rounded-md border border-black/15 px-3 outline-none focus:border-hoja"
+          className="tap-target rounded-lg border border-hoja/20 px-3 outline-none transition focus:border-hoja focus:ring-2 focus:ring-hoja/15"
         />
       </label>
-      <label className="grid gap-1 text-sm font-semibold text-ink">
+      <label className="grid gap-1.5 text-sm font-bold text-ink">
         Habilidad
         <input
           name="skill"
           defaultValue={skill}
           placeholder="Limpieza, ventas..."
-          className="tap-target rounded-md border border-black/15 px-3 outline-none focus:border-hoja"
+          className="tap-target rounded-lg border border-hoja/20 px-3 outline-none transition focus:border-hoja focus:ring-2 focus:ring-hoja/15"
         />
       </label>
-      <label className="grid gap-1 text-sm font-semibold text-ink">
+      <label className="grid gap-1.5 text-sm font-bold text-ink">
         Ingreso máximo
         <input
           name="income"
           inputMode="numeric"
           defaultValue={income}
           placeholder="Hasta RD$2,000"
-          className="tap-target rounded-md border border-black/15 px-3 outline-none focus:border-hoja"
+          className="tap-target rounded-lg border border-hoja/20 px-3 outline-none transition focus:border-hoja focus:ring-2 focus:ring-hoja/15"
         />
       </label>
-      <label className="grid gap-1 text-sm font-semibold text-ink">
+      <label className="grid gap-1.5 text-sm font-bold text-ink">
         Estilo
         <select
           name="workStyle"
           defaultValue={workStyle ?? ""}
-          className="tap-target rounded-md border border-black/15 px-3 outline-none focus:border-hoja"
+          className="tap-target rounded-lg border border-hoja/20 px-3 outline-none transition focus:border-hoja focus:ring-2 focus:ring-hoja/15"
         >
           <option value="">Cualquier estilo</option>
           {workStyleOptions.map((option) => (
@@ -68,7 +68,7 @@ export function FilterBar({
           ))}
         </select>
       </label>
-      <button className="tap-target rounded-md bg-hoja px-4 py-2 font-bold text-white">
+      <button className="tap-target rounded-xl bg-hoja px-4 py-2 font-black text-white shadow-soft hover:bg-ink">
         Filtrar
       </button>
     </form>
