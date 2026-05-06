@@ -27,23 +27,55 @@ export const metadata: Metadata = {
       "Personas reales, disponibles ahora mismo en tu ciudad.",
     url: "https://listord.com",
     siteName: "ListoRD",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1536,
+        height: 1024,
+        alt: "ListoRD"
+      }
+    ],
     locale: "es_DO",
     type: "website"
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "ListoRD",
     description:
-      "Trabajadores listos para trabajar hoy en República Dominicana."
+      "Trabajadores listos para trabajar hoy en República Dominicana.",
+    images: [
+      {
+        url: "/logo.png",
+        alt: "ListoRD"
+      }
+    ]
   },
   robots: {
     index: true,
     follow: true
   },
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png"
+    icon: [
+      {
+        url: "/logo.png",
+        sizes: "1536x1024",
+        type: "image/png"
+      }
+    ],
+    shortcut: [
+      {
+        url: "/logo.png",
+        sizes: "1536x1024",
+        type: "image/png"
+      }
+    ],
+    apple: [
+      {
+        url: "/logo.png",
+        sizes: "1536x1024",
+        type: "image/png"
+      }
+    ]
   }
 };
 

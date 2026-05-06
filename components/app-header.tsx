@@ -4,10 +4,10 @@ import Image from "next/image";
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-[rgba(31,31,28,0.06)] bg-crema/90 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:flex-nowrap sm:px-6 sm:py-3.5">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-3 px-4 py-3 sm:flex-nowrap sm:justify-between sm:px-6 sm:py-3.5">
         <Link
           href="/"
-          className="mr-2 flex shrink-0 items-center sm:mr-3"
+          className="inline-flex shrink-0 items-center rounded-2xl border border-hoja/15 bg-card/90 px-3 py-2 shadow-[0_12px_30px_rgba(29,29,27,0.055),inset_0_1px_0_rgba(255,255,255,0.72)] hover:border-hoja/25 hover:bg-[#fffdf8]"
           aria-label="ListoRD"
         >
           <Image
@@ -16,8 +16,8 @@ export function AppHeader() {
             width={1337}
             height={412}
             priority
-            sizes="(max-width: 640px) 112px, 164px"
-            className="h-[32px] w-auto object-contain sm:h-[48px]"
+            sizes="(max-width: 640px) 132px, 164px"
+            className="h-[34px] w-auto object-contain sm:h-[40px]"
           />
         </Link>
         <nav className="flex w-full items-center justify-between gap-1.5 text-xs font-black sm:w-auto sm:justify-end sm:gap-2 sm:text-sm">
