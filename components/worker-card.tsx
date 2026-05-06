@@ -294,20 +294,20 @@ export function WorkerCard({
               {fullName}
             </h2>
             <p className="worker-income text-ink">
-              💰 Quiere {formatIncomeShort(worker.desired_income)}
+              Quiere {formatIncomeShort(worker.desired_income)}
             </p>
-            <p className="mt-2 rounded-lg bg-hoja/10 px-3 py-2 text-sm font-black text-ink">
-              Quedan pocos trabajadores disponibles hoy
+            <p className="mt-2 text-sm font-bold text-ink/55">
+              Disponible para conversar por WhatsApp
             </p>
           </div>
-          <div className="pill-row mt-3 text-sm font-bold">
-            <span className="rounded-lg bg-hoja/15 px-2.5 py-1.5 text-ink/80">
-              Responden por WhatsApp
+          <div className="pill-row mt-4 text-xs font-black">
+            <span className="trust-badge px-2.5 py-1.5">
+              WhatsApp directo
             </span>
-            <span className="rounded-lg bg-cielo px-2.5 py-1.5 text-ink/80">
-              Perfiles verificados
+            <span className="trust-badge px-2.5 py-1.5">
+              Verificado
             </span>
-            <span className="rounded-lg bg-crema px-2.5 py-1.5 text-ink/75">
+            <span className="trust-badge px-2.5 py-1.5">
               {city}
             </span>
           </div>
@@ -316,13 +316,13 @@ export function WorkerCard({
             {skills.slice(0, 3).map((skill) => (
               <span
                 key={skill}
-                className="rounded-lg bg-sage/20 px-2.5 py-1.5 text-xs font-bold text-ink"
+                className="rounded-full border border-[rgba(31,31,28,0.06)] bg-sage/[0.18] px-2.5 py-1.5 text-xs font-black text-ink/80"
               >
                 {skill}
               </span>
             ))}
             {workStyle && (
-              <span className="rounded-lg bg-cielo px-2.5 py-1.5 text-xs font-bold text-ink">
+              <span className="rounded-full border border-[rgba(31,31,28,0.06)] bg-cielo px-2.5 py-1.5 text-xs font-black text-ink/80">
                 Estilo: {workStyleLabels[workStyle]}
               </span>
             )}
@@ -339,15 +339,15 @@ export function WorkerCard({
           <button
             type="button"
             onClick={() => handleContactClick(worker)}
-            className="tap-target whatsapp-cta flex w-full items-center justify-center gap-2 rounded-xl bg-[#1f7a4c] px-4 py-4 font-black text-white shadow-soft hover:bg-[#17613c]"
+            className="tap-target whatsapp-cta flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1f7a4c] px-4 py-4 font-black text-white hover:bg-[#17613c]"
           >
             <WhatsAppIcon />
             Contactar por WhatsApp
           </button>
-          <p className="mt-2 text-center text-xs font-black text-ink/70">
+          <p className="mt-2 text-center text-xs font-black text-ink/60">
             Contacto directo por WhatsApp
           </p>
-          <p className="mt-1 text-center text-xs font-bold text-ink/60">
+          <p className="mt-1 text-center text-xs font-bold text-ink/50">
             Responden en menos de 10 minutos
           </p>
           {contactError && (
@@ -364,7 +364,7 @@ export function WorkerCard({
             aria-modal="true"
             aria-labelledby={`paywall-title-${worker.id}`}
           >
-            <div className="w-full max-w-md rounded-2xl border border-hoja/15 bg-card p-5 shadow-lift">
+            <div className="w-full max-w-md rounded-3xl border border-[rgba(31,31,28,0.06)] bg-card p-5 shadow-lift">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 text-center">
                   <h3
@@ -379,11 +379,11 @@ export function WorkerCard({
                   <p className="mt-1 text-sm font-black text-hoja">
                     Solo RD$6 al día
                   </p>
-                  <p className="mt-3 rounded-xl bg-hoja/10 p-3 text-sm font-bold leading-6 text-ink/75">
+                  <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-hoja/10 p-3 text-sm font-bold leading-6 text-ink/75">
                     Contacto directo por WhatsApp con perfiles verificados que
                     responden en minutos.
                   </p>
-                  <p className="mt-3 rounded-xl bg-cielo p-3 text-sm font-black text-ink">
+                  <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-cielo p-3 text-sm font-black text-ink">
                     Quedan pocos trabajadores disponibles hoy
                   </p>
                 </div>
@@ -400,7 +400,7 @@ export function WorkerCard({
                 <label className="grid gap-1 text-left text-sm font-bold text-ink">
                   Tu WhatsApp
                   <input
-                    className="tap-target rounded-lg border border-hoja/20 px-3 outline-none transition focus:border-hoja focus:ring-2 focus:ring-hoja/15"
+                    className="premium-input tap-target"
                     value={employerWhatsAppNumber}
                     onChange={(event) =>
                       setEmployerWhatsAppNumber(event.target.value)
@@ -414,7 +414,7 @@ export function WorkerCard({
                   type="button"
                   onClick={() => handleStripeCheckout("weekly")}
                   disabled={checkoutPlan !== null}
-                  className="tap-target rounded-xl border border-hoja bg-hoja p-4 text-center font-black text-white shadow-soft hover:bg-ink disabled:opacity-70"
+                  className="btn-primary tap-target p-4 text-center text-white disabled:opacity-70"
                 >
                   {checkoutPlan
                     ? "Procesando pago..."
@@ -424,7 +424,7 @@ export function WorkerCard({
                   type="button"
                   onClick={() => handleStripeCheckout("monthly")}
                   disabled={checkoutPlan !== null}
-                  className="tap-target rounded-xl border border-hoja bg-hoja p-4 text-center font-black text-white shadow-soft hover:bg-ink disabled:opacity-70"
+                  className="btn-primary tap-target p-4 text-center text-white disabled:opacity-70"
                 >
                   {checkoutPlan
                     ? "Procesando pago..."
@@ -443,7 +443,7 @@ export function WorkerCard({
               <button
                 type="button"
                 onClick={handleWhatsAppPayment}
-                className="tap-target mt-3 flex w-full items-center justify-center rounded-xl border border-hoja/15 bg-crema px-4 py-3 font-black text-ink hover:border-hoja/30 hover:bg-white"
+                className="btn-secondary tap-target mt-3 flex w-full items-center justify-center px-4 py-3"
               >
                 Pagar por WhatsApp
               </button>

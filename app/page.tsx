@@ -28,61 +28,77 @@ export default async function Home({
         <section className="hero-section">
           <div className="container hero-inner">
             <div>
-              <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                Realidad &gt; palabras
+              <p className="text-sm font-black uppercase tracking-wide text-hoja/90">
+                Marketplace laboral directo en RD
               </p>
               <h1 className="hero-title text-ink">
-                Trabajadores listos para trabajar hoy
+                Trabajadores reales. Listos para hoy.
               </h1>
               <p className="hero-copy">
-                Trabajadores reales, disponibles ahora mismo en tu ciudad. Mira
-                cuánto quieren ganar, cuándo pueden trabajar y qué saben hacer.
+                Encuentra personas verificadas, disponibles en tu ciudad y
+                listas para conversar por WhatsApp. Menos ruido, más confianza
+                y una forma más humana de contratar.
               </p>
-              <p className="mt-4 text-lg font-bold leading-8 text-ink">
-                Trabajadores disponibles ahora. Responden en menos de 10 minutos.
-              </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/empleadores"
-                  className="tap-target inline-flex items-center justify-center rounded-xl bg-ink px-6 py-4 text-base font-black text-white shadow-soft transition hover:bg-hoja"
+                  className="btn-primary tap-target inline-flex items-center justify-center px-6 py-4 text-base text-white"
                 >
                   Necesito gente
                 </Link>
                 <Link
                   href="/trabajadores/registro"
-                  className="tap-target inline-flex items-center justify-center rounded-xl border border-hoja/15 bg-card px-6 py-4 text-base font-black text-ink shadow-soft transition hover:border-hoja/30 hover:bg-white"
+                  className="btn-secondary tap-target inline-flex items-center justify-center px-6 py-4 text-base"
                 >
                   Busco trabajo
                 </Link>
               </div>
-              <div className="mt-6 flex flex-wrap gap-2 text-sm font-black text-ink">
-                <span className="rounded-lg border border-hoja/10 bg-card px-3 py-2 shadow-soft">
+              <div className="mt-7 flex flex-wrap gap-2 text-sm font-black text-ink">
+                <span className="trust-badge px-3.5 py-2">
                   Perfiles verificados
                 </span>
-                <span className="rounded-lg border border-hoja/10 bg-card px-3 py-2 shadow-soft">
+                <span className="trust-badge px-3.5 py-2">
                   Respuesta en minutos
                 </span>
-                <span className="rounded-lg border border-hoja/10 bg-card px-3 py-2 shadow-soft">
+                <span className="trust-badge px-3.5 py-2">
                   Contacto directo por WhatsApp
                 </span>
               </div>
             </div>
             <div className="trust-panel">
-              <p className="text-sm font-black text-ink">
-                Quedan pocos trabajadores disponibles hoy
+              <p className="text-xs font-black uppercase tracking-wide text-hoja">
+                Señales de confianza
               </p>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
-                <div className="rounded-lg bg-crema p-3 font-bold text-ink/80">Verificado</div>
-                <div className="rounded-lg bg-crema p-3 font-bold text-ink/80">Responde</div>
-                <div className="rounded-lg bg-crema p-3 font-bold text-ink/80">WhatsApp</div>
+              <p className="mt-3 text-2xl font-black leading-tight text-ink">
+                Contrata con más claridad desde el primer mensaje.
+              </p>
+              <p className="mt-3 text-sm font-bold leading-6 text-ink/60">
+                Ve ciudad, habilidades, ingreso esperado y disponibilidad antes
+                de abrir WhatsApp.
+              </p>
+              <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-black">
+                <div className="trust-badge px-3 py-3">Verificado</div>
+                <div className="trust-badge px-3 py-3">Responde</div>
+                <div className="trust-badge px-3 py-3">Directo</div>
               </div>
             </div>
           </div>
         </section>
 
         <section className="container filter-section">
-          <div className="mb-5 rounded-xl bg-hoja px-4 py-3.5 text-sm font-black text-white shadow-soft">
-            Trabajadores disponibles ahora. Responden en menos de 10 minutos.
+          <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-black uppercase tracking-wide text-hoja">
+                Explora perfiles
+              </p>
+              <h2 className="mt-1 text-2xl font-black text-ink">
+                Filtra por lo que necesitas hoy
+              </h2>
+            </div>
+            <p className="max-w-md text-sm font-bold leading-6 text-ink/60">
+              Resultados limpios para encontrar trabajadores disponibles sin
+              perder tiempo.
+            </p>
           </div>
           <FilterBar
             city={searchParams.city}
@@ -93,16 +109,16 @@ export default async function Home({
         </section>
 
         <section className="container workers-section">
-          <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-hoja/10 bg-card p-3 text-center text-sm font-black shadow-soft sm:grid-cols-4">
-            <div className="rounded-xl bg-crema px-3 py-3 text-ink/80">Llegó</div>
-            <div className="rounded-xl bg-crema px-3 py-3 text-ink/80">Cumplió</div>
-            <div className="rounded-xl bg-crema px-3 py-3 text-ink/80">Respondió</div>
-            <div className="rounded-xl bg-crema px-3 py-3 text-ink/80">Fue contratado</div>
+          <div className="mb-8 grid grid-cols-2 gap-2 rounded-3xl border border-[rgba(31,31,28,0.06)] bg-card/80 p-2.5 text-center text-sm font-black shadow-soft sm:grid-cols-4">
+            <div className="trust-badge px-3 py-3">Llegó</div>
+            <div className="trust-badge px-3 py-3">Cumplió</div>
+            <div className="trust-badge px-3 py-3">Respondió</div>
+            <div className="trust-badge px-3 py-3">Fue contratado</div>
           </div>
           {(!workersResult.ok || hasWorkers) && (
             <div className="section-heading">
               <div>
-                <h2 className="text-xl font-black">
+                <h2 className="text-2xl font-black text-ink">
                   Trabajadores disponibles ahora
                 </h2>
                 <p className="mt-1 text-sm font-bold text-ink/55">
@@ -126,7 +142,7 @@ export default async function Home({
                 </p>
                 <Link
                   href="/"
-                  className="tap-target mt-5 inline-flex items-center justify-center rounded-xl bg-hoja px-6 py-3 font-black text-white shadow-soft transition hover:bg-ink"
+                  className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-white"
                 >
                   Intentar de nuevo
                 </Link>
@@ -146,7 +162,7 @@ export default async function Home({
                 </p>
                 <Link
                   href="/trabajadores/registro"
-                  className="tap-target mt-5 inline-flex items-center justify-center rounded-xl bg-hoja px-6 py-3 text-lg font-black text-white shadow-soft transition hover:bg-ink"
+                  className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-lg text-white"
                 >
                   Registrarme como trabajador
                 </Link>
