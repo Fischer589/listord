@@ -7,7 +7,7 @@ export function AppHeader() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-3 px-4 py-3 sm:flex-nowrap sm:justify-between sm:px-6 sm:py-3.5">
         <Link
           href="/"
-          className="inline-flex shrink-0 items-center rounded-2xl border border-hoja/15 bg-card/90 px-3 py-2 shadow-[0_12px_30px_rgba(29,29,27,0.055),inset_0_1px_0_rgba(255,255,255,0.72)] hover:border-hoja/25 hover:bg-[#fffdf8]"
+          className="inline-flex shrink-0 items-center rounded-2xl border border-[rgba(74,72,60,0.11)] bg-[#fffdf7] px-2.5 py-1.5 shadow-[0_10px_24px_rgba(29,29,27,0.045),inset_0_1px_0_rgba(255,255,255,0.82)] hover:border-[rgba(74,72,60,0.16)] hover:bg-[#fffefb] sm:px-3 sm:py-2"
           aria-label="ListoRD"
         >
           <span className="block h-[34px] w-[132px] overflow-hidden sm:h-[40px] sm:w-[164px]">
@@ -18,7 +18,7 @@ export function AppHeader() {
               height={262}
               priority
               sizes="(max-width: 640px) 132px, 164px"
-              className="h-full w-full object-contain"
+              className="h-full w-full object-contain brightness-90 contrast-125 saturate-[0.92]"
             />
           </span>
         </Link>
