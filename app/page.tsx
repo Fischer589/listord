@@ -29,57 +29,56 @@ export default async function Home({
           <div className="container hero-inner">
             <div>
               <p className="text-sm font-black uppercase tracking-wide text-hoja/90">
-                Marketplace laboral directo en RD
+                Trabajadores verificados en RD
               </p>
               <h1 className="hero-title text-ink">
-                Trabajadores reales. Listos para hoy.
+                Contrata trabajadores verificados por WhatsApp.
               </h1>
               <p className="hero-copy">
-                Encuentra personas verificadas, disponibles en tu ciudad y
-                listas para conversar por WhatsApp. Menos ruido, más confianza
-                y una forma más humana de contratar.
+                Encuentra personas reales en RD, disponibles para trabajar hoy.
+                1 contacto gratis.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/empleadores"
-                  className="btn-primary tap-target inline-flex items-center justify-center px-6 py-4 text-base text-white"
+                  className="btn-primary tap-target inline-flex min-w-0 items-center justify-center px-6 py-4 text-base text-white"
                 >
                   Necesito gente
                 </Link>
                 <Link
                   href="/trabajadores/registro"
-                  className="btn-secondary tap-target inline-flex items-center justify-center px-6 py-4 text-base"
+                  className="btn-secondary tap-target inline-flex min-w-0 items-center justify-center px-6 py-4 text-base"
                 >
                   Busco trabajo
                 </Link>
               </div>
               <div className="mt-7 flex flex-wrap gap-2 text-sm font-black text-ink">
                 <span className="trust-badge px-3.5 py-2">
-                  Perfiles verificados
+                  Verificados
                 </span>
                 <span className="trust-badge px-3.5 py-2">
-                  Respuesta en minutos
+                  Contacto directo
                 </span>
                 <span className="trust-badge px-3.5 py-2">
-                  Contacto directo por WhatsApp
+                  Listos para hoy
                 </span>
               </div>
             </div>
             <div className="trust-panel">
               <p className="text-xs font-black uppercase tracking-wide text-hoja">
-                Señales de confianza
+                Contratacion directa
               </p>
               <p className="mt-3 text-2xl font-black leading-tight text-ink">
-                Contrata con más claridad desde el primer mensaje.
+                Ve quien esta disponible antes de escribir.
               </p>
               <p className="mt-3 text-sm font-bold leading-6 text-ink/60">
-                Ve ciudad, habilidades, ingreso esperado y disponibilidad antes
-                de abrir WhatsApp.
+                Ciudad, habilidades, ingreso esperado y disponibilidad en un
+                perfil simple.
               </p>
               <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-black">
-                <div className="trust-badge px-3 py-3">Verificado</div>
-                <div className="trust-badge px-3 py-3">Responde</div>
-                <div className="trust-badge px-3 py-3">Directo</div>
+                <div className="trust-badge px-3 py-3">RD</div>
+                <div className="trust-badge px-3 py-3">Hoy</div>
+                <div className="trust-badge px-3 py-3">WhatsApp</div>
               </div>
             </div>
           </div>

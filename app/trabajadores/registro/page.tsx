@@ -222,40 +222,42 @@ export default function WorkerRegistrationPage({
   return (
     <>
       <AppHeader />
-      <main className="mx-auto max-w-3xl px-4 py-6">
+      <main className="worker-registration-page mx-auto w-full min-w-0 max-w-3xl overflow-x-hidden px-4 py-6">
         <Link href="/" className="text-sm font-bold text-hoja">
           Volver
         </Link>
-        <h1 className="mt-3 text-3xl font-black">Registrarme como trabajador</h1>
-        <p className="mt-2 leading-7 text-black/70">
+        <h1 className="mt-3 break-words text-3xl font-black">
+          Registrarme como trabajador
+        </h1>
+        <p className="mt-2 break-words leading-7 text-black/70">
           Recibimos tu informacion y la revisamos antes de mostrarla
           publicamente en ListoRD.
         </p>
 
         {state === "incompleto" && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+          <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             Completa nombre, descripcion y todos los campos requeridos para
             enviar tu registro.
           </div>
         )}
         {state === "telefono" && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+          <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             Usa un numero de WhatsApp valido con al menos 10 digitos.
           </div>
         )}
         {state === "duplicado" && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+          <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             Ese WhatsApp ya fue registrado. No se puede enviar el mismo perfil
             dos veces.
           </div>
         )}
         {state === "rechazado" && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+          <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             Revisa el texto del perfil. No aceptamos lenguaje ofensivo o spam.
           </div>
         )}
         {state === "error" && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+          <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             No pudimos enviar tu registro ahora mismo. Intenta otra vez en unos
             minutos.
           </div>

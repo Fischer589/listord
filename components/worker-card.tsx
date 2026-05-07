@@ -38,6 +38,7 @@ export function WorkerCard({
   worker: Worker;
 }) {
   const fullName = worker.full_name || "Trabajador ListoRD";
+  const photoUrl = worker.photo_url?.trim();
   const city = worker.city || "República Dominicana";
   const skills = Array.isArray(worker.skills) ? worker.skills : [];
   const workStyle =
@@ -271,17 +272,17 @@ export function WorkerCard({
   return (
     <article className="worker-card" ref={cardRef}>
       <div className="worker-photo">
-        {worker.photo_url ? (
+        {photoUrl ? (
           <Image
-            src={worker.photo_url}
+            src={photoUrl}
             alt={`Foto de ${fullName}`}
             fill
             sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-            className="object-cover object-center"
+            className="worker-photo-image"
             priority={false}
           />
         ) : (
-          <div className="grid h-full place-items-center text-4xl font-black text-hoja">
+          <div className="worker-photo-fallback">
             {getInitials(fullName)}
           </div>
         )}

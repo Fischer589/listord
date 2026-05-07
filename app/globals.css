@@ -13,8 +13,16 @@
   --border: rgba(31, 31, 28, 0.06);
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -23,6 +31,8 @@ body {
     radial-gradient(circle at 12% -10%, rgba(168, 181, 154, 0.18), transparent 26rem),
     var(--bg);
   color: var(--ink);
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
   font-family:
@@ -35,6 +45,42 @@ input,
 select,
 textarea {
   font: inherit;
+  min-width: 0;
+  max-width: 100%;
+}
+
+main,
+section,
+article,
+aside,
+header,
+footer,
+nav,
+form,
+fieldset,
+label,
+div {
+  min-width: 0;
+}
+
+input[type="file"] {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+input[type="file"]::file-selector-button {
+  max-width: 52%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+img,
+svg,
+video,
+canvas {
   max-width: 100%;
 }
 
@@ -44,6 +90,8 @@ a {
 }
 
 a {
+  max-width: 100%;
+  overflow-wrap: break-word;
   transition:
     background-color 180ms ease,
     border-color 180ms ease,
@@ -80,6 +128,68 @@ textarea {
   color: var(--ink);
 }
 
+footer {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+footer nav {
+  min-width: 0;
+  max-width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+footer nav a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.app-header-inner {
+  max-width: min(100%, 72rem);
+}
+
+.app-header-logo {
+  max-width: min(132px, calc(100vw - 2rem));
+}
+
+.app-header-nav {
+  max-width: 100%;
+}
+
+.app-header-nav a {
+  overflow-wrap: anywhere;
+}
+
+.worker-registration-page {
+  max-width: min(100%, 48rem);
+  overflow-x: clip;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.worker-registration-page,
+.worker-registration-page * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.worker-registration-form {
+  max-width: 100%;
+}
+
+.worker-registration-form > * {
+  max-width: 100%;
+}
+
+.worker-registration-form input,
+.worker-registration-form select,
+.worker-registration-form textarea,
+.worker-registration-form button {
+  width: 100%;
+  max-width: 100%;
+}
+
 input::placeholder,
 textarea::placeholder {
   color: rgba(107, 107, 99, 0.62);
@@ -97,15 +207,17 @@ textarea::placeholder {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--ink), #37402e 55%, var(--primary));
+  background: linear-gradient(135deg, #11110f, #26311f 52%, #52683d);
   box-shadow:
-    0 16px 34px rgba(29, 29, 27, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    0 18px 42px rgba(29, 29, 27, 0.2),
+    0 3px 10px rgba(82, 104, 61, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .btn-primary:hover {
   box-shadow:
-    0 20px 42px rgba(29, 29, 27, 0.18),
+    0 22px 52px rgba(29, 29, 27, 0.24),
+    0 4px 14px rgba(82, 104, 61, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -131,9 +243,9 @@ textarea::placeholder {
   overflow: hidden;
   border-bottom: 1px solid var(--border);
   background:
-    radial-gradient(circle at 82% 16%, rgba(168, 181, 154, 0.3), transparent 21rem),
-    radial-gradient(circle at 12% 0%, rgba(216, 200, 147, 0.18), transparent 24rem),
-    linear-gradient(180deg, #fffdf8 0%, var(--bg) 94%);
+    radial-gradient(circle at 82% 16%, rgba(111, 127, 91, 0.34), transparent 20rem),
+    radial-gradient(circle at 11% 0%, rgba(209, 184, 94, 0.2), transparent 23rem),
+    linear-gradient(135deg, #fffdf8 0%, #f4f0e5 48%, #e8eddf 100%);
 }
 
 .hero-section::after {
@@ -143,7 +255,7 @@ textarea::placeholder {
   width: 30rem;
   height: 30rem;
   border-radius: 999px;
-  background: rgba(111, 127, 91, 0.08);
+  background: rgba(111, 127, 91, 0.12);
   content: "";
   filter: blur(20px);
   pointer-events: none;
@@ -161,26 +273,27 @@ textarea::placeholder {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 2rem;
-  padding-top: 4rem;
-  padding-bottom: 4.75rem;
+  gap: 2.25rem;
+  padding-top: 3.5rem;
+  padding-bottom: 4.25rem;
 }
 
 .hero-title {
-  max-width: 48rem;
+  max-width: 51rem;
   margin-top: 0.875rem;
-  font-size: clamp(2.65rem, 8vw, 5.45rem);
-  line-height: 0.94;
+  font-size: clamp(2.45rem, 7.4vw, 5.25rem);
+  line-height: 0.96;
   font-weight: 900;
   letter-spacing: 0;
 }
 
 .hero-copy {
-  max-width: 39rem;
+  max-width: 35rem;
   margin-top: 1.35rem;
-  color: var(--muted);
-  font-size: 1.075rem;
-  line-height: 1.75;
+  color: rgba(29, 29, 27, 0.68);
+  font-size: 1.16rem;
+  line-height: 1.55;
+  font-weight: 800;
 }
 
 .trust-panel,
@@ -191,17 +304,31 @@ textarea::placeholder {
 }
 
 .trust-panel {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(111, 127, 91, 0.18);
   border-radius: 1.35rem;
-  padding: 1.35rem;
+  padding: 1.5rem;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.9), rgba(246, 243, 236, 0.82)),
+    rgba(251, 249, 244, 0.92);
   backdrop-filter: blur(18px);
+  box-shadow:
+    0 24px 70px rgba(29, 29, 27, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .trust-badge {
-  border: 1px solid rgba(31, 31, 28, 0.055);
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid rgba(31, 31, 28, 0.07);
   border-radius: 999px;
-  background: rgba(255, 253, 248, 0.72);
-  color: rgba(29, 29, 27, 0.76);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  background: rgba(255, 253, 248, 0.82);
+  color: rgba(29, 29, 27, 0.82);
+  overflow-wrap: anywhere;
+  box-shadow:
+    0 10px 24px rgba(29, 29, 27, 0.045),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
 .filter-section {
@@ -286,19 +413,31 @@ textarea::placeholder {
 .worker-photo {
   position: relative;
   width: 100%;
-  height: 9.75rem;
+  height: clamp(12.25rem, 58vw, 15rem);
   flex: 0 0 auto;
   overflow: hidden;
+  border-radius: 1.35rem 1.35rem 0 0;
   background:
     radial-gradient(circle at 50% 10%, rgba(255, 253, 248, 0.76), transparent 9rem),
     #edf1e7;
 }
 
-.worker-photo img {
+.worker-photo-image {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: center top;
+}
+
+.worker-photo-fallback {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--primary);
+  font-size: 2.4rem;
+  font-weight: 900;
 }
 
 .worker-main {
@@ -367,6 +506,29 @@ textarea::placeholder {
 }
 
 @media (max-width: 767px) {
+  .app-header-inner {
+    overflow-x: clip;
+  }
+
+  .app-header-nav {
+    gap: 0.25rem;
+  }
+
+  .app-header-nav a {
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+  }
+
+  .worker-registration-page {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .worker-registration-form {
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+  }
+
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -394,6 +556,12 @@ textarea::placeholder {
   }
 }
 
+@media (min-width: 640px) {
+  .app-header-logo {
+    max-width: 164px;
+  }
+}
+
 @media (min-width: 768px) {
   .hero-inner {
     grid-template-columns: 1.1fr 0.9fr;
@@ -407,7 +575,7 @@ textarea::placeholder {
   }
 
   .worker-photo {
-    height: 10rem;
+    height: 13rem;
   }
 }
 
