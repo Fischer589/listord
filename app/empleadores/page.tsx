@@ -22,12 +22,12 @@ export default function EmployersPage() {
           </div>
           <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
             <p className="text-lg font-black">
-              Por menos de RD$100 puedes contactar trabajadores listos para
+              Desde RD$99 puedes contactar trabajadores listos para
               trabajar hoy.
             </p>
             <div className="mt-4 grid gap-3">
-              <PlanCard title="Semanal" price="RD$99" detail="Acceso rapido por 7 dias" />
-              <PlanCard title="Mensual" price="RD$199" detail="Mejor para contratacion constante" />
+              <PlanCard title="Semanal" price="RD$99 / semana" detail="Acceso rapido por 7 dias" />
+              <PlanCard title="Mensual" price="RD$199 / mes" detail="Mejor para contratacion constante" />
             </div>
             <Link
               href="/"

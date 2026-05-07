@@ -398,7 +398,7 @@ export function WorkerCard({
                     Ya usaste tu contacto gratis de hoy
                   </p>
                   <p className="mt-1 text-sm font-black text-hoja">
-                    Solo RD$6 al día
+                    Solo RD$7 al día
                   </p>
                   <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-hoja/10 p-3 text-sm font-bold leading-6 text-ink/75">
                     Contacto directo por WhatsApp con perfiles verificados que
@@ -439,7 +439,7 @@ export function WorkerCard({
                 >
                   {checkoutPlan
                     ? "Procesando pago..."
-                    : "Pagar con tarjeta — RD$199 / semana"}
+                    : "Pagar con tarjeta — RD$99 / semana"}
                 </button>
                 <button
                   type="button"
@@ -449,7 +449,7 @@ export function WorkerCard({
                 >
                   {checkoutPlan
                     ? "Procesando pago..."
-                    : "Pagar con tarjeta — RD$499 / mes"}
+                    : "Pagar con tarjeta — RD$199 / mes"}
                 </button>
               </div>
               {paymentError && (

@@ -19,7 +19,7 @@ ListoRD es un marketplace mobile-first y Spanish-first para Republica Dominicana
 - Sistema de Hiring Outcome para confirmar si el contacto termino en contratacion real.
 - Registro real para trabajadores con aprobacion antes de publicacion.
 - Flujo de solicitud de contacto para empleadores.
-- Pagina de monetizacion suave: 2 contactos gratis, RD$99/semana y RD$199/mes.
+- Pagina de monetizacion suave: 2 contactos gratis, RD$99 / semana y RD$199 / mes.
 - Estado vacío seguro cuando Supabase no está configurado o no tiene datos publicados.
 
 ## Configuracion local
@@ -105,6 +105,6 @@ Antes de lanzar, revisa `PRODUCTION_CHECKLIST.md`.
 
 ## Siguientes piezas de producto
 
-- Integracion de pagos para RD$99/semana y RD$199/mes.
+- Integracion de pagos para RD$99 / semana y RD$199 / mes.
 - Panel de trabajador para aceptar o rechazar solicitudes.
 - Eventos de reputacion para show-up, pago y respuesta.

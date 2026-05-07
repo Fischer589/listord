@@ -43,7 +43,7 @@ export default function ContactRequestPage({
           <div className="mt-4 rounded-md bg-mango/20 p-3">
             <p className="font-black">Consigue trabajadores mas rapido</p>
             <p className="mt-1 text-sm leading-6 text-black/70">
-              RD$99 por semana o RD$199 por mes desbloquea contacto instantaneo
+              RD$99 / semana o RD$199 / mes desbloquea contacto instantaneo
               y prioridad.
             </p>
             <Link href="/empleadores" className="mt-2 inline-flex font-black text-ink">
