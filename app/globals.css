@@ -557,22 +557,34 @@ textarea::placeholder {
 }
 
 .worker-primary-skill {
-  display: inline-flex;
-  margin-top: 0.55rem;
+  display: flex;
+  margin-top: 0.38rem;
   max-width: 100%;
   min-width: 0;
   align-items: center;
+  gap: 0.52rem;
+  overflow: hidden;
+  color: #536349;
+  font-size: 0.86rem;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.worker-primary-skill::before {
+  content: "";
+  width: 0.42rem;
+  height: 0.42rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #8a9a72;
+  box-shadow: 0 0 0 4px rgba(111, 127, 91, 0.11);
+}
+
+.worker-primary-skill-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-radius: 999px;
-  border: 1px solid rgba(111, 127, 91, 0.16);
-  background: rgba(237, 241, 231, 0.72);
-  padding: 0.32rem 0.68rem;
-  color: #4d5f3f;
-  font-size: 0.78rem;
-  line-height: 1.2;
-  font-weight: 900;
 }
 
 .pill-row {

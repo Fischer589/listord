@@ -20,6 +20,17 @@ const PAYMENT_ERROR_MESSAGE =
   "No pudimos iniciar el pago. Intenta de nuevo o escríbenos por WhatsApp.";
 const INVALID_WHATSAPP_MESSAGE =
   "Escribe un WhatsApp valido para activar tu acceso.";
+const FALLBACK_PRIMARY_SKILL = "Trabajador disponible";
+
+function getWorkerSkills(worker: Worker) {
+  return Array.isArray(worker.skills)
+    ? worker.skills.map((skill) => skill.trim()).filter(Boolean)
+    : [];
+}
+
+function getPrimarySkill(skills: string[]) {
+  return skills[0] || FALLBACK_PRIMARY_SKILL;
+}
 
 function getInitials(name: string) {
   const initials = name
@@ -40,10 +51,9 @@ export function WorkerCard({
   const fullName = worker.full_name || "Trabajador ListoRD";
   const photoUrl = worker.photo_url?.trim();
   const city = worker.city || "República Dominicana";
-  const skills = Array.isArray(worker.skills)
-    ? worker.skills.map((skill) => skill.trim()).filter(Boolean)
-    : [];
-  const primarySkill = skills[0] || "Trabajador disponible";
+  const skills = getWorkerSkills(worker);
+  const primarySkill = getPrimarySkill(skills);
+  const supportingSkills = skills.slice(1, 4);
   const workStyle =
     worker.work_style && worker.work_style in workStyleLabels
       ? worker.work_style
@@ -297,8 +307,10 @@ export function WorkerCard({
             <h2 className="worker-name text-ink">
               {fullName}
             </h2>
-            <p className="worker-primary-skill">
-              {primarySkill}
+            <p className="worker-primary-skill" title={primarySkill}>
+              <span className="worker-primary-skill-text">
+                {primarySkill}
+              </span>
             </p>
             <p className="worker-income text-ink">
               Quiere {formatIncomeShort(worker.desired_income)}
@@ -319,21 +331,23 @@ export function WorkerCard({
             </span>
           </div>
 
-          <div className="pill-row mt-4">
-            {skills.slice(0, 3).map((skill) => (
-              <span
-                key={skill}
-                className="rounded-full border border-[rgba(31,31,28,0.06)] bg-sage/[0.18] px-2.5 py-1.5 text-xs font-black text-ink/80"
-              >
-                {skill}
-              </span>
-            ))}
-            {workStyle && (
-              <span className="rounded-full border border-[rgba(31,31,28,0.06)] bg-cielo px-2.5 py-1.5 text-xs font-black text-ink/80">
-                Estilo: {workStyleLabels[workStyle]}
-              </span>
-            )}
-          </div>
+          {(supportingSkills.length > 0 || workStyle) && (
+            <div className="pill-row mt-4">
+              {supportingSkills.map((skill) => (
+                <span
+                  key={skill}
+                  className="rounded-full border border-[rgba(31,31,28,0.06)] bg-sage/[0.18] px-2.5 py-1.5 text-xs font-black text-ink/80"
+                >
+                  {skill}
+                </span>
+              ))}
+              {workStyle && (
+                <span className="rounded-full border border-[rgba(31,31,28,0.06)] bg-cielo px-2.5 py-1.5 text-xs font-black text-ink/80">
+                  Estilo: {workStyleLabels[workStyle]}
+                </span>
+              )}
+            </div>
+          )}
 
           {worker.short_intro && (
             <p className="worker-bio mt-4 text-sm leading-6 text-ink/70">
