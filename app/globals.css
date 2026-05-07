@@ -21,17 +21,17 @@
 
 html {
   width: 100%;
+  min-width: 0;
   max-width: 100%;
   overflow-x: hidden;
 }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at 12% -10%, rgba(168, 181, 154, 0.18), transparent 26rem),
-    var(--bg);
+  background: linear-gradient(180deg, #f8f5ee 0%, var(--bg) 18rem);
   color: var(--ink);
   width: 100%;
+  min-width: 0;
   max-width: 100%;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
@@ -66,12 +66,15 @@ div {
 input[type="file"] {
   display: block;
   width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: normal;
 }
 
 input[type="file"]::file-selector-button {
-  max-width: 52%;
+  max-width: min(10rem, 48%);
+  margin-right: 0.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -147,6 +150,8 @@ footer nav a {
 
 .app-header-inner {
   max-width: min(100%, 72rem);
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
 }
 
 .app-header-logo {
@@ -162,10 +167,12 @@ footer nav a {
 }
 
 .worker-registration-page {
-  max-width: min(100%, 48rem);
+  width: min(100%, 48rem);
+  max-width: 100%;
   overflow-x: clip;
   padding-left: max(1rem, env(safe-area-inset-left));
   padding-right: max(1rem, env(safe-area-inset-right));
+  contain: inline-size;
 }
 
 .worker-registration-page,
@@ -176,6 +183,7 @@ footer nav a {
 
 .worker-registration-form {
   max-width: 100%;
+  contain: inline-size;
 }
 
 .worker-registration-form > * {
@@ -207,10 +215,10 @@ textarea::placeholder {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #11110f, #26311f 52%, #52683d);
+  background: linear-gradient(135deg, #11110f, #1f2819 48%, #4f6938);
   box-shadow:
-    0 18px 42px rgba(29, 29, 27, 0.2),
-    0 3px 10px rgba(82, 104, 61, 0.2),
+    0 18px 42px rgba(29, 29, 27, 0.24),
+    0 3px 14px rgba(82, 104, 61, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
@@ -243,30 +251,16 @@ textarea::placeholder {
   overflow: hidden;
   border-bottom: 1px solid var(--border);
   background:
-    radial-gradient(circle at 82% 16%, rgba(111, 127, 91, 0.34), transparent 20rem),
-    radial-gradient(circle at 11% 0%, rgba(209, 184, 94, 0.2), transparent 23rem),
-    linear-gradient(135deg, #fffdf8 0%, #f4f0e5 48%, #e8eddf 100%);
-}
-
-.hero-section::after {
-  position: absolute;
-  right: -7rem;
-  bottom: -10rem;
-  width: 30rem;
-  height: 30rem;
-  border-radius: 999px;
-  background: rgba(111, 127, 91, 0.12);
-  content: "";
-  filter: blur(20px);
-  pointer-events: none;
+    linear-gradient(118deg, rgba(255, 253, 248, 0.98) 0%, rgba(246, 243, 236, 0.95) 45%, rgba(228, 236, 217, 0.96) 100%),
+    linear-gradient(180deg, #fffdf8, #eef3e7);
 }
 
 .container {
   width: 100%;
-  max-width: 72rem;
+  max-width: min(100%, 72rem);
   margin: 0 auto;
-  padding-left: 1.125rem;
-  padding-right: 1.125rem;
+  padding-left: max(1.125rem, env(safe-area-inset-left));
+  padding-right: max(1.125rem, env(safe-area-inset-right));
 }
 
 .hero-inner {
@@ -281,19 +275,37 @@ textarea::placeholder {
 .hero-title {
   max-width: 51rem;
   margin-top: 0.875rem;
-  font-size: clamp(2.45rem, 7.4vw, 5.25rem);
+  font-size: clamp(2.4rem, 7vw, 5.35rem);
   line-height: 0.96;
   font-weight: 900;
   letter-spacing: 0;
 }
 
 .hero-copy {
-  max-width: 35rem;
-  margin-top: 1.35rem;
+  max-width: 38rem;
+  margin-top: 1.2rem;
   color: rgba(29, 29, 27, 0.68);
-  font-size: 1.16rem;
-  line-height: 1.55;
+  font-size: 1.18rem;
+  line-height: 1.5;
   font-weight: 800;
+}
+
+.hero-kicker {
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgba(111, 127, 91, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.72);
+  color: #465638;
+  padding: 0.45rem 0.75rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.hero-actions,
+.hero-badges,
+.hero-message {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .trust-panel,
@@ -307,15 +319,96 @@ textarea::placeholder {
   position: relative;
   overflow: hidden;
   border-color: rgba(111, 127, 91, 0.18);
-  border-radius: 1.35rem;
-  padding: 1.5rem;
+  border-radius: 1.25rem;
+  padding: 1rem;
   background:
-    linear-gradient(180deg, rgba(255, 253, 248, 0.9), rgba(246, 243, 236, 0.82)),
+    linear-gradient(180deg, rgba(255, 253, 248, 0.94), rgba(242, 239, 229, 0.86)),
     rgba(251, 249, 244, 0.92);
   backdrop-filter: blur(18px);
   box-shadow:
     0 24px 70px rgba(29, 29, 27, 0.11),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.hero-proof-card {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgba(31, 31, 28, 0.07);
+  border-radius: 1rem;
+  background: #fffdf8;
+  padding: 1rem;
+  box-shadow: 0 16px 36px rgba(29, 29, 27, 0.08);
+}
+
+.hero-proof-status {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #203117;
+  color: #fffdf8;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.hero-proof-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.hero-proof-list div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(31, 31, 28, 0.055);
+  border-radius: 0.9rem;
+  background: rgba(255, 253, 248, 0.66);
+  padding: 0.8rem;
+  color: rgba(29, 29, 27, 0.76);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.hero-proof-list span {
+  display: grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(111, 127, 91, 0.16);
+  color: #3e4e32;
+  font-size: 0.78rem;
+}
+
+.hero-proof-footer {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.95rem;
+  border-top: 1px solid rgba(31, 31, 28, 0.07);
+  padding-top: 0.95rem;
+  font-weight: 900;
+}
+
+.hero-proof-footer p {
+  color: #465638;
+}
+
+.hero-proof-footer a {
+  border-radius: 999px;
+  background: #1d1d1b;
+  color: #fffdf8;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.88rem;
 }
 
 .trust-badge {
@@ -506,8 +599,16 @@ textarea::placeholder {
 }
 
 @media (max-width: 767px) {
+  .container {
+    padding-left: max(0.95rem, env(safe-area-inset-left));
+    padding-right: max(0.95rem, env(safe-area-inset-right));
+  }
+
   .app-header-inner {
+    max-width: 100%;
     overflow-x: clip;
+    padding-left: max(0.625rem, env(safe-area-inset-left));
+    padding-right: max(0.625rem, env(safe-area-inset-right));
   }
 
   .app-header-nav {
@@ -519,14 +620,63 @@ textarea::placeholder {
     padding-right: 0.375rem;
   }
 
+  .hero-inner {
+    gap: 1.65rem;
+    padding-top: 2.75rem;
+    padding-bottom: 3.25rem;
+  }
+
+  .hero-title {
+    font-size: clamp(2.35rem, 11.8vw, 3.65rem);
+  }
+
+  .hero-copy {
+    font-size: 1.04rem;
+  }
+
+  .hero-actions a {
+    width: 100%;
+  }
+
+  .trust-panel {
+    padding: 0.85rem;
+  }
+
+  .hero-proof-card {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .hero-proof-status {
+    align-self: flex-start;
+  }
+
   .worker-registration-page {
     max-width: 100%;
     overflow-x: hidden;
+    padding-left: max(0.875rem, env(safe-area-inset-left));
+    padding-right: max(0.875rem, env(safe-area-inset-right));
   }
 
   .worker-registration-form {
     padding-left: 0.875rem;
     padding-right: 0.875rem;
+  }
+
+  .worker-registration-form input,
+  .worker-registration-form select,
+  .worker-registration-form textarea {
+    font-size: 1rem;
+  }
+
+  .worker-registration-form input[type="file"] {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+
+  .worker-registration-form input[type="file"]::file-selector-button {
+    max-width: min(8.5rem, 46%);
+    padding: 0.45rem 0.55rem;
   }
 
   .section-heading {

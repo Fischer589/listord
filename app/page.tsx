@@ -27,9 +27,9 @@ export default async function Home({
       <main className="page-shell">
         <section className="hero-section">
           <div className="container hero-inner">
-            <div>
-              <p className="text-sm font-black uppercase tracking-wide text-hoja/90">
-                Trabajadores verificados en RD
+            <div className="hero-message">
+              <p className="hero-kicker text-sm font-black uppercase tracking-wide">
+                RD + WhatsApp
               </p>
               <h1 className="hero-title text-ink">
                 Contrata trabajadores verificados por WhatsApp.
@@ -38,7 +38,7 @@ export default async function Home({
                 Encuentra personas reales en RD, disponibles para trabajar hoy.
                 1 contacto gratis.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="hero-actions mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/empleadores"
                   className="btn-primary tap-target inline-flex min-w-0 items-center justify-center px-6 py-4 text-base text-white"
@@ -52,33 +52,41 @@ export default async function Home({
                   Busco trabajo
                 </Link>
               </div>
-              <div className="mt-7 flex flex-wrap gap-2 text-sm font-black text-ink">
-                <span className="trust-badge px-3.5 py-2">
-                  Verificados
-                </span>
-                <span className="trust-badge px-3.5 py-2">
-                  Contacto directo
-                </span>
-                <span className="trust-badge px-3.5 py-2">
-                  Listos para hoy
-                </span>
+              <div className="hero-badges mt-7 flex flex-wrap gap-2 text-sm font-black text-ink">
+                <span className="trust-badge px-3.5 py-2">Verificados</span>
+                <span className="trust-badge px-3.5 py-2">Contacto directo</span>
+                <span className="trust-badge px-3.5 py-2">Listos para hoy</span>
               </div>
             </div>
             <div className="trust-panel">
-              <p className="text-xs font-black uppercase tracking-wide text-hoja">
-                Contratacion directa
-              </p>
-              <p className="mt-3 text-2xl font-black leading-tight text-ink">
-                Ve quien esta disponible antes de escribir.
-              </p>
-              <p className="mt-3 text-sm font-bold leading-6 text-ink/60">
-                Ciudad, habilidades, ingreso esperado y disponibilidad en un
-                perfil simple.
-              </p>
-              <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-black">
-                <div className="trust-badge px-3 py-3">RD</div>
-                <div className="trust-badge px-3 py-3">Hoy</div>
-                <div className="trust-badge px-3 py-3">WhatsApp</div>
+              <div className="hero-proof-card">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-hoja">
+                    Disponible hoy
+                  </p>
+                  <p className="mt-1 text-xl font-black leading-tight text-ink">
+                    Limpieza, cocina, construccion y mas
+                  </p>
+                </div>
+                <span className="hero-proof-status">Verificado</span>
+              </div>
+              <div className="hero-proof-list">
+                <div>
+                  <span>1</span>
+                  Filtra por ciudad
+                </div>
+                <div>
+                  <span>2</span>
+                  Revisa perfiles reales
+                </div>
+                <div>
+                  <span>3</span>
+                  Contacta por WhatsApp
+                </div>
+              </div>
+              <div className="hero-proof-footer">
+                <p>1 contacto gratis</p>
+                <Link href="/empleadores">Empezar ahora</Link>
               </div>
             </div>
           </div>
