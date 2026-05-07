@@ -33,6 +33,7 @@ type EditableWorker = {
 
 const workerProfileSaveError =
   "No pudimos guardar tu perfil ahora. Intenta de nuevo o escríbenos por WhatsApp.";
+const workerJobCategoryError = "Escribe claramente qué trabajo haces.";
 
 function isDuplicateWhatsAppError(error: { code?: string; message?: string }) {
   return (
@@ -144,6 +145,25 @@ async function findWorkerByWhatsAppNumber(whatsappNumber?: string) {
   };
 }
 
+function getPrimaryJobCategory(skills?: string[] | null) {
+  return Array.isArray(skills) ? skills[0]?.trim() || "" : "";
+}
+
+function getSupportingSkills(skills?: string[] | null) {
+  return Array.isArray(skills)
+    ? skills.map((skill) => skill.trim()).filter(Boolean).slice(1)
+    : [];
+}
+
+function buildSkillsWithPrimaryJob(primaryJob: string, extraSkills: string[]) {
+  return [
+    primaryJob,
+    ...extraSkills.filter(
+      (skill) => skill.toLowerCase() !== primaryJob.toLowerCase()
+    )
+  ];
+}
+
 async function updateWorkerProfile(formData: FormData) {
   "use server";
 
@@ -158,7 +178,10 @@ async function updateWorkerProfile(formData: FormData) {
   const fullName = getText(formData, "full_name");
   const city = getText(formData, "city");
   const whatsappNumber = getText(formData, "whatsapp_number");
-  const skills = getList(formData, "skills");
+  const primaryJobCategory = getText(formData, "job_category");
+  const skills = primaryJobCategory
+    ? buildSkillsWithPrimaryJob(primaryJobCategory, getList(formData, "skills"))
+    : [];
   const availability = getList(formData, "availability");
   const desiredIncome = Number(getText(formData, "desired_income"));
   const shortIntro = getText(formData, "short_intro");
@@ -174,14 +197,19 @@ async function updateWorkerProfile(formData: FormData) {
     fullName.length < 2 ||
     !city ||
     !whatsappNumber ||
-    skills.length === 0 ||
+    !primaryJobCategory ||
     !Number.isFinite(desiredIncome) ||
     desiredIncome <= 0 ||
     availability.length === 0 ||
     shortIntro.length < 20 ||
     !workStyle
   ) {
-    redirect(getEditRedirect(editToken, "incompleto"));
+    redirect(
+      getEditRedirect(
+        editToken,
+        !primaryJobCategory ? "trabajo" : "incompleto"
+      )
+    );
   }
 
   if (!normalizedWhatsAppNumber) {
@@ -192,6 +220,7 @@ async function updateWorkerProfile(formData: FormData) {
     hasBlockedText([
       fullName,
       city,
+      primaryJobCategory,
       skills.join(" "),
       availability.join(" "),
       shortIntro
@@ -317,6 +346,10 @@ export default async function EditWorkerPage({
   const missingProfileQualityFields = worker
     ? getMissingProfileQualityFields(worker)
     : [];
+  const primaryJobCategory = worker
+    ? getPrimaryJobCategory(worker.skills)
+    : "";
+  const supportingSkills = worker ? getSupportingSkills(worker.skills) : [];
 
   return (
     <>
@@ -340,6 +373,11 @@ export default async function EditWorkerPage({
         {state === "incompleto" && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             Completa nombre, descripcion y todos los campos requeridos.
+          </div>
+        )}
+        {state === "trabajo" && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+            {workerJobCategoryError}
           </div>
         )}
         {state === "telefono" && (
@@ -494,12 +532,22 @@ export default async function EditWorkerPage({
             </div>
 
             <label className="grid gap-1 font-bold">
-              Habilidades
+              ¿Qué trabajo haces principalmente?
+              <input
+                className="tap-target rounded-md border border-black/15 px-3"
+                name="job_category"
+                defaultValue={primaryJobCategory}
+                placeholder="Ejemplo: limpiadora, cocinera, construcción, plomero..."
+                required
+              />
+            </label>
+
+            <label className="grid gap-1 font-bold">
+              Otras habilidades
               <textarea
                 className="min-h-24 rounded-md border border-black/15 p-3"
                 name="skills"
-                defaultValue={(worker.skills || []).join(", ")}
-                required
+                defaultValue={supportingSkills.join(", ")}
               />
             </label>
 

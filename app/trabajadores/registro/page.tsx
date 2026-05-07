@@ -11,6 +11,7 @@ import {
 
 export type WorkerRegistrationActionState = {
   success?: true;
+  jobCategoryError?: true;
   supabaseError?: true;
 };
 
@@ -63,6 +64,20 @@ function getShortIntro(formData: FormData) {
   return shortIntro || "Disponible para trabajar.";
 }
 
+function getWorkerSkillsWithPrimaryJob(formData: FormData) {
+  const primaryJob = String(formData.get("job_category") || "").trim();
+
+  if (!primaryJob) {
+    return null;
+  }
+
+  const extraSkills = getList(formData, "skills").filter(
+    (skill) => skill.toLowerCase() !== primaryJob.toLowerCase()
+  );
+
+  return [primaryJob, ...extraSkills];
+}
+
 async function loadWorkerRegistrationDependencies() {
   try {
     const supabaseAdmin = await import("@/lib/supabase-admin");
@@ -104,6 +119,14 @@ async function submitWorkerRegistration(
     };
   }
 
+  const skills = getWorkerSkillsWithPrimaryJob(formData);
+
+  if (!skills) {
+    return {
+      jobCategoryError: true
+    };
+  }
+
   const insertPayload: {
     city: string;
     desired_income: number;
@@ -119,7 +142,7 @@ async function submitWorkerRegistration(
     whatsapp_number: String(formData.get("whatsapp_number") || "").trim(),
     work_style: String(formData.get("work_style") || "flexible") as WorkStyle,
     short_intro: getShortIntro(formData),
-    skills: getList(formData, "skills"),
+    skills,
     desired_income: getDesiredIncome(formData),
     edit_token: crypto.randomUUID()
   };

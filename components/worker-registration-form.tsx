@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormState } from "react-dom";
+import type React from "react";
 import type { WorkerRegistrationActionState } from "@/app/trabajadores/registro/page";
 import type { WorkStyle } from "@/lib/types";
 
@@ -21,6 +22,17 @@ const initialState: WorkerRegistrationActionState = {};
 const shareText = encodeURIComponent(
   "Mira mi perfil en ListoRD 👇\nhttps://listordapp.com\nEstoy registrado en ListoRD para recibir oportunidades de trabajo."
 );
+const jobCategoryError = "Escribe claramente qué trabajo haces.";
+
+function setRequiredJobCategoryMessage(
+  event: React.InvalidEvent<HTMLInputElement>
+) {
+  event.currentTarget.setCustomValidity(jobCategoryError);
+}
+
+function clearCustomValidity(event: React.FormEvent<HTMLInputElement>) {
+  event.currentTarget.setCustomValidity("");
+}
 
 export function WorkerRegistrationForm({
   action,
@@ -28,6 +40,7 @@ export function WorkerRegistrationForm({
 }: WorkerRegistrationFormProps) {
   const [state, formAction] = useFormState(action, initialState);
   const success = state.success;
+  const hasJobCategoryError = state.jobCategoryError;
   const supabaseError = state.supabaseError;
 
   return (
@@ -53,6 +66,12 @@ export function WorkerRegistrationForm({
         <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
           No pudimos enviar tu registro ahora mismo. Intenta otra vez en unos
           minutos.
+        </div>
+      )}
+
+      {hasJobCategoryError && (
+        <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
+          {jobCategoryError}
         </div>
       )}
 
@@ -110,12 +129,23 @@ export function WorkerRegistrationForm({
         </div>
 
         <label className="grid min-w-0 gap-1 font-bold">
-          Habilidades
+          ¿Qué trabajo haces principalmente?
+          <input
+            className="tap-target w-full min-w-0 rounded-md border border-black/15 px-3"
+            name="job_category"
+            placeholder="Ejemplo: limpiadora, cocinera, construcción, plomero..."
+            required
+            onInvalid={setRequiredJobCategoryMessage}
+            onInput={clearCustomValidity}
+          />
+        </label>
+
+        <label className="grid min-w-0 gap-1 font-bold">
+          Otras habilidades
           <textarea
             className="min-h-24 w-full min-w-0 rounded-md border border-black/15 p-3"
             name="skills"
             placeholder="Limpieza, cocina, construccion"
-            required
           />
         </label>
 
