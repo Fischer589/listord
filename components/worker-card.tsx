@@ -40,7 +40,10 @@ export function WorkerCard({
   const fullName = worker.full_name || "Trabajador ListoRD";
   const photoUrl = worker.photo_url?.trim();
   const city = worker.city || "República Dominicana";
-  const skills = Array.isArray(worker.skills) ? worker.skills : [];
+  const skills = Array.isArray(worker.skills)
+    ? worker.skills.map((skill) => skill.trim()).filter(Boolean)
+    : [];
+  const primarySkill = skills[0] || "Trabajador disponible";
   const workStyle =
     worker.work_style && worker.work_style in workStyleLabels
       ? worker.work_style
@@ -294,6 +297,9 @@ export function WorkerCard({
             <h2 className="worker-name text-ink">
               {fullName}
             </h2>
+            <p className="worker-primary-skill">
+              {primarySkill}
+            </p>
             <p className="worker-income text-ink">
               Quiere {formatIncomeShort(worker.desired_income)}
             </p>

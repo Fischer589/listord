@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app-header";
 import { WorkerRegistrationForm } from "@/components/worker-registration-form";
 import type { WorkStyle } from "@/lib/types";
 import {
+  getList,
   normalizeWhatsAppNumber,
   uploadWorkerPhoto
 } from "@/lib/worker-profile";
@@ -109,6 +110,7 @@ async function submitWorkerRegistration(
     edit_token: string;
     full_name: string;
     short_intro: string;
+    skills: string[];
     whatsapp_number: string;
     work_style: WorkStyle;
   } = {
@@ -117,6 +119,7 @@ async function submitWorkerRegistration(
     whatsapp_number: String(formData.get("whatsapp_number") || "").trim(),
     work_style: String(formData.get("work_style") || "flexible") as WorkStyle,
     short_intro: getShortIntro(formData),
+    skills: getList(formData, "skills"),
     desired_income: getDesiredIncome(formData),
     edit_token: crypto.randomUUID()
   };

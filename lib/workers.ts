@@ -32,6 +32,7 @@ const HOMEPAGE_WORKER_SELECT = `
   work_style,
   desired_income,
   short_intro,
+  skills,
   photo_url
 `;
 
@@ -44,6 +45,7 @@ type HomepageWorkerRow = Pick<
   | "work_style"
   | "desired_income"
   | "short_intro"
+  | "skills"
   | "photo_url"
 >;
 
