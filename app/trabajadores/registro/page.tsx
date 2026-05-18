@@ -250,25 +250,31 @@ export default function WorkerRegistrationPage({
       <AppHeader />
       <main className="worker-registration-page mx-auto w-full min-w-0 max-w-3xl overflow-x-hidden px-4 py-6">
         <Link href="/" className="text-sm font-bold text-hoja">
-          Volver
+          ← Volver al inicio
         </Link>
-        <h1 className="mt-3 break-words text-3xl font-black">
-          Registrarme como trabajador
-        </h1>
-        <p className="mt-2 break-words leading-7 text-black/70">
-          Recibimos tu informacion y la revisamos antes de mostrarla
-          publicamente en ListoRD.
-        </p>
+
+        <div className="mt-4 rounded-2xl border border-hoja/20 bg-cielo/50 p-5">
+          <p className="text-xs font-black uppercase tracking-wide text-hoja">
+            Gratis · Sin comisiones
+          </p>
+          <h1 className="mt-2 break-words text-3xl font-black text-ink">
+            Crea tu perfil gratis y consigue clientes por WhatsApp
+          </h1>
+          <p className="mt-2 break-words leading-7 text-ink/70">
+            Hazte visible en tu ciudad. Los clientes te encuentran en ListoRD y
+            te contactan directo por WhatsApp — sin intermediarios.
+          </p>
+        </div>
 
         {state === "incompleto" && (
           <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            Completa nombre, descripcion y todos los campos requeridos para
-            enviar tu registro.
+            Completa el nombre, la descripción y todos los campos requeridos
+            para enviar tu registro.
           </div>
         )}
         {state === "telefono" && (
           <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            Usa un numero de WhatsApp valido con al menos 10 digitos.
+            Usa un número de WhatsApp válido con al menos 10 dígitos.
           </div>
         )}
         {state === "duplicado" && (

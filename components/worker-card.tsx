@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { getBrowserSessionId, trackEvent } from "@/lib/analytics";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
@@ -19,7 +20,7 @@ const CONTACT_ERROR_MESSAGE =
 const PAYMENT_ERROR_MESSAGE =
   "No pudimos iniciar el pago. Intenta de nuevo o escríbenos por WhatsApp.";
 const INVALID_WHATSAPP_MESSAGE =
-  "Escribe un WhatsApp valido para activar tu acceso.";
+  "Escribe un WhatsApp válido para activar tu acceso.";
 const FALLBACK_PRIMARY_SKILL = "Trabajador disponible";
 
 function getWorkerSkills(worker: Worker) {
@@ -41,6 +42,17 @@ function getInitials(name: string) {
     .join("");
 
   return initials || "LR";
+}
+
+/** Appends a pre-filled message to a wa.me URL */
+function buildWhatsAppUrlWithMessage(url: string, message: string) {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("text", message);
+    return parsed.toString();
+  } catch {
+    return url;
+  }
 }
 
 export function WorkerCard({
@@ -274,7 +286,14 @@ export function WorkerCard({
         return;
       }
 
-      window.open(contactUrl, "_blank");
+      // Build the pre-filled message using the worker's name and primary skill
+      const workerName = selectedWorker.full_name?.split(" ")[0] || "hola";
+      const workerSkills = getWorkerSkills(selectedWorker);
+      const skill = getPrimarySkill(workerSkills);
+      const prefilledMessage = `Hola ${workerName}, te encontré en ListoRD. Necesito un(a) ${skill}. ¿Estás disponible?`;
+      const finalUrl = buildWhatsAppUrlWithMessage(contactUrl, prefilledMessage);
+
+      window.open(finalUrl, "_blank");
     } catch (error) {
       setContactError(
         error instanceof Error ? error.message : CONTACT_ERROR_MESSAGE
@@ -313,21 +332,18 @@ export function WorkerCard({
               </span>
             </p>
             <p className="worker-income text-ink">
-              Quiere {formatIncomeShort(worker.desired_income)}
-            </p>
-            <p className="mt-2 text-sm font-bold text-ink/55">
-              Disponible para conversar por WhatsApp
+              Disponible desde {formatIncomeShort(worker.desired_income)}
             </p>
           </div>
           <div className="pill-row mt-4 text-xs font-black">
             <span className="trust-badge px-2.5 py-1.5">
-              WhatsApp directo
-            </span>
-            <span className="trust-badge px-2.5 py-1.5">
-              Verificado
+              ✓ Verificado
             </span>
             <span className="trust-badge px-2.5 py-1.5">
               {city}
+            </span>
+            <span className="trust-badge px-2.5 py-1.5">
+              WhatsApp directo
             </span>
           </div>
 
@@ -350,10 +366,20 @@ export function WorkerCard({
           )}
 
           {worker.short_intro && (
-            <p className="worker-bio mt-4 text-sm leading-6 text-ink/70">
+            <p className="worker-bio mt-4 text-sm leading-6 text-ink/70 line-clamp-2">
               {worker.short_intro}
             </p>
           )}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-2 text-xs font-bold text-ink/50">
+          <span>Disponible hoy</span>
+          <Link
+            href={`/trabajador/${worker.id}`}
+            className="text-hoja underline-offset-2 hover:underline"
+          >
+            Ver perfil →
+          </Link>
         </div>
 
         <div className="contact-cta-shell">
@@ -365,11 +391,8 @@ export function WorkerCard({
             <WhatsAppIcon />
             Contactar por WhatsApp
           </button>
-          <p className="mt-2 text-center text-xs font-black text-ink/60">
-            Contacto directo por WhatsApp
-          </p>
-          <p className="mt-1 text-center text-xs font-bold text-ink/50">
-            Responden en menos de 10 minutos
+          <p className="mt-2 text-center text-xs font-bold text-ink/55">
+            Mensaje directo — responden rápido
           </p>
           {contactError && (
             <p className="mt-2 rounded-md bg-red-50 p-2 text-center text-xs font-black text-red-700">
@@ -405,7 +428,7 @@ export function WorkerCard({
                     responden en minutos.
                   </p>
                   <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-cielo p-3 text-sm font-black text-ink">
-                    Quedan pocos trabajadores disponibles hoy
+                    Acceso sin compromisos — cancela cuando quieras
                   </p>
                 </div>
                 <button
