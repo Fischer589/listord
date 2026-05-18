@@ -7,6 +7,17 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const CATEGORY_PILLS = [
+  { label: "🧹 Limpieza", skill: "limpieza" },
+  { label: "🍳 Cocina", skill: "cocina" },
+  { label: "🔧 Plomería", skill: "plomería" },
+  { label: "🏗️ Construcción", skill: "construcción" },
+  { label: "💡 Electricidad", skill: "electricista" },
+  { label: "🎨 Pintura", skill: "pintura" },
+  { label: "📚 Clases", skill: "clases" },
+  { label: "💅 Belleza", skill: "manicura" }
+];
+
 export default async function Home({
   searchParams
 }: {
@@ -25,37 +36,40 @@ export default async function Home({
     <>
       <AppHeader />
       <main className="page-shell">
+        {/* ── HERO ── */}
         <section className="hero-section">
           <div className="container hero-inner">
             <div className="hero-message">
               <p className="hero-kicker text-sm font-black uppercase tracking-wide">
-                RD + WhatsApp
+                Solo en República Dominicana 🇩🇴
               </p>
               <h1 className="hero-title text-ink">
-                Contrata trabajadores verificados por WhatsApp.
+                Encuentra trabajadores confiables hoy.
               </h1>
               <p className="hero-copy">
-                Encuentra personas reales en RD, disponibles para trabajar hoy.
-                1 contacto gratis.
+                Busca limpieza, construcción, cocina, plomería y más. Habla
+                directo por WhatsApp.
               </p>
               <div className="hero-actions mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/empleadores"
                   className="btn-primary tap-target inline-flex min-w-0 items-center justify-center px-6 py-4 text-base text-white"
                 >
-                  Necesito gente
+                  Encontrar trabajadores
                 </Link>
                 <Link
                   href="/trabajadores/registro"
                   className="btn-secondary tap-target inline-flex min-w-0 items-center justify-center px-6 py-4 text-base"
                 >
-                  Busco trabajo
+                  Crear mi perfil gratis
                 </Link>
               </div>
               <div className="hero-badges mt-7 flex flex-wrap gap-2 text-sm font-black text-ink">
-                <span className="trust-badge px-3.5 py-2">Verificados</span>
-                <span className="trust-badge px-3.5 py-2">Contacto directo</span>
-                <span className="trust-badge px-3.5 py-2">Listos para hoy</span>
+                <span className="trust-badge px-3.5 py-2">✓ Verificados</span>
+                <span className="trust-badge px-3.5 py-2">
+                  WhatsApp directo
+                </span>
+                <span className="trust-badge px-3.5 py-2">1 gratis al día</span>
               </div>
             </div>
             <div className="trust-panel">
@@ -65,7 +79,7 @@ export default async function Home({
                     Disponible hoy
                   </p>
                   <p className="mt-1 text-xl font-black leading-tight text-ink">
-                    Limpieza, cocina, construccion y mas
+                    Limpieza · Plomería · Cocina · Construcción · Más
                   </p>
                 </div>
                 <span className="hero-proof-status">Verificado</span>
@@ -73,7 +87,7 @@ export default async function Home({
               <div className="hero-proof-list">
                 <div>
                   <span>1</span>
-                  Filtra por ciudad
+                  Filtra por ciudad y servicio
                 </div>
                 <div>
                   <span>2</span>
@@ -81,17 +95,36 @@ export default async function Home({
                 </div>
                 <div>
                   <span>3</span>
-                  Contacta por WhatsApp
+                  Contacta directo por WhatsApp
                 </div>
               </div>
               <div className="hero-proof-footer">
                 <p>1 contacto gratis</p>
-                <Link href="/empleadores">Empezar ahora</Link>
+                <Link href="/empleadores">Empezar ahora →</Link>
               </div>
             </div>
           </div>
         </section>
 
+        {/* ── CATEGORY QUICK-FILTERS ── */}
+        <section className="container category-section">
+          <p className="mb-4 text-sm font-black uppercase tracking-wide text-hoja">
+            ¿Qué necesitas?
+          </p>
+          <div className="category-pill-row">
+            {CATEGORY_PILLS.map(({ label, skill }) => (
+              <Link
+                key={skill}
+                href={`/?skill=${encodeURIComponent(skill)}`}
+                className={`category-pill${searchParams.skill === skill ? " category-pill--active" : ""}`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ── FILTER BAR ── */}
         <section className="container filter-section">
           <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -115,13 +148,8 @@ export default async function Home({
           />
         </section>
 
+        {/* ── WORKER GRID ── */}
         <section className="container workers-section">
-          <div className="mb-8 grid grid-cols-2 gap-2 rounded-3xl border border-[rgba(31,31,28,0.06)] bg-card/80 p-2.5 text-center text-sm font-black shadow-soft sm:grid-cols-4">
-            <div className="trust-badge px-3 py-3">Llegó</div>
-            <div className="trust-badge px-3 py-3">Cumplió</div>
-            <div className="trust-badge px-3 py-3">Respondió</div>
-            <div className="trust-badge px-3 py-3">Fue contratado</div>
-          </div>
           {(!workersResult.ok || hasWorkers) && (
             <div className="section-heading">
               <div>
@@ -129,7 +157,7 @@ export default async function Home({
                   Trabajadores disponibles ahora
                 </h2>
                 <p className="mt-1 text-sm font-bold text-ink/55">
-                  Quedan pocos trabajadores disponibles hoy
+                  Perfiles revisados y listos para trabajar hoy
                 </p>
               </div>
             </div>
@@ -160,21 +188,76 @@ export default async function Home({
               ))
             ) : (
               <div className="empty-state md:col-span-2 lg:col-span-3">
-                <h3 className="mt-2 text-2xl font-black text-ink">
+                <p className="text-4xl">🇩🇴</p>
+                <h3 className="mt-3 text-2xl font-black text-ink">
                   Estamos agregando trabajadores verificados en RD.
                 </h3>
                 <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
-                  ¿Buscas trabajo? Regístrate gratis para aparecer en ListoRD y
-                  recibir oportunidades por WhatsApp.
+                  ¿Ofreces un servicio? Crea tu perfil gratis y empieza a
+                  recibir oportunidades por WhatsApp hoy mismo.
                 </p>
                 <Link
                   href="/trabajadores/registro"
                   className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-lg text-white"
                 >
-                  Registrarme como trabajador
+                  Crear mi perfil gratis
                 </Link>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* ── TRUST SECTION ── */}
+        <section className="container trust-section">
+          <p className="mb-5 text-center text-sm font-black uppercase tracking-wide text-hoja">
+            ¿Por qué ListoRD?
+          </p>
+          <div className="trust-section-grid">
+            <div className="trust-item">
+              <span className="trust-item-icon">✓</span>
+              <h3 className="trust-item-title">Perfiles verificados</h3>
+              <p className="trust-item-body">
+                Cada perfil es revisado manualmente por el equipo de ListoRD
+                antes de publicarse.
+              </p>
+            </div>
+            <div className="trust-item">
+              <span className="trust-item-icon">💬</span>
+              <h3 className="trust-item-title">Contacto directo por WhatsApp</h3>
+              <p className="trust-item-body">
+                Sin intermediarios. Hablas directamente con la persona.
+                Un contacto gratis cada día.
+              </p>
+            </div>
+            <div className="trust-item">
+              <span className="trust-item-icon">🇩🇴</span>
+              <h3 className="trust-item-title">Hecho para RD</h3>
+              <p className="trust-item-body">
+                Diseñado para el mercado dominicano. Trabajadores reales, en tu
+                ciudad, disponibles hoy.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── WORKER CTA BANNER ── */}
+        <section className="container worker-cta-banner">
+          <div className="worker-cta-inner">
+            <div>
+              <h2 className="text-2xl font-black text-ink">
+                ¿Ofreces un servicio?
+              </h2>
+              <p className="mt-2 leading-7 text-ink/70">
+                Crea tu perfil gratis y hazte visible en tu ciudad. Los clientes
+                te contactan directo por WhatsApp.
+              </p>
+            </div>
+            <Link
+              href="/trabajadores/registro"
+              className="btn-primary tap-target inline-flex shrink-0 items-center justify-center px-6 py-4 text-base text-white"
+            >
+              Crear mi perfil gratis
+            </Link>
           </div>
         </section>
       </main>
