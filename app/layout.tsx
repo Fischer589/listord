@@ -5,7 +5,7 @@ import { AnalyticsTracker } from "@/components/analytics-tracker";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://listord.com"),
+  metadataBase: new URL("https://listordapp.com"),
   title: {
     default: "ListoRD – Trabajadores listos hoy",
     template: "%s | ListoRD"
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     title: "ListoRD | Trabajadores listos para trabajar hoy",
     description:
       "Personas reales, disponibles ahora mismo en tu ciudad.",
-    url: "https://listord.com",
+    url: "https://listordapp.com",
     siteName: "ListoRD",
     images: [
       {
@@ -91,13 +91,20 @@ export default function RootLayout({
           <AnalyticsTracker />
         </Suspense>
         {children}
-        <footer className="border-t border-hoja/15 bg-card py-7 text-center text-sm font-bold text-ink/60">
-          <p>© 2026 ListoRD</p>
-          <nav className="mt-3 flex flex-wrap items-center justify-center gap-4 text-ink">
-            <Link href="/trabajadores/editar">Editar mi perfil</Link>
-            <Link href="/trabajadores/registro">Registrarme como trabajador</Link>
+        <footer className="border-t border-hoja/15 bg-card py-8 text-center text-sm font-bold text-ink/55">
+          <p className="text-base font-black text-ink">
+            Encuentra. Conecta. Listo. 🇩🇴
+          </p>
+          <p className="mt-1 text-ink/55">© 2026 ListoRD</p>
+          <nav className="mt-4 flex flex-wrap items-center justify-center gap-4 text-ink/70">
+            <Link href="/" className="hover:text-ink">Inicio</Link>
+            <Link href="/empleadores" className="hover:text-ink">Para empleadores</Link>
+            <Link href="/trabajadores/registro" className="hover:text-ink">Busco trabajo</Link>
+            <Link href="/trabajadores/editar" className="hover:text-ink">Editar mi perfil</Link>
           </nav>
-          <p className="mt-3 text-ink">Encuentra. Conecta. Listo.</p>
+          <p className="mt-4 text-xs text-ink/40">
+            Trabajadores verificados en República Dominicana · Contacto directo por WhatsApp
+          </p>
         </footer>
       </body>
     </html>

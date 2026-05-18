@@ -20,6 +20,15 @@ const nextConfig = {
       protocol: "https",
       hostname
     }))
+  },
+  async redirects() {
+    return [
+      {
+        source: "/busco-trabajo",
+        destination: "/trabajadores/registro",
+        permanent: true
+      }
+    ];
   }
 };
 

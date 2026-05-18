@@ -24,12 +24,6 @@ export function AppHeader() {
         </Link>
         <nav className="app-header-nav flex w-full min-w-0 items-center justify-between gap-1.5 text-xs font-black sm:w-auto sm:justify-end sm:gap-2 sm:text-sm">
           <Link
-            href="/trabajadores/editar"
-            className="tap-target inline-flex min-w-0 flex-1 items-center justify-center rounded-xl px-2 py-2 text-center leading-tight text-ink/70 hover:bg-card hover:text-ink sm:flex-none sm:px-3"
-          >
-            Editar mi perfil
-          </Link>
-          <Link
             href="/trabajadores/registro"
             className="tap-target inline-flex min-w-0 flex-1 items-center justify-center rounded-xl px-2 py-2 text-center leading-tight text-ink/70 hover:bg-card hover:text-ink sm:flex-none sm:px-3"
           >
