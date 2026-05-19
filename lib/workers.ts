@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseClient } from "./supabase";
+import { workerMatchesCity, workerMatchesSkill } from "./search";
 import type { Worker } from "./types";
 
 type WorkerFilters = {
@@ -62,8 +63,42 @@ export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
   return result.workers;
 }
 
+/**
+ * Applies in-memory filters to a worker list.
+ * All filtering is done post-fetch so no Supabase schema changes are needed.
+ */
+function applyFilters(workers: Worker[], filters: WorkerFilters): Worker[] {
+  return workers.filter(worker => {
+    // City — normalized partial match
+    if (filters.city?.trim()) {
+      if (!workerMatchesCity(worker, filters.city)) return false;
+    }
+
+    // Skill / service — synonym-aware full-text match
+    if (filters.skill?.trim()) {
+      if (!workerMatchesSkill(worker, filters.skill)) return false;
+    }
+
+    // Max income — numeric threshold
+    if (filters.income?.trim()) {
+      const maxIncome = Number(filters.income);
+      if (Number.isFinite(maxIncome) && maxIncome > 0) {
+        const workerIncome = Number(worker.desired_income ?? 0);
+        if (workerIncome > maxIncome) return false;
+      }
+    }
+
+    // Work style — exact enum match
+    if (filters.workStyle?.trim()) {
+      if (worker.work_style !== filters.workStyle) return false;
+    }
+
+    return true;
+  });
+}
+
 export async function getWorkersResult(
-  _filters: WorkerFilters
+  filters: WorkerFilters
 ): Promise<WorkersResult> {
   noStore();
 
@@ -96,11 +131,14 @@ export async function getWorkersResult(
     }
 
     const rows = (data ?? []) as HomepageWorkerRow[];
-    const workers = rows.map((worker) => ({
+    const allWorkers = rows.map((worker) => ({
       ...worker,
       is_verified: true
     }));
-    const verifiedWorkerCount = workers.length;
+
+    const verifiedWorkerCount = allWorkers.length;
+    const workers = applyFilters(allWorkers, filters);
+
     return {
       ok: true,
       workers,
