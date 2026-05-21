@@ -344,6 +344,9 @@ textarea::placeholder {
 }
 
 .hero-proof-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   flex: 0 0 auto;
   border-radius: 999px;
   background: #203117;
@@ -897,4 +900,284 @@ textarea::placeholder {
 /* ── filter-section spacing: push down slightly to give category pills room ── */
 .filter-section {
   padding-top: 2.25rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREMIUM DESIGN SYSTEM — Step 4 additions
+   New classes for worker-card v2 + homepage social-proof upgrades
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Pulse animations ── */
+@keyframes pulse-avail {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.55; transform: scale(1.35); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* ─── Worker card: "Nuevo" badge ─── */
+.worker-badge-new {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1f7a4c, #3e8e60);
+  color: #fff;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(31, 122, 76, 0.35);
+  pointer-events: none;
+}
+
+/* ─── Worker card: name + verified row ─── */
+.worker-name-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0;
+}
+
+.worker-verified-pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: rgba(111, 127, 91, 0.14);
+  color: #3e5533;
+  font-size: 0.72rem;
+  font-weight: 900;
+  border: 1px solid rgba(111, 127, 91, 0.22);
+  margin-top: 0.15rem;
+}
+
+/* ─── Worker card: city + rate info row ─── */
+.worker-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.worker-city-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.worker-city-icon {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: 0 0 auto;
+  opacity: 0.55;
+}
+
+.worker-rate-label {
+  flex: 0 0 auto;
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #3f4a35;
+}
+
+/* ─── Worker card: skill chips ─── */
+.worker-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+
+.worker-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(31, 31, 28, 0.075);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.78);
+  color: rgba(29, 29, 27, 0.72);
+  padding: 0.22rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.worker-skill-more {
+  display: inline-flex;
+  align-items: center;
+  border: 1px dashed rgba(31, 31, 28, 0.1);
+  border-radius: 999px;
+  color: rgba(29, 29, 27, 0.45);
+  padding: 0.22rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* ─── Worker card: profile completeness signal ─── */
+.worker-complete-signal {
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #3e5533;
+  opacity: 0.8;
+}
+
+/* ─── Worker card: footer row ─── */
+.worker-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--border);
+}
+
+.worker-availability {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #3e5533;
+}
+
+.worker-avail-dot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #4caf79;
+  box-shadow: 0 0 0 3px rgba(76, 175, 121, 0.18);
+  animation: pulse-avail 2.2s ease-in-out infinite;
+}
+
+.worker-profile-link {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #465638;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgba(111, 127, 91, 0.22);
+  background: rgba(111, 127, 91, 0.06);
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.worker-profile-link:hover {
+  background: rgba(111, 127, 91, 0.14);
+  border-color: rgba(111, 127, 91, 0.38);
+  transform: none;
+}
+
+/* ─── Hero: social proof stats bar ─── */
+.hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 1.5rem;
+  border: 1px solid rgba(111, 127, 91, 0.16);
+  border-radius: 1rem;
+  background: rgba(255, 253, 248, 0.72);
+  padding: 0.75rem 1.1rem;
+  width: fit-content;
+  max-width: 100%;
+  box-shadow:
+    0 8px 22px rgba(29, 29, 27, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0.9rem;
+}
+
+.hero-stat-number {
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.hero-stat-label {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: rgba(29, 29, 27, 0.52);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.hero-stat-divider {
+  width: 1px;
+  height: 2rem;
+  background: rgba(31, 31, 28, 0.1);
+  flex: 0 0 auto;
+}
+
+/* ─── Hero: "En vivo" pulsing dot ─── */
+.hero-proof-dot {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #7dde9e;
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+/* ─── Filter result count tag ─── */
+.results-count-tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  border: 1px solid rgba(111, 127, 91, 0.2);
+  border-radius: 999px;
+  background: rgba(111, 127, 91, 0.07);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #3e4e32;
+  white-space: nowrap;
+}
+
+.results-count-number {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #3f4a35;
+}
+
+.results-count-total {
+  color: rgba(29, 29, 27, 0.45);
+  font-weight: 700;
+}
+
+/* ─── Accessibility: reduced motion overrides ─── */
+@media (prefers-reduced-motion: reduce) {
+  .worker-avail-dot,
+  .hero-proof-dot {
+    animation: none;
+  }
 }
