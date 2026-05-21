@@ -142,7 +142,7 @@ function expandQuery(raw: string): string[] {
 
   const wordTokens = q.split(/\s+/).filter(s => s.length > 0);
 
-  // Direct key match (e.g. "plomeria" → plomería synonyms)
+  // Direct key match  (e.g. "plomeria" → plomería synonyms)
   if (Object.prototype.hasOwnProperty.call(SYNONYM_MAP, q)) {
     return dedupe([q].concat(SYNONYM_MAP[q] as string[]).concat(wordTokens));
   }

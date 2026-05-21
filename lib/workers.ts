@@ -34,7 +34,8 @@ const HOMEPAGE_WORKER_SELECT = `
   desired_income,
   short_intro,
   skills,
-  photo_url
+  photo_url,
+  created_at
 `;
 
 type HomepageWorkerRow = Pick<
@@ -48,6 +49,7 @@ type HomepageWorkerRow = Pick<
   | "short_intro"
   | "skills"
   | "photo_url"
+  | "created_at"
 >;
 
 type SupabaseErrorDetails = {
@@ -59,7 +61,6 @@ type SupabaseErrorDetails = {
 
 export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
   const result = await getWorkersResult(filters);
-
   return result.workers;
 }
 
@@ -117,11 +118,11 @@ export async function getWorkersResult(
     const { data, error } = await supabase
       .from("workers")
       .select(HOMEPAGE_WORKER_SELECT)
-      .eq("is_verified", true);
+      .eq("is_verified", true)
+      .order("created_at", { ascending: false });
 
     if (error) {
       logHomepageWorkerQueryError(error);
-
       return {
         ok: false,
         workers: [],
@@ -147,7 +148,6 @@ export async function getWorkersResult(
   } catch (error) {
     const normalizedError = normalizeUnknownError(error);
     logHomepageWorkerQueryError(normalizedError);
-
     return {
       ok: false,
       workers: [],
@@ -168,14 +168,10 @@ function logHomepageWorkerQueryError(error: SupabaseErrorDetails) {
 
 function normalizeUnknownError(error: unknown): SupabaseErrorDetails {
   if (error instanceof Error) {
-    return {
-      message: error.message
-    };
+    return { message: error.message };
   }
-
   if (error && typeof error === "object") {
     const maybeError = error as SupabaseErrorDetails;
-
     return {
       message: maybeError.message,
       code: maybeError.code,
@@ -183,8 +179,5 @@ function normalizeUnknownError(error: unknown): SupabaseErrorDetails {
       hint: maybeError.hint
     };
   }
-
-  return {
-    message: String(error)
-  };
+  return { message: String(error) };
 }
