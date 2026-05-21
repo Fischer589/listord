@@ -1671,3 +1671,179 @@ textarea::placeholder {
     animation: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CATEGORY PAGES — /categorias/[slug]
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Category hero section ── */
+.cat-hero {
+  border-bottom: 1px solid var(--border);
+  background:
+    linear-gradient(118deg, rgba(255, 253, 248, 0.98) 0%, rgba(246, 243, 236, 0.95) 45%, rgba(228, 236, 217, 0.96) 100%),
+    linear-gradient(180deg, #fffdf8, #eef3e7);
+  padding-top: 2.5rem;
+  padding-bottom: 3rem;
+}
+
+.cat-hero-inner {
+  max-width: min(100%, 56rem);
+}
+
+/* ── Breadcrumb ── */
+.cat-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.cat-breadcrumb-link {
+  color: rgba(29, 29, 27, 0.45);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.cat-breadcrumb-link:hover {
+  color: rgba(29, 29, 27, 0.8);
+  transform: none;
+}
+
+.cat-breadcrumb-sep {
+  color: rgba(29, 29, 27, 0.25);
+}
+
+.cat-breadcrumb-current {
+  color: rgba(29, 29, 27, 0.65);
+}
+
+/* ── Kicker ── */
+.cat-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(111, 127, 91, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.72);
+  color: #465638;
+  padding: 0.38rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.cat-kicker-emoji {
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ── Title ── */
+.cat-title {
+  font-size: clamp(1.9rem, 5.5vw, 3.2rem);
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 0.85rem;
+}
+
+.cat-desc {
+  max-width: 42rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  font-weight: 700;
+  color: rgba(29, 29, 27, 0.65);
+  margin: 0 0 1.1rem;
+}
+
+/* ── Live worker count ── */
+.cat-count-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #3e5533;
+}
+
+.cat-count-dot {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #4caf79;
+  box-shadow: 0 0 0 3px rgba(76, 175, 121, 0.2);
+  animation: pulse-avail 2.2s ease-in-out infinite;
+}
+
+.cat-count-text strong {
+  font-weight: 900;
+}
+
+/* ── Trust pills row ── */
+.cat-trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.cat-trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(31, 31, 28, 0.07);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.85);
+  color: rgba(29, 29, 27, 0.72);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px rgba(29, 29, 27, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+/* ── "Otras categorías" section ── */
+.cat-more-section {
+  padding-top: 3rem;
+  padding-bottom: 5rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Homepage: city activity signal ── */
+.hero-cities {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: rgba(29, 29, 27, 0.52);
+  letter-spacing: 0.01em;
+}
+
+.hero-cities-dot {
+  display: inline-block;
+  width: 0.38rem;
+  height: 0.38rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #4caf79;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .cat-count-dot,
+  .hero-cities-dot {
+    animation: none;
+  }
+}
