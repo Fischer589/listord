@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { AppHeader } from "@/components/app-header";
 import { WorkerProfileContactButton } from "@/components/worker-profile-contact-button";
+import { ShareProfileButton } from "@/components/share-profile-button";
 import { getSupabaseClient } from "@/lib/supabase";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import type { Worker, WorkStyle } from "@/lib/types";
@@ -18,7 +19,8 @@ const PROFILE_SELECT = `
   desired_income,
   short_intro,
   skills,
-  photo_url
+  photo_url,
+  created_at
 `;
 
 type ProfileRow = Pick<
@@ -31,6 +33,7 @@ type ProfileRow = Pick<
   | "short_intro"
   | "skills"
   | "photo_url"
+  | "created_at"
 >;
 
 async function getWorkerProfile(slug: string): Promise<ProfileRow | null> {
@@ -48,13 +51,17 @@ async function getWorkerProfile(slug: string): Promise<ProfileRow | null> {
   return data as ProfileRow;
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function getInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("") || "LR";
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") || "LR"
+  );
 }
 
 function getSkills(worker: ProfileRow) {
@@ -63,8 +70,33 @@ function getSkills(worker: ProfileRow) {
     : [];
 }
 
+function formatMemberSince(createdAt: string | undefined): string | null {
+  if (!createdAt) return null;
+  try {
+    return new Date(createdAt).toLocaleDateString("es-DO", {
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return null;
+  }
+}
+
+function isNewProfile(createdAt: string | undefined, days = 30): boolean {
+  if (!createdAt) return false;
+  try {
+    return (
+      Date.now() - new Date(createdAt).getTime() < days * 24 * 60 * 60 * 1000
+    );
+  } catch {
+    return false;
+  }
+}
+
+// ─── SEO Metadata ─────────────────────────────────────────────────────────────
+
 export async function generateMetadata({
-  params
+  params,
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
@@ -75,24 +107,98 @@ export async function generateMetadata({
   const skills = getSkills(worker);
   const primarySkill = skills[0] || "Trabajador disponible";
   const city = worker.city || "República Dominicana";
+  const description =
+    worker.short_intro ||
+    `${name} es ${primarySkill} en ${city}. Perfil verificado en ListoRD. Contáctalo directo por WhatsApp — sin intermediarios.`;
 
   return {
-    title: `${name} — ${primarySkill} en ${city} | ListoRD`,
-    description:
-      worker.short_intro ||
-      `Perfil verificado de ${name}. Disponible para trabajar en ${city} hoy.`,
+    title: `${name} — ${primarySkill} en ${city}`,
+    description,
+    keywords: [
+      name,
+      primarySkill,
+      city,
+      ...skills.slice(0, 3),
+      "trabajador verificado",
+      "República Dominicana",
+      "ListoRD",
+    ].filter(Boolean),
     openGraph: {
-      title: `${name} | ListoRD`,
-      description:
-        worker.short_intro ||
-        `${primarySkill} disponible en ${city}. Contáctalo por WhatsApp.`,
-      ...(worker.photo_url ? { images: [{ url: worker.photo_url }] } : {})
-    }
+      title: `${name} — ${primarySkill} en ${city} | ListoRD`,
+      description,
+      url: `https://listordapp.com/trabajador/${worker.id}`,
+      type: "profile",
+      ...(worker.photo_url
+        ? { images: [{ url: worker.photo_url, alt: `Foto de ${name}` }] }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${name} — ${primarySkill} en ${city}`,
+      description,
+      ...(worker.photo_url ? { images: [worker.photo_url] } : {}),
+    },
   };
 }
 
+// ─── JSON-LD structured data ──────────────────────────────────────────────────
+
+function WorkerJsonLd({
+  worker,
+  skills,
+  profileUrl,
+}: {
+  worker: ProfileRow;
+  skills: string[];
+  profileUrl: string;
+}) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: worker.full_name || "Trabajador ListoRD",
+    jobTitle: skills[0] || "Trabajador",
+    ...(worker.short_intro ? { description: worker.short_intro } : {}),
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: worker.city || "República Dominicana",
+      addressCountry: "DO",
+    },
+    url: profileUrl,
+    ...(worker.photo_url ? { image: worker.photo_url } : {}),
+    worksFor: {
+      "@type": "Organization",
+      name: "ListoRD",
+      url: "https://listordapp.com",
+    },
+    ...(skills.length > 0
+      ? {
+          hasOccupation: {
+            "@type": "Occupation",
+            name: skills[0],
+            skills: skills.join(", "),
+          },
+        }
+      : {}),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+const HOW_IT_WORKS = [
+  { step: "1", text: `Haz clic en "Contactar por WhatsApp" abajo` },
+  { step: "2", text: "Se abre WhatsApp con un mensaje listo para enviar" },
+  { step: "3", text: "Hablas directamente con la persona — sin intermediarios" },
+];
+
 export default async function WorkerProfilePage({
-  params
+  params,
 }: {
   params: { slug: string };
 }) {
@@ -103,32 +209,34 @@ export default async function WorkerProfilePage({
   const city = worker.city || "República Dominicana";
   const skills = getSkills(worker);
   const primarySkill = skills[0] || "Trabajador disponible";
-  const supportingSkills = skills.slice(1, 5);
+  const supportingSkills = skills.slice(1);
   const workStyle =
     worker.work_style && worker.work_style in workStyleLabels
       ? (worker.work_style as WorkStyle)
       : null;
   const profileUrl = `https://listordapp.com/trabajador/${worker.id}`;
-  const shareText = encodeURIComponent(
-    `Mira mi perfil en ListoRD 👇\n${profileUrl}`
-  );
+  const memberSince = formatMemberSince(worker.created_at);
+  const isNew = isNewProfile(worker.created_at, 30);
 
   return (
     <>
       <AppHeader />
-      <main className="container py-8">
-        <Link
-          href="/"
-          className="text-sm font-bold text-hoja hover:underline"
-        >
+      <WorkerJsonLd worker={worker} skills={skills} profileUrl={profileUrl} />
+
+      <main className="container py-8 md:py-12">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold text-hoja hover:underline">
           ← Volver al inicio
         </Link>
 
         <div className="mt-5 grid gap-6 md:grid-cols-[320px_1fr] md:items-start">
-          {/* ── LEFT: Photo + quick info ── */}
+
+          {/* ── LEFT: Photo card + Share card ── */}
           <div className="flex flex-col gap-4">
+
+            {/* Profile card */}
             <div className="overflow-hidden rounded-2xl border border-[rgba(31,31,28,0.07)] bg-white shadow-soft">
-              <div className="relative h-64 w-full bg-gradient-to-br from-cielo to-[#e8f0e0]">
+              {/* Photo */}
+              <div className="profile-photo-wrap">
                 {worker.photo_url ? (
                   <Image
                     src={worker.photo_url}
@@ -139,23 +247,27 @@ export default async function WorkerProfilePage({
                     priority
                   />
                 ) : (
-                  <div className="grid h-full w-full place-items-center text-5xl font-black text-hoja/60">
+                  <div className="profile-photo-fallback">
                     {getInitials(fullName)}
                   </div>
                 )}
+                {/* Activity signal */}
+                {isNew && (
+                  <span className="profile-new-badge">✦ Nuevo en ListoRD</span>
+                )}
               </div>
+
+              {/* Quick info */}
               <div className="p-5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <h1 className="text-2xl font-black text-ink">{fullName}</h1>
                     <p className="mt-1 flex items-center gap-1.5 text-sm font-black text-hoja">
                       <span className="inline-block h-2 w-2 rounded-full bg-hoja/70" />
                       {primarySkill}
                     </p>
                   </div>
-                  <span className="rounded-full bg-ink px-3 py-1 text-xs font-black text-white">
-                    ✓ Verificado
-                  </span>
+                  <span className="profile-verified-pill">✓ Verificado</span>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -174,23 +286,39 @@ export default async function WorkerProfilePage({
                     </p>
                   </div>
                 </div>
+
+                {memberSince && (
+                  <p className="mt-3 text-xs font-bold text-ink/40">
+                    Miembro desde {memberSince}
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Share button */}
-            <a
-              href={`https://wa.me/?text=${shareText}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="tap-target flex w-full items-center justify-center gap-2 rounded-xl border border-hoja/30 bg-white px-4 py-3 text-sm font-black text-hoja shadow-soft hover:bg-cielo"
-            >
-              <WhatsAppIcon />
-              Compartir este perfil
-            </a>
+            {/* ── Share motivation card ── */}
+            <div className="profile-share-card">
+              <p className="profile-share-eyebrow">¿Eres tú en este perfil?</p>
+              <p className="profile-share-headline">
+                Comparte y consigue más clientes hoy
+              </p>
+              <p className="profile-share-body">
+                Publica en WhatsApp Status, Facebook o Messenger — tus contactos
+                pueden contratarte directo.
+              </p>
+              <ShareProfileButton
+                profileUrl={profileUrl}
+                workerName={fullName}
+                primarySkill={primarySkill}
+                city={city}
+                variant="primary"
+              />
+            </div>
+
           </div>
 
-          {/* ── RIGHT: Details ── */}
+          {/* ── RIGHT: About + Skills + How + Trust + CTA ── */}
           <div className="flex flex-col gap-5">
+
             {/* About */}
             {worker.short_intro && (
               <div className="rounded-2xl border border-[rgba(31,31,28,0.07)] bg-white p-5 shadow-soft">
@@ -205,7 +333,7 @@ export default async function WorkerProfilePage({
             {(supportingSkills.length > 0 || workStyle) && (
               <div className="rounded-2xl border border-[rgba(31,31,28,0.07)] bg-white p-5 shadow-soft">
                 <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                  Habilidades y estilo
+                  Habilidades
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {supportingSkills.map((skill) => (
@@ -218,46 +346,55 @@ export default async function WorkerProfilePage({
                   ))}
                   {workStyle && (
                     <span className="rounded-full border border-[rgba(31,31,28,0.07)] bg-cielo px-3 py-1.5 text-sm font-black text-ink/80">
-                      Estilo: {workStyleLabels[workStyle]}
+                      {workStyleLabels[workStyle]}
                     </span>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Trust */}
-            <div className="rounded-2xl border border-hoja/20 bg-cielo/60 p-5">
+            {/* How to contact — for employers arriving cold */}
+            <div className="rounded-2xl border border-[rgba(31,31,28,0.07)] bg-white p-5 shadow-soft">
               <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                Perfil verificado
+                Cómo contactar
               </p>
-              <p className="mt-2 text-sm leading-6 text-ink/70">
-                Este perfil fue revisado manualmente por el equipo de ListoRD.
-                Hablas directamente con la persona, sin intermediarios.
-              </p>
+              <div className="mt-4 grid gap-3">
+                {HOW_IT_WORKS.map(({ step, text }) => (
+                  <div key={step} className="profile-how-step">
+                    <span className="profile-how-num">{step}</span>
+                    <p className="text-sm font-bold leading-6 text-ink/75">{text}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Contact CTA */}
+            {/* Verification trust */}
+            <div className="profile-trust-card">
+              <div className="flex items-start gap-3">
+                <span className="profile-trust-icon">✓</span>
+                <div>
+                  <p className="font-black text-ink">
+                    Perfil revisado por nuestro equipo
+                  </p>
+                  <p className="mt-1.5 text-sm leading-6 text-ink/62">
+                    Cada perfil en ListoRD es verificado manualmente antes de
+                    publicarse. Sin bots, sin perfiles falsos. Estás hablando
+                    con una persona real en República Dominicana.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* WhatsApp contact CTA */}
             <WorkerProfileContactButton
               workerId={worker.id}
               workerName={fullName}
               primarySkill={primarySkill}
             />
+
           </div>
         </div>
       </main>
     </>
-  );
-}
-
-function WhatsAppIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 32 32"
-      className="h-4 w-4 shrink-0"
-      fill="currentColor"
-    >
-      <path d="M16.03 3.5A12.38 12.38 0 0 0 5.44 22.3L4 28.5l6.36-1.38A12.36 12.36 0 1 0 16.03 3.5Zm0 22.5a10.05 10.05 0 0 1-5.12-1.4l-.36-.22-3.75.82.85-3.58-.24-.38A10.06 10.06 0 1 1 16.03 26Zm5.76-7.53c-.31-.16-1.85-.91-2.13-1.02-.29-.1-.49-.16-.7.16-.2.31-.8 1.02-.98 1.23-.18.2-.36.23-.67.08-.31-.16-1.32-.49-2.51-1.55a9.44 9.44 0 0 1-1.73-2.15c-.18-.31-.02-.48.14-.64.14-.14.31-.36.47-.54.16-.18.2-.31.31-.52.1-.2.05-.39-.03-.54-.08-.16-.7-1.68-.96-2.3-.25-.6-.51-.52-.7-.53h-.6c-.2 0-.54.08-.83.39-.29.31-1.09 1.06-1.09 2.59s1.12 3.01 1.27 3.22c.16.2 2.2 3.36 5.34 4.72.75.32 1.33.51 1.78.65.75.24 1.43.2 1.97.12.6-.09 1.85-.76 2.11-1.49.26-.73.26-1.35.18-1.49-.08-.13-.29-.2-.6-.36Z" />
-    </svg>
   );
 }

@@ -23,7 +23,7 @@ const INVALID_WHATSAPP_MESSAGE =
   "Escribe un WhatsApp válido para activar tu acceso.";
 const FALLBACK_PRIMARY_SKILL = "Trabajador disponible";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getWorkerSkills(worker: Worker) {
   return Array.isArray(worker.skills)
@@ -56,14 +56,22 @@ function buildWhatsAppUrlWithMessage(url: string, message: string) {
   }
 }
 
-/** Returns true if the worker registered within the last N days */
-function isRecentlyRegistered(createdAt: string | undefined, days = 7): boolean {
-  if (!createdAt) return false;
+/**
+ * Returns the profile age bucket:
+ * - "today"  : registered within the last 24 hours
+ * - "week"   : registered within the last 7 days
+ * - null     : older than 7 days or unknown
+ */
+function getProfileAge(createdAt: string | undefined): "today" | "week" | null {
+  if (!createdAt) return null;
   try {
     const diffMs = Date.now() - new Date(createdAt).getTime();
-    return diffMs < days * 24 * 60 * 60 * 1000;
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    if (diffMs < ONE_DAY) return "today";
+    if (diffMs < 7 * ONE_DAY) return "week";
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -77,7 +85,7 @@ function hasCompleteProfile(worker: Worker): boolean {
   );
 }
 
-// ─── Component ─────────────────────────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function WorkerCard({ worker }: { worker: Worker }) {
   const fullName = worker.full_name || "Trabajador ListoRD";
@@ -85,7 +93,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
   const city = worker.city || "República Dominicana";
   const skills = getWorkerSkills(worker);
   const primarySkill = getPrimarySkill(skills);
-  // Show primary skill in header, supporting skills as chips (skip first)
+  // Show primary skill in header; supporting skills as chips (skip first)
   const chipSkills = skills.slice(1, 4);
   const overflowCount = Math.max(0, skills.length - 1 - chipSkills.length);
   const workStyle =
@@ -93,7 +101,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
       ? worker.work_style
       : null;
 
-  const isNew = isRecentlyRegistered(worker.created_at, 7);
+  const profileAge = getProfileAge(worker.created_at);
   const isComplete = hasCompleteProfile(worker);
 
   // ── State ──
@@ -281,7 +289,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
     }
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <article className="worker-card" ref={cardRef}>
@@ -299,8 +307,12 @@ export function WorkerCard({ worker }: { worker: Worker }) {
         ) : (
           <div className="worker-photo-fallback">{getInitials(fullName)}</div>
         )}
-        {/* Freshness badge — overlaid on photo */}
-        {isNew && <span className="worker-badge-new">✦ Nuevo</span>}
+        {/* Activity badge — "Nuevo hoy" or "Nuevo" */}
+        {profileAge && (
+          <span className="worker-badge-new">
+            {profileAge === "today" ? "✦ Nuevo hoy" : "✦ Nuevo"}
+          </span>
+        )}
       </div>
 
       {/* ── Body ── */}
