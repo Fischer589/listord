@@ -23,6 +23,8 @@ const INVALID_WHATSAPP_MESSAGE =
   "Escribe un WhatsApp válido para activar tu acceso.";
 const FALLBACK_PRIMARY_SKILL = "Trabajador disponible";
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────────────────
+
 function getWorkerSkills(worker: Worker) {
   return Array.isArray(worker.skills)
     ? worker.skills.map((skill) => skill.trim()).filter(Boolean)
@@ -40,7 +42,6 @@ function getInitials(name: string) {
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
     .join("");
-
   return initials || "LR";
 }
 
@@ -55,47 +56,63 @@ function buildWhatsAppUrlWithMessage(url: string, message: string) {
   }
 }
 
-export function WorkerCard({
-  worker
-}: {
-  worker: Worker;
-}) {
+/** Returns true if the worker registered within the last N days */
+function isRecentlyRegistered(createdAt: string | undefined, days = 7): boolean {
+  if (!createdAt) return false;
+  try {
+    const diffMs = Date.now() - new Date(createdAt).getTime();
+    return diffMs < days * 24 * 60 * 60 * 1000;
+  } catch {
+    return false;
+  }
+}
+
+/** Returns true if the worker has a complete profile (photo + intro + 2 skills) */
+function hasCompleteProfile(worker: Worker): boolean {
+  return Boolean(
+    worker.photo_url?.trim() &&
+      worker.short_intro?.trim() &&
+      Array.isArray(worker.skills) &&
+      worker.skills.length >= 2
+  );
+}
+
+// ─── Component ─────────────────────────────────────────────────────────────────────────────
+
+export function WorkerCard({ worker }: { worker: Worker }) {
   const fullName = worker.full_name || "Trabajador ListoRD";
   const photoUrl = worker.photo_url?.trim();
   const city = worker.city || "República Dominicana";
   const skills = getWorkerSkills(worker);
   const primarySkill = getPrimarySkill(skills);
-  const supportingSkills = skills.slice(1, 4);
+  // Show primary skill in header, supporting skills as chips (skip first)
+  const chipSkills = skills.slice(1, 4);
+  const overflowCount = Math.max(0, skills.length - 1 - chipSkills.length);
   const workStyle =
     worker.work_style && worker.work_style in workStyleLabels
       ? worker.work_style
       : null;
+
+  const isNew = isRecentlyRegistered(worker.created_at, 7);
+  const isComplete = hasCompleteProfile(worker);
+
+  // ── State ──
   const [showPaywall, setShowPaywall] = useState(false);
-  const [checkoutPlan, setCheckoutPlan] = useState<
-    "weekly" | "monthly" | null
-  >(null);
+  const [checkoutPlan, setCheckoutPlan] = useState<"weekly" | "monthly" | null>(null);
   const [employerWhatsAppNumber, setEmployerWhatsAppNumber] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const [contactError, setContactError] = useState("");
   const cardRef = useRef<HTMLElement | null>(null);
 
+  // ── Analytics ──
   useEffect(() => {
     const card = cardRef.current;
-
-    if (!card) {
-      return;
-    }
-
+    if (!card) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (!entry?.isIntersecting) {
-          return;
-        }
-
+        if (!entry?.isIntersecting) return;
         try {
-          trackEvent("worker_view", {
-            worker_id: worker.id
-          });
+          trackEvent("worker_view", { worker_id: worker.id });
         } catch (error) {
           console.warn("Worker view analytics failed.", {
             name: error instanceof Error ? error.name : "UnknownError"
@@ -105,15 +122,14 @@ export function WorkerCard({
       },
       { threshold: 0.5 }
     );
-
     observer.observe(card);
-
     return () => observer.disconnect();
   }, [worker.id]);
 
+  // ── Handlers (ALL UNTOUCHED) ──
+
   const handleContactClick = async (selectedWorker: Worker) => {
     let browserSessionId = "";
-
     try {
       browserSessionId = getBrowserSessionId();
     } catch (error) {
@@ -121,35 +137,26 @@ export function WorkerCard({
         name: error instanceof Error ? error.name : "UnknownError"
       });
     }
-
     setContactError("");
     try {
-      trackEvent("contact_click", {
-        worker_id: selectedWorker.id
-      });
+      trackEvent("contact_click", { worker_id: selectedWorker.id });
     } catch (error) {
       console.warn("Contact click analytics failed.", {
         name: error instanceof Error ? error.name : "UnknownError"
       });
     }
-
     await redirectToWhatsApp(selectedWorker, browserSessionId);
   };
 
   async function handleStripeCheckout(plan: "weekly" | "monthly") {
     setPaymentError("");
-    const normalizedEmployerWhatsApp = normalizeWhatsAppNumber(
-      employerWhatsAppNumber
-    );
-
+    const normalizedEmployerWhatsApp = normalizeWhatsAppNumber(employerWhatsAppNumber);
     if (!normalizedEmployerWhatsApp) {
       setPaymentError(INVALID_WHATSAPP_MESSAGE);
       return;
     }
-
     setCheckoutPlan(plan);
     let browserSessionId = "";
-
     try {
       browserSessionId = getBrowserSessionId();
     } catch (error) {
@@ -157,17 +164,13 @@ export function WorkerCard({
         name: error instanceof Error ? error.name : "UnknownError"
       });
     }
-
     try {
-      trackEvent("checkout_start", {
-        plan
-      });
+      trackEvent("checkout_start", { plan });
     } catch (error) {
       console.warn("Checkout start analytics failed.", {
         name: error instanceof Error ? error.name : "UnknownError"
       });
     }
-
     try {
       const statusResponse = await fetch(
         `/api/premium/status?browser_session_id=${encodeURIComponent(
@@ -177,24 +180,16 @@ export function WorkerCard({
       const statusData = (await statusResponse.json().catch(() => null)) as {
         premium?: boolean;
       } | null;
-
       if (statusResponse.ok && statusData?.premium) {
         setEmployerWhatsAppNumber(normalizedEmployerWhatsApp);
         setCheckoutPlan(null);
         setShowPaywall(false);
-        await redirectToWhatsApp(
-          worker,
-          browserSessionId,
-          normalizedEmployerWhatsApp
-        );
+        await redirectToWhatsApp(worker, browserSessionId, normalizedEmployerWhatsApp);
         return;
       }
-
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan,
           browser_session_id: browserSessionId,
@@ -203,13 +198,11 @@ export function WorkerCard({
         })
       });
       const data = (await response.json()) as { url?: string; error?: string };
-
       if (!response.ok || !data.url) {
         setPaymentError(PAYMENT_ERROR_MESSAGE);
         setCheckoutPlan(null);
         return;
       }
-
       window.location.href = data.url;
     } catch {
       setPaymentError(PAYMENT_ERROR_MESSAGE);
@@ -219,12 +212,10 @@ export function WorkerCard({
 
   function handleWhatsAppPayment() {
     const url = buildWhatsAppUrl(ADMIN_WHATSAPP_PHONE);
-
     if (!url || !isValidWhatsAppUrl(url)) {
       setPaymentError(PAYMENT_ERROR_MESSAGE);
       return;
     }
-
     window.open(url, "_blank");
   }
 
@@ -236,9 +227,7 @@ export function WorkerCard({
     try {
       const response = await fetch("/api/workers/contact", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           workerId: selectedWorker.id,
           browser_session_id: browserSessionId,
@@ -251,15 +240,11 @@ export function WorkerCard({
         reason?: string;
         free_contacts_remaining?: number;
       };
-
       try {
         data = (await response.json()) as typeof data;
       } catch {
-        data = {
-          error: CONTACT_ERROR_MESSAGE
-        };
+        data = { error: CONTACT_ERROR_MESSAGE };
       }
-
       if (
         response.status === 402 ||
         data.reason === "paywall_required" ||
@@ -278,21 +263,16 @@ export function WorkerCard({
         setShowPaywall(true);
         return;
       }
-
       const contactUrl = data.url;
-
       if (!response.ok || !contactUrl || !isValidWhatsAppUrl(contactUrl)) {
         setContactError(data.error || CONTACT_ERROR_MESSAGE);
         return;
       }
-
-      // Build the pre-filled message using the worker's name and primary skill
       const workerName = selectedWorker.full_name?.split(" ")[0] || "hola";
       const workerSkills = getWorkerSkills(selectedWorker);
       const skill = getPrimarySkill(workerSkills);
       const prefilledMessage = `Hola ${workerName}, te encontré en ListoRD. Necesito un(a) ${skill}. ¿Estás disponible?`;
       const finalUrl = buildWhatsAppUrlWithMessage(contactUrl, prefilledMessage);
-
       window.open(finalUrl, "_blank");
     } catch (error) {
       setContactError(
@@ -301,8 +281,11 @@ export function WorkerCard({
     }
   }
 
+  // ── Render ───────────────────────────────────────────────────────────────────────
+
   return (
     <article className="worker-card" ref={cardRef}>
+      {/* ── Photo ── */}
       <div className="worker-photo">
         {photoUrl ? (
           <Image
@@ -314,74 +297,83 @@ export function WorkerCard({
             priority={false}
           />
         ) : (
-          <div className="worker-photo-fallback">
-            {getInitials(fullName)}
-          </div>
+          <div className="worker-photo-fallback">{getInitials(fullName)}</div>
         )}
+        {/* Freshness badge — overlaid on photo */}
+        {isNew && <span className="worker-badge-new">✦ Nuevo</span>}
       </div>
 
+      {/* ── Body ── */}
       <div className="worker-main flex flex-1 flex-col">
         <div className="flex-1">
-          <div>
-            <h2 className="worker-name text-ink">
-              {fullName}
-            </h2>
-            <p className="worker-primary-skill" title={primarySkill}>
-              <span className="worker-primary-skill-text">
-                {primarySkill}
-              </span>
-            </p>
-            <p className="worker-income text-ink">
-              Disponible desde {formatIncomeShort(worker.desired_income)}
-            </p>
+
+          {/* Name + verification row */}
+          <div className="worker-name-row">
+            <div className="min-w-0 flex-1">
+              <h2 className="worker-name text-ink">{fullName}</h2>
+              <p className="worker-primary-skill" title={primarySkill}>
+                <span className="worker-primary-skill-text">{primarySkill}</span>
+              </p>
+            </div>
+            <span className="worker-verified-pill">✓</span>
           </div>
-          <div className="pill-row mt-4 text-xs font-black">
-            <span className="trust-badge px-2.5 py-1.5">
-              ✓ Verificado
-            </span>
-            <span className="trust-badge px-2.5 py-1.5">
+
+          {/* City + rate info row */}
+          <div className="worker-info-row">
+            <span className="worker-city-label">
+              <svg aria-hidden="true" viewBox="0 0 16 16" className="worker-city-icon" fill="currentColor">
+                <path d="M8 1.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9ZM2 6a6 6 0 1 1 10.74 3.67l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04A6 6 0 0 1 2 6Z"/>
+              </svg>
               {city}
             </span>
-            <span className="trust-badge px-2.5 py-1.5">
-              WhatsApp directo
+            <span className="worker-rate-label">
+              {formatIncomeShort(worker.desired_income)}
             </span>
           </div>
 
-          {(supportingSkills.length > 0 || workStyle) && (
-            <div className="pill-row mt-4">
-              {supportingSkills.map((skill) => (
-                <span
-                  key={skill}
-                  className="rounded-full border border-[rgba(31,31,28,0.06)] bg-sage/[0.18] px-2.5 py-1.5 text-xs font-black text-ink/80"
-                >
-                  {skill}
-                </span>
+          {/* Bio */}
+          {worker.short_intro && (
+            <p className="worker-bio line-clamp-2">{worker.short_intro}</p>
+          )}
+
+          {/* Skill chips */}
+          {(chipSkills.length > 0 || workStyle) && (
+            <div className="worker-chips-row">
+              {chipSkills.map((skill) => (
+                <span key={skill} className="worker-skill-chip">{skill}</span>
               ))}
-              {workStyle && (
-                <span className="rounded-full border border-[rgba(31,31,28,0.06)] bg-cielo px-2.5 py-1.5 text-xs font-black text-ink/80">
-                  Estilo: {workStyleLabels[workStyle]}
+              {overflowCount > 0 && (
+                <span className="worker-skill-more">+{overflowCount}</span>
+              )}
+              {workStyle && chipSkills.length === 0 && (
+                <span className="worker-skill-chip">
+                  {workStyleLabels[workStyle]}
                 </span>
               )}
             </div>
           )}
 
-          {worker.short_intro && (
-            <p className="worker-bio mt-4 text-sm leading-6 text-ink/70 line-clamp-2">
-              {worker.short_intro}
-            </p>
+          {/* Profile quality signal */}
+          {isComplete && (
+            <p className="worker-complete-signal">✓ Perfil completo</p>
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-2 text-xs font-bold text-ink/50">
-          <span>Disponible hoy</span>
+        {/* Availability + profile link footer */}
+        <div className="worker-card-footer">
+          <div className="worker-availability">
+            <span className="worker-avail-dot" aria-hidden="true" />
+            Disponible hoy
+          </div>
           <Link
             href={`/trabajador/${worker.id}`}
-            className="text-hoja underline-offset-2 hover:underline"
+            className="worker-profile-link"
           >
             Ver perfil →
           </Link>
         </div>
 
+        {/* ── WhatsApp CTA ── */}
         <div className="contact-cta-shell">
           <button
             type="button"
@@ -391,16 +383,17 @@ export function WorkerCard({
             <WhatsAppIcon />
             Contactar por WhatsApp
           </button>
-          <p className="mt-2 text-center text-xs font-bold text-ink/55">
-            Mensaje directo — responden rápido
+          <p className="mt-2 text-center text-xs font-bold text-ink/50">
+            Mensaje directo — sin intermediarios
           </p>
           {contactError && (
-            <p className="mt-2 rounded-md bg-red-50 p-2 text-center text-xs font-black text-red-700">
+            <p className="mt-2 rounded-lg bg-red-50 p-2 text-center text-xs font-black text-red-700">
               {contactError}
             </p>
           )}
         </div>
 
+        {/* ── Paywall Modal (unchanged) ── */}
         {showPaywall && (
           <div
             className="fixed inset-0 z-50 grid place-items-end bg-black/45 p-3 sm:place-items-center"
