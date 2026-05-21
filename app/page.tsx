@@ -7,15 +7,16 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// Each pill maps directly to a /categorias/[slug] SEO page
 const CATEGORY_PILLS = [
-  { label: "🧹 Limpieza", skill: "limpieza" },
-  { label: "🍳 Cocina", skill: "cocina" },
-  { label: "🔧 Plomería", skill: "plomería" },
-  { label: "🏗️ Construcción", skill: "construcción" },
-  { label: "💡 Electricidad", skill: "electricista" },
-  { label: "🎨 Pintura", skill: "pintura" },
-  { label: "📚 Clases", skill: "clases" },
-  { label: "💅 Belleza", skill: "manicura" }
+  { label: "🧹 Limpieza",     slug: "limpiadora"   },
+  { label: "🍳 Cocina",       slug: "cocinera"     },
+  { label: "🔧 Plomería",     slug: "plomero"      },
+  { label: "🏗️ Construcción", slug: "albanil"      },
+  { label: "💡 Electricidad", slug: "electricista" },
+  { label: "🎨 Pintura",      slug: "pintor"       },
+  { label: "📚 Clases",       slug: "tutor"        },
+  { label: "💅 Belleza",      slug: "belleza"      },
 ];
 
 function isFilterActive(searchParams: {
@@ -32,8 +33,22 @@ function isFilterActive(searchParams: {
   );
 }
 
+/** Extract unique cities from workers (ES5-safe, no Set spread). */
+function extractCities(workers: Array<{ city?: string | null }>): string[] {
+  const seen: Record<string, boolean> = {};
+  const result: string[] = [];
+  for (let i = 0; i < workers.length; i++) {
+    const c = workers[i].city?.trim();
+    if (c && !seen[c]) {
+      seen[c] = true;
+      result.push(c);
+    }
+  }
+  return result.slice(0, 5);
+}
+
 export default async function Home({
-  searchParams
+  searchParams,
 }: {
   searchParams: {
     city?: string;
@@ -51,9 +66,11 @@ export default async function Home({
 
   // Social proof counter — round down to nearest 5 for "X+" feel
   const socialProofCount =
-    totalVerified >= 5
-      ? Math.floor(totalVerified / 5) * 5
-      : totalVerified;
+    totalVerified >= 5 ? Math.floor(totalVerified / 5) * 5 : totalVerified;
+
+  // Live city signal — extracted from all workers (unfiltered would be ideal but
+  // this gives a real, honest snapshot of who is currently active)
+  const activeCities = extractCities(workers);
 
   return (
     <>
@@ -80,7 +97,9 @@ export default async function Home({
                 <div className="hero-stats">
                   <div className="hero-stat">
                     <span className="hero-stat-number">
-                      {socialProofCount > 0 ? `${socialProofCount}+` : totalVerified}
+                      {socialProofCount > 0
+                        ? `${socialProofCount}+`
+                        : totalVerified}
                     </span>
                     <span className="hero-stat-label">verificados</span>
                   </div>
@@ -95,6 +114,14 @@ export default async function Home({
                     <span className="hero-stat-label">aprobación</span>
                   </div>
                 </div>
+              )}
+
+              {/* Live city activity signal */}
+              {activeCities.length > 0 && (
+                <p className="hero-cities">
+                  <span className="hero-cities-dot" aria-hidden="true" />
+                  Activos en {activeCities.join(" · ")}
+                </p>
               )}
 
               <div className="hero-actions mt-8 flex flex-col gap-3 sm:flex-row">
@@ -151,18 +178,17 @@ export default async function Home({
         </section>
 
         {/* ── CATEGORY QUICK-FILTERS ── */}
+        {/* Pills link to dedicated SEO category pages */}
         <section className="container category-section">
           <p className="mb-4 text-sm font-black uppercase tracking-wide text-hoja">
             ¿Qué necesitas?
           </p>
           <div className="category-pill-row">
-            {CATEGORY_PILLS.map(({ label, skill }) => (
+            {CATEGORY_PILLS.map(({ label, slug }) => (
               <Link
-                key={skill}
-                href={`/?skill=${encodeURIComponent(skill)}`}
-                className={`category-pill${
-                  searchParams.skill === skill ? " category-pill--active" : ""
-                }`}
+                key={slug}
+                href={`/categorias/${slug}`}
+                className="category-pill"
               >
                 {label}
               </Link>
@@ -186,8 +212,10 @@ export default async function Home({
               <div className="results-count-tag">
                 {hasWorkers ? (
                   <>
-                    <span className="results-count-number">{workers.length}</span>
-                    {" "}resultado{workers.length !== 1 ? "s" : ""}
+                    <span className="results-count-number">
+                      {workers.length}
+                    </span>{" "}
+                    resultado{workers.length !== 1 ? "s" : ""}
                     {totalVerified > workers.length && (
                       <span className="results-count-total">
                         {" "}de {totalVerified}
@@ -347,7 +375,7 @@ export default async function Home({
                 ¿Tienes un servicio que ofrecer?
               </h2>
               <p className="mt-2 leading-7 text-ink/70">
-                Házte visible hoy. Los clientes te encuentran y te escriben
+                Hazte visible hoy. Los clientes te encuentran y te escriben
                 directo por WhatsApp — sin pagar comisiones.
               </p>
             </div>
