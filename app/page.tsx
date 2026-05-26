@@ -1,6 +1,6 @@
 import { AppHeader } from "@/components/app-header";
 import { FilterBar } from "@/components/filter-bar";
-import { WorkerCard } from "@/components/worker-card";
+import { WorkerDiscovery } from "@/components/worker-discovery";
 import { getWorkersResult } from "@/lib/workers";
 import Link from "next/link";
 
@@ -71,6 +71,10 @@ export default async function Home({
   // Live city signal — real snapshot of active workers
   const activeCities = extractCities(workers);
 
+  // Label for carousel aria / heading when filter is active
+  const filterLabel =
+    searchParams.skill?.trim() || searchParams.city?.trim() || undefined;
+
   return (
     <>
       <AppHeader />
@@ -124,12 +128,12 @@ export default async function Home({
               )}
 
               <div className="hero-actions mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/empleadores"
+                <a
+                  href="#descubre"
                   className="btn-primary tap-target inline-flex min-w-0 items-center justify-center px-6 py-4 text-base text-white"
                 >
-                  Encontrar trabajadores
-                </Link>
+                  Descubrir trabajadores
+                </a>
                 <Link
                   href="/trabajadores/registro"
                   className="btn-secondary tap-target inline-flex min-w-0 items-center justify-center px-6 py-4 text-base"
@@ -170,7 +174,7 @@ export default async function Home({
               </div>
               <div className="hero-proof-footer">
                 <p>1 contacto gratis · sin registro</p>
-                <Link href="/empleadores">Empezar →</Link>
+                <a href="#descubre">Empezar →</a>
               </div>
             </div>
           </div>
@@ -237,36 +241,125 @@ export default async function Home({
           </section>
         )}
 
-        {/* ── FILTER BAR ── */}
-        <section className="container filter-section">
+        {/* ══════════════════════════════════════════════
+            DISCOVERY CAROUSEL — primary browsing surface
+            Lives above the filter bar so the immersive
+            swipe experience is the FIRST thing users see.
+        ══════════════════════════════════════════════ */}
+        <section id="descubre" className="container discovery-section">
           <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                Explora perfiles
+                {showingFiltered ? "Resultados" : "Explora perfiles"}
               </p>
               <h2 className="mt-1 text-2xl font-black text-ink">
-                Filtra por lo que necesitas hoy
+                {filterActive && hasWorkers
+                  ? `${workers.length} trabajador${workers.length !== 1 ? "es" : ""} encontrado${workers.length !== 1 ? "s" : ""}`
+                  : "Trabajadores disponibles ahora"}
               </h2>
+              {filterActive && hasWorkers && (
+                <p className="mt-1 text-sm font-bold text-ink/55">
+                  Ordenados por relevancia · perfiles verificados
+                </p>
+              )}
             </div>
-            {showingFiltered && (
-              <div className="results-count-tag">
-                {hasWorkers ? (
-                  <>
-                    <span className="results-count-number">
-                      {workers.length}
-                    </span>{" "}
-                    resultado{workers.length !== 1 ? "s" : ""}
-                    {totalVerified > workers.length && (
-                      <span className="results-count-total">
-                        {" "}de {totalVerified}
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  "Sin resultados"
-                )}
-              </div>
+            {showingFiltered && hasWorkers && (
+              <Link
+                href="/"
+                className="shrink-0 rounded-xl border border-[rgba(31,31,28,0.07)] bg-white px-3 py-2 text-sm font-black text-ink/60 shadow-soft hover:text-ink"
+              >
+                Ver todos
+              </Link>
             )}
+          </div>
+
+          {/* Error state */}
+          {!workersResult.ok && (
+            <div className="empty-state">
+              <p className="text-sm font-black uppercase tracking-wide text-hoja">
+                Conexión interrumpida
+              </p>
+              <h3 className="mt-2 text-2xl font-black text-ink">
+                No pudimos cargar los trabajadores ahora mismo.
+              </h3>
+              <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
+                Intenta de nuevo en unos minutos.
+              </p>
+              <Link
+                href="/"
+                className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-white"
+              >
+                Intentar de nuevo
+              </Link>
+            </div>
+          )}
+
+          {/* Filter active — no results */}
+          {workersResult.ok && filterActive && !hasWorkers && (
+            <div className="empty-state">
+              <p className="text-4xl">🔍</p>
+              <h3 className="mt-3 text-2xl font-black text-ink">
+                No encontramos trabajadores con ese filtro.
+              </h3>
+              <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
+                Prueba con una búsqueda más amplia o revisa todos los
+                trabajadores disponibles.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/"
+                  className="btn-primary tap-target inline-flex items-center justify-center px-6 py-3 text-white"
+                >
+                  Ver todos los trabajadores
+                </Link>
+                <Link
+                  href="/trabajadores/registro"
+                  className="btn-secondary tap-target inline-flex items-center justify-center px-6 py-3"
+                >
+                  ¿Eres trabajador? Regístrate
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* No workers at all (empty DB) */}
+          {workersResult.ok && !filterActive && !hasWorkers && (
+            <div className="empty-state">
+              <p className="text-4xl">🇩🇴</p>
+              <h3 className="mt-3 text-2xl font-black text-ink">
+                Estamos agregando trabajadores verificados en RD.
+              </h3>
+              <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
+                ¿Ofreces un servicio? Crea tu perfil gratis y empieza a
+                recibir oportunidades por WhatsApp hoy mismo.
+              </p>
+              <Link
+                href="/trabajadores/registro"
+                className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-lg text-white"
+              >
+                Crear mi perfil gratis
+              </Link>
+            </div>
+          )}
+
+          {/* ── THE CAROUSEL — only rendered when there are workers ── */}
+          {workersResult.ok && hasWorkers && (
+            <WorkerDiscovery
+              workers={workers}
+              categoryLabel={filterLabel}
+            />
+          )}
+        </section>
+
+        {/* ── FILTER BAR — below the carousel for deeper exploration ── */}
+        <section className="container filter-section">
+          <div className="mb-5 flex flex-col gap-1">
+            <p className="text-sm font-black uppercase tracking-wide text-hoja">
+              Búsqueda avanzada
+            </p>
+            <h2 className="mt-1 text-xl font-black text-ink">
+              Filtra por ciudad, oficio o disponibilidad
+            </h2>
           </div>
           <FilterBar
             city={searchParams.city}
@@ -274,102 +367,6 @@ export default async function Home({
             income={searchParams.income}
             workStyle={searchParams.workStyle}
           />
-        </section>
-
-        {/* ── WORKER GRID ── */}
-        <section className="container workers-section">
-          {(!workersResult.ok || hasWorkers) && (
-            <div className="section-heading">
-              <div>
-                <h2 className="text-2xl font-black text-ink">
-                  {filterActive && hasWorkers
-                    ? `${workers.length} trabajador${workers.length !== 1 ? "es" : ""} encontrado${workers.length !== 1 ? "s" : ""}`
-                    : "Trabajadores disponibles ahora"}
-                </h2>
-                <p className="mt-1 text-sm font-bold text-ink/55">
-                  {filterActive && hasWorkers
-                    ? "Ordenados por relevancia · perfiles verificados"
-                    : "Los más recientes primero · perfiles verificados"}
-                </p>
-              </div>
-              {filterActive && hasWorkers && (
-                <Link
-                  href="/"
-                  className="shrink-0 rounded-xl border border-[rgba(31,31,28,0.07)] bg-white px-3 py-2 text-sm font-black text-ink/60 shadow-soft hover:text-ink"
-                >
-                  Ver todos
-                </Link>
-              )}
-            </div>
-          )}
-
-          <div className="worker-grid">
-            {!workersResult.ok ? (
-              <div className="empty-state md:col-span-2 lg:col-span-3">
-                <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                  Conexión interrumpida
-                </p>
-                <h3 className="mt-2 text-2xl font-black text-ink">
-                  No pudimos cargar los trabajadores ahora mismo.
-                </h3>
-                <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
-                  Intenta de nuevo en unos minutos.
-                </p>
-                <Link
-                  href="/"
-                  className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-white"
-                >
-                  Intentar de nuevo
-                </Link>
-              </div>
-            ) : hasWorkers ? (
-              workers.map((worker) => (
-                <WorkerCard key={worker.id} worker={worker} />
-              ))
-            ) : filterActive ? (
-              <div className="empty-state md:col-span-2 lg:col-span-3">
-                <p className="text-4xl">🔍</p>
-                <h3 className="mt-3 text-2xl font-black text-ink">
-                  No encontramos trabajadores con ese filtro.
-                </h3>
-                <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
-                  Prueba con una búsqueda más amplia o revisa todos los
-                  trabajadores disponibles.
-                </p>
-                <div className="mt-5 flex flex-wrap justify-center gap-3">
-                  <Link
-                    href="/"
-                    className="btn-primary tap-target inline-flex items-center justify-center px-6 py-3 text-white"
-                  >
-                    Ver todos los trabajadores
-                  </Link>
-                  <Link
-                    href="/trabajadores/registro"
-                    className="btn-secondary tap-target inline-flex items-center justify-center px-6 py-3"
-                  >
-                    ¿Eres trabajador? Regístrate
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div className="empty-state md:col-span-2 lg:col-span-3">
-                <p className="text-4xl">🇩🇴</p>
-                <h3 className="mt-3 text-2xl font-black text-ink">
-                  Estamos agregando trabajadores verificados en RD.
-                </h3>
-                <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
-                  ¿Ofreces un servicio? Crea tu perfil gratis y empieza a
-                  recibir oportunidades por WhatsApp hoy mismo.
-                </p>
-                <Link
-                  href="/trabajadores/registro"
-                  className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-lg text-white"
-                >
-                  Crear mi perfil gratis
-                </Link>
-              </div>
-            )}
-          </div>
         </section>
 
         {/* ── TRUST SECTION ── */}
@@ -413,7 +410,7 @@ export default async function Home({
                 ¿Tienes un servicio que ofrecer?
               </h2>
               <p className="mt-2 leading-7 text-ink/70">
-                Hazwe visible hoy. Los clientes te encuentran y te escriben
+                Hazte visible hoy. Los clientes te encuentran y te escriben
                 directo por WhatsApp — sin pagar comisiones.
               </p>
             </div>
