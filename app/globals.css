@@ -1272,6 +1272,7 @@ textarea::placeholder {
   font-weight: 700;
 }
 
+
 /* ── Homepage: city activity signal ── */
 .hero-cities {
   display: inline-flex;
@@ -1934,6 +1935,368 @@ textarea::placeholder {
   }
 
   .share-menu {
+    animation: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   WORKER DISCOVERY CAROUSEL
+   Immersive snap-scroll experience for category pages.
+   Wraps existing .worker-card components — all logic preserved.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Shell ── */
+.discovery-shell {
+  position: relative;
+}
+
+/* ── Header row: live pill + position counter ── */
+.discovery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+}
+
+.discovery-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  border: 1px solid rgba(76, 175, 121, 0.22);
+  border-radius: 999px;
+  background: rgba(76, 175, 121, 0.06);
+  padding: 0.38rem 0.82rem;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #2e5e3e;
+  letter-spacing: 0.01em;
+}
+
+.discovery-live-dot {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #4caf79;
+  box-shadow: 0 0 0 2.5px rgba(76, 175, 121, 0.2);
+  animation: pulse-avail 2.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.discovery-counter {
+  font-size: 0.84rem;
+  font-weight: 900;
+  color: rgba(29, 29, 27, 0.38);
+  letter-spacing: 0.02em;
+}
+
+.discovery-counter-sep {
+  opacity: 0.5;
+}
+
+/* ── Snap carousel — bleeds to viewport edges on mobile ── */
+.discovery-carousel {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 0.75rem;
+  margin: 0 -1.125rem;
+  padding: 0.25rem 1.125rem 0.75rem;
+}
+
+.discovery-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Individual slide — "peek" shows edge of next card ── */
+.discovery-slide {
+  flex: 0 0 calc(100% - 2.75rem);
+  scroll-snap-align: start;
+  min-width: 0;
+  transition:
+    opacity var(--mid) var(--smooth),
+    transform var(--mid) var(--smooth);
+}
+
+/* Non-active slides slightly faded + pulled back */
+.discovery-slide:not(.discovery-slide--active) {
+  opacity: 0.66;
+  transform: scale(0.973);
+}
+
+/* ── Taller, more immersive photos in discovery context ── */
+.discovery-carousel .worker-photo {
+  height: clamp(21rem, 74vw, 28rem);
+}
+
+/* Suppress per-card entrance anim — carousel handles entrance */
+.discovery-carousel .worker-card {
+  animation: none;
+}
+
+/* ── Progress rail ── */
+.discovery-progress-rail {
+  height: 2px;
+  background: rgba(31, 31, 28, 0.07);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.85rem;
+}
+
+.discovery-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3e5533, #6b9a52);
+  border-radius: 999px;
+  transition: width var(--mid) var(--smooth);
+}
+
+/* ── Navigation dots ── */
+.discovery-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+}
+
+.discovery-dot {
+  height: 0.42rem;
+  width: 0.42rem;
+  border-radius: 999px;
+  border: none;
+  background: rgba(31, 31, 28, 0.14);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition:
+    width var(--mid) var(--spring),
+    background var(--mid) var(--smooth);
+}
+
+.discovery-dot--active {
+  width: 1.5rem;
+  background: #3e5533;
+}
+
+/* ── Swipe hint ── */
+.discovery-hint {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  font-size: 0.73rem;
+  font-weight: 900;
+  color: rgba(29, 29, 27, 0.3);
+  letter-spacing: 0.04em;
+  animation: hint-fade 3.5s ease-in-out forwards;
+}
+
+@keyframes hint-fade {
+  0%, 55% { opacity: 1; }
+  100%     { opacity: 0; }
+}
+
+/* ── Category discovery section spacing ── */
+.cat-discovery-section {
+  padding-top: 2.25rem;
+  padding-bottom: 4.5rem;
+}
+
+/* ── Tablet: show 2 cards ── */
+@media (min-width: 640px) {
+  .discovery-slide {
+    flex: 0 0 calc(50% - 1.5rem);
+  }
+
+  .discovery-carousel .worker-photo {
+    height: clamp(17rem, 34vw, 24rem);
+  }
+
+  .discovery-slide:not(.discovery-slide--active) {
+    opacity: 0.75;
+    transform: scale(0.982);
+  }
+}
+
+/* ── Desktop: show 3 cards ── */
+@media (min-width: 1024px) {
+  .discovery-slide {
+    flex: 0 0 calc(33.33% - 1rem);
+  }
+
+  .discovery-carousel .worker-photo {
+    height: clamp(16rem, 22vw, 22rem);
+  }
+
+  .discovery-slide:not(.discovery-slide--active) {
+    opacity: 0.8;
+    transform: scale(0.988);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NETWORK PULSE BAR
+   Living activity signal on homepage — real data, ambient presence.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.network-pulse-section {
+  padding-top: 1.75rem;
+}
+
+.network-pulse-bar {
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(111, 127, 91, 0.15);
+  border-radius: 1rem;
+  background: rgba(255, 253, 248, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 0.6rem 0;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  box-shadow:
+    0 4px 16px rgba(29, 29, 27, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.network-pulse-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.network-pulse-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+  padding: 0 1.05rem;
+  flex: 0 0 auto;
+}
+
+.network-pulse-item--inline {
+  flex-direction: row;
+  gap: 0.42rem;
+}
+
+.network-pulse-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: #4caf79;
+  box-shadow: 0 0 0 2px rgba(76, 175, 121, 0.2);
+  animation: pulse-avail 2.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.network-pulse-number {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.network-pulse-label {
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+  color: rgba(29, 29, 27, 0.42);
+  white-space: nowrap;
+}
+
+.network-pulse-divider {
+  width: 1px;
+  height: 1.65rem;
+  background: rgba(31, 31, 28, 0.07);
+  flex: 0 0 auto;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HERO AMBIENT BREATHING
+   Subtle orb animation that moves through the hero — creates "alive" feel.
+   Pure CSS — no JS, no performance cost.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.hero-section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 65% 50% at 78% 22%,
+    rgba(168, 181, 154, 0.13),
+    transparent 62%
+  );
+  animation: hero-orb 22s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes hero-orb {
+  0%, 100% { opacity: 0.5; transform: translate(0, 0) scale(1); }
+  33%       { opacity: 0.85; transform: translate(-3%, 3%) scale(1.06); }
+  66%       { opacity: 0.55; transform: translate(4%, -3%) scale(0.96); }
+}
+
+/* Ensure hero content stays above orb */
+.hero-inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* Category hero breathing orb */
+.cat-hero {
+  overflow: hidden;
+  position: relative;
+}
+
+.cat-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 60% 80% at 85% 50%,
+    rgba(168, 181, 154, 0.1),
+    transparent 65%
+  );
+  animation: hero-orb 18s ease-in-out infinite;
+  z-index: 0;
+}
+
+.cat-hero-inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Reduced motion overrides for new additions ── */
+@media (prefers-reduced-motion: reduce) {
+  .discovery-slide:not(.discovery-slide--active) {
+    opacity: 1;
+    transform: none;
+  }
+
+  .discovery-progress-fill {
+    transition: none;
+  }
+
+  .discovery-dot {
+    transition: none;
+  }
+
+  .discovery-hint {
+    animation: none;
+    opacity: 0.4;
+  }
+
+  .hero-section::after,
+  .cat-hero::after {
+    animation: none;
+  }
+
+  .discovery-live-dot,
+  .network-pulse-dot {
     animation: none;
   }
 }
