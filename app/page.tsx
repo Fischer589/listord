@@ -12,7 +12,7 @@ const CATEGORY_ITEMS = [
   { emoji: "🧹", label: "Limpieza",      slug: "limpiadora"   },
   { emoji: "🍳", label: "Cocina",        slug: "cocinera"     },
   { emoji: "🔧", label: "Plomería",      slug: "plomero"      },
-  { emoji: "⚡", label: "Electricodad",  slug: "electricista" },
+  { emoji: "⚡", label: "Electricidad",  slug: "electricista" },
   { emoji: "🏗️", label: "Construcción",  slug: "albanil"      },
   { emoji: "🎨", label: "Pintura",       slug: "pintor"       },
   { emoji: "📚", label: "Clases",        slug: "tutor"        },
