@@ -11,6 +11,14 @@
   --ink: #1d1d1b;
   --muted: #6b6b63;
   --border: rgba(31, 31, 28, 0.06);
+
+  /* ── Motion system ── */
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --smooth: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fast: 160ms;
+  --mid: 260ms;
+  --slow: 400ms;
 }
 
 *,
@@ -96,22 +104,22 @@ a {
   max-width: 100%;
   overflow-wrap: break-word;
   transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    color 180ms ease,
-    opacity 180ms ease,
-    transform 180ms ease;
+    background-color var(--fast) var(--smooth),
+    border-color var(--fast) var(--smooth),
+    box-shadow var(--fast) var(--smooth),
+    color var(--fast) var(--smooth),
+    opacity var(--fast) var(--smooth),
+    transform var(--fast) var(--smooth);
 }
 
 button {
   transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    color 180ms ease,
-    opacity 180ms ease,
-    transform 180ms ease;
+    background-color var(--fast) var(--smooth),
+    border-color var(--fast) var(--smooth),
+    box-shadow var(--fast) var(--smooth),
+    color var(--fast) var(--smooth),
+    opacity var(--fast) var(--smooth),
+    transform var(--fast) var(--smooth);
 }
 
 button:hover,
@@ -278,7 +286,7 @@ textarea::placeholder {
   font-size: clamp(2.4rem, 7vw, 5.35rem);
   line-height: 0.96;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: -0.02em;
 }
 
 .hero-copy {
@@ -467,13 +475,347 @@ textarea::placeholder {
   margin-bottom: 1.35rem;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   WORKER GRID + CARD — Electric evolution
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Entrance animation ── */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .worker-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
+.worker-card {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  padding: 0;
+  animation: card-in var(--slow) var(--smooth) both;
+  transition:
+    border-color var(--mid) var(--smooth),
+    box-shadow var(--mid) var(--smooth),
+    transform var(--mid) var(--smooth);
+  will-change: transform;
+}
+
+.worker-card:hover {
+  border-color: rgba(111, 127, 91, 0.18);
+  box-shadow: 0 32px 80px rgba(29, 29, 27, 0.14);
+  transform: translateY(-5px);
+}
+
+.worker-card:active {
+  transform: translateY(-1px) scale(0.988);
+  transition-duration: 80ms;
+}
+
+/* ── Photo hero ── */
+.worker-photo {
+  position: relative;
+  width: 100%;
+  height: clamp(16rem, 56vw, 21rem);
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 1.5rem 1.5rem 0 0;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255, 253, 248, 0.92), transparent 9.5rem),
+    linear-gradient(135deg, rgba(220, 228, 210, 0.95), rgba(240, 236, 220, 0.9));
+}
+
+.worker-photo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.worker-photo-fallback {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--primary);
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+/* ── Gradient overlay (transparent → dark at bottom) ── */
+.worker-photo-grad {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 25%,
+    rgba(8, 11, 6, 0.03) 48%,
+    rgba(8, 11, 6, 0.76) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* ── Live availability signal — glass pill top-left ── */
+.worker-live-signal {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  background: rgba(6, 14, 4, 0.52);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 0.3rem 0.68rem;
+  font-size: 0.69rem;
+  font-weight: 900;
+  color: #a8f0c2;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+/* ── New badge — top right ── */
+.worker-badge-new {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  z-index: 3;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1f7a4c, #3e8e60);
+  color: #fff;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.69rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(31, 122, 76, 0.38);
+  pointer-events: none;
+}
+
+/* ── Name / skill / location — overlay at bottom of photo ── */
+.worker-photo-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 1.2rem 1.1rem;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.worker-overlay-skill {
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.62);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin: 0 0 0.2rem;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.worker-overlay-name {
+  font-size: clamp(1.1rem, 3.2vw, 1.3rem);
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.97);
+  line-height: 1.15;
+  margin: 0 0 0.26rem;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.22);
+  letter-spacing: -0.015em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.worker-overlay-meta {
+  font-size: 0.77rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Card body ── */
+.worker-main {
+  min-width: 0;
+  flex: 1;
+  padding: 1.1rem 1.2rem 1rem;
+}
+
+/* ── Supporting skill chips ── */
+.worker-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+  margin-top: 0;
+  margin-bottom: 0.6rem;
+}
+
+.worker-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(31, 31, 28, 0.075);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.78);
+  color: rgba(29, 29, 27, 0.72);
+  padding: 0.2rem 0.62rem;
+  font-size: 0.73rem;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.worker-skill-more {
+  display: inline-flex;
+  align-items: center;
+  border: 1px dashed rgba(31, 31, 28, 0.1);
+  border-radius: 999px;
+  color: rgba(29, 29, 27, 0.42);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.73rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* ── Bio ── */
+.worker-bio {
+  margin-top: 0.55rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  font-weight: 700;
+}
+
+/* ── Complete signal ── */
+.worker-complete-signal {
+  margin-top: 0.5rem;
+  font-size: 0.73rem;
+  font-weight: 900;
+  color: #3e5533;
+  opacity: 0.78;
+}
+
+/* ── Card footer: verified + profile link ── */
+.worker-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.worker-verified-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.worker-verified-pill {
+  display: grid;
+  width: 1.45rem;
+  height: 1.45rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(111, 127, 91, 0.13);
+  color: #3e5533;
+  font-size: 0.68rem;
+  font-weight: 900;
+  border: 1px solid rgba(111, 127, 91, 0.2);
+}
+
+.worker-verified-text {
+  font-size: 0.76rem;
+  font-weight: 900;
+  color: #3e5533;
+  letter-spacing: 0.01em;
+}
+
+.worker-profile-link {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #465638;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.2rem 0.62rem;
+  border: 1px solid rgba(111, 127, 91, 0.22);
+  background: rgba(111, 127, 91, 0.06);
+  transition: background var(--fast) var(--smooth), border-color var(--fast) var(--smooth);
+}
+
+.worker-profile-link:hover {
+  background: rgba(111, 127, 91, 0.13);
+  border-color: rgba(111, 127, 91, 0.36);
+  transform: none;
+}
+
+/* ── Availability dot (used in live signal) ── */
+.worker-avail-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: #5fe09a;
+  box-shadow: 0 0 0 2.5px rgba(95, 224, 154, 0.22);
+  animation: pulse-avail 2.2s ease-in-out infinite;
+}
+
+/* ── Contact CTA ── */
+.contact-cta-shell {
+  margin-top: 0.9rem;
+  width: 100%;
+}
+
+.whatsapp-cta {
+  min-height: 3.25rem;
+  font-size: 1rem;
+  line-height: 1.2;
+  border-radius: 1rem;
+  box-shadow:
+    0 14px 32px rgba(31, 122, 76, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition: box-shadow var(--mid) var(--smooth), transform var(--mid) var(--smooth), background var(--fast) var(--smooth);
+}
+
+.whatsapp-cta:hover {
+  box-shadow:
+    0 20px 44px rgba(31, 122, 76, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.whatsapp-cta:active {
+  transform: scale(0.97);
+  transition-duration: 70ms;
+}
+
+/* ── Empty state ── */
 .empty-state {
   border: 1px solid var(--border);
   border-radius: 1.35rem;
@@ -483,152 +825,7 @@ textarea::placeholder {
   box-shadow: 0 18px 50px rgba(29, 29, 27, 0.075);
 }
 
-.worker-card {
-  display: flex;
-  height: 100%;
-  min-width: 0;
-  flex-direction: column;
-  overflow: hidden;
-  border-radius: 1.35rem;
-  padding: 0;
-  transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
-}
-
-.worker-card:hover {
-  border-color: rgba(111, 127, 91, 0.16);
-  box-shadow: 0 26px 70px rgba(29, 29, 27, 0.11);
-  transform: translateY(-3px);
-}
-
-.worker-photo {
-  position: relative;
-  width: 100%;
-  height: clamp(12.25rem, 58vw, 15rem);
-  flex: 0 0 auto;
-  overflow: hidden;
-  border-radius: 1.35rem 1.35rem 0 0;
-  background:
-    radial-gradient(circle at 50% 12%, rgba(255, 253, 248, 0.92), transparent 9.5rem),
-    linear-gradient(135deg, rgba(237, 241, 231, 0.95), rgba(255, 250, 238, 0.86));
-}
-
-.worker-photo-image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center center;
-}
-
-.worker-photo-fallback {
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-items: center;
-  color: var(--primary);
-  font-size: 2.4rem;
-  font-weight: 900;
-}
-
-.worker-main {
-  min-width: 0;
-  flex: 1;
-  padding: 1.25rem;
-}
-
-.worker-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 1.18rem;
-  line-height: 1.35;
-  font-weight: 900;
-}
-
-.worker-income {
-  margin-top: 0.45rem;
-  font-size: 1.15rem;
-  line-height: 1.3;
-  font-weight: 900;
-  color: #3f4a35;
-}
-
-.worker-primary-skill {
-  display: flex;
-  margin-top: 0.38rem;
-  max-width: 100%;
-  min-width: 0;
-  align-items: center;
-  gap: 0.52rem;
-  overflow: hidden;
-  color: #536349;
-  font-size: 0.86rem;
-  line-height: 1.2;
-  font-weight: 900;
-}
-
-.worker-primary-skill::before {
-  content: "";
-  width: 0.42rem;
-  height: 0.42rem;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  background: #8a9a72;
-  box-shadow: 0 0 0 4px rgba(111, 127, 91, 0.11);
-}
-
-.worker-primary-skill-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pill-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.worker-bio {
-  margin-top: 1rem;
-  color: var(--muted);
-  font-size: 0.925rem;
-  line-height: 1.6;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding-top: 0.875rem;
-  border-top: 1px solid var(--border);
-}
-
-.contact-cta-shell {
-  margin-top: 1rem;
-  width: 100%;
-}
-
-.whatsapp-cta {
-  min-height: 3.5rem;
-  font-size: 1.05rem;
-  line-height: 1.2;
-  box-shadow:
-    0 16px 34px rgba(31, 122, 76, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
-}
-
-.whatsapp-cta:hover {
-  box-shadow:
-    0 20px 44px rgba(31, 122, 76, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-
+/* ── Responsive ── */
 @media (max-width: 767px) {
   .container {
     padding-left: max(0.95rem, env(safe-area-inset-left));
@@ -732,8 +929,8 @@ textarea::placeholder {
   }
 
   .whatsapp-cta {
-    min-height: 4rem;
-    font-size: 1.125rem;
+    min-height: 3.75rem;
+    font-size: 1.08rem;
   }
 }
 
@@ -756,7 +953,7 @@ textarea::placeholder {
   }
 
   .worker-photo {
-    height: 13rem;
+    height: clamp(17rem, 28vw, 21rem);
   }
 }
 
@@ -766,12 +963,77 @@ textarea::placeholder {
   }
 }
 
-/* ── Category quick-filter pills ── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   CATEGORY DISCOVERY — Immersive tap grid
+   ══════════════════════════════════════════════════════════════════════════════ */
+
 .category-section {
-  padding-top: 2rem;
+  padding-top: 2.5rem;
   padding-bottom: 0;
 }
 
+/* ── 4×2 tap grid ── */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  aspect-ratio: 1;
+  border: 1px solid rgba(31, 31, 28, 0.065);
+  border-radius: 1.3rem;
+  background: rgba(255, 253, 248, 0.9);
+  text-decoration: none;
+  box-shadow:
+    0 4px 14px rgba(29, 29, 27, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  transition:
+    border-color var(--mid) var(--smooth),
+    background var(--mid) var(--smooth),
+    box-shadow var(--mid) var(--smooth),
+    transform var(--mid) var(--spring);
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.category-card:hover {
+  border-color: rgba(111, 127, 91, 0.24);
+  background: #fffdf8;
+  box-shadow:
+    0 12px 30px rgba(29, 29, 27, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.category-card:active {
+  transform: scale(0.91);
+  transition-duration: 75ms;
+  transition-timing-function: var(--ease-out);
+}
+
+.category-card-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+  display: block;
+}
+
+.category-card-label {
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: rgba(29, 29, 27, 0.68);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.15;
+}
+
+/* Legacy pill row — still usable in category pages */
 .category-pill-row {
   display: flex;
   flex-wrap: wrap;
@@ -791,7 +1053,7 @@ textarea::placeholder {
   font-weight: 900;
   text-decoration: none;
   box-shadow: 0 4px 12px rgba(29, 29, 27, 0.045), inset 0 1px 0 rgba(255,255,255,0.78);
-  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: border-color var(--fast) var(--smooth), background var(--fast) var(--smooth), box-shadow var(--fast) var(--smooth), transform var(--fast) var(--spring);
   white-space: nowrap;
 }
 
@@ -809,7 +1071,10 @@ textarea::placeholder {
   box-shadow: 0 4px 12px rgba(111, 127, 91, 0.14), inset 0 1px 0 rgba(255,255,255,0.78);
 }
 
-/* ── Trust section ── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   TRUST SECTION
+   ══════════════════════════════════════════════════════════════════════════════ */
+
 .trust-section {
   padding-top: 4rem;
   padding-bottom: 4rem;
@@ -862,7 +1127,10 @@ textarea::placeholder {
   }
 }
 
-/* ── Worker CTA banner ── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   WORKER CTA BANNER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
 .worker-cta-banner {
   padding-bottom: 4.5rem;
 }
@@ -894,199 +1162,26 @@ textarea::placeholder {
   overflow: hidden;
 }
 
-/* ── filter-section spacing: push down slightly to give category pills room ── */
+/* ── filter-section spacing ── */
 .filter-section {
   padding-top: 2.25rem;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   PREMIUM DESIGN SYSTEM — Step 4 additions
-   New classes for worker-card v2 + homepage social-proof upgrades
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════════
+   PULSE ANIMATIONS + LIVING SIGNALS
+   ══════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Pulse animations ── */
 @keyframes pulse-avail {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.55; transform: scale(1.35); }
+  50%       { opacity: 0.5; transform: scale(1.4); }
 }
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.45; }
+  50%       { opacity: 0.4; }
 }
 
-/* ─── Worker card: "Nuevo" badge ─── */
-.worker-badge-new {
-  position: absolute;
-  top: 0.65rem;
-  right: 0.65rem;
-  z-index: 2;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #1f7a4c, #3e8e60);
-  color: #fff;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.7rem;
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  box-shadow: 0 4px 12px rgba(31, 122, 76, 0.35);
-  pointer-events: none;
-}
-
-/* ─── Worker card: name + verified row ─── */
-.worker-name-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0;
-}
-
-.worker-verified-pill {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 999px;
-  background: rgba(111, 127, 91, 0.14);
-  color: #3e5533;
-  font-size: 0.72rem;
-  font-weight: 900;
-  border: 1px solid rgba(111, 127, 91, 0.22);
-  margin-top: 0.15rem;
-}
-
-/* ─── Worker card: city + rate info row ─── */
-.worker-info-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.55rem;
-  flex-wrap: wrap;
-}
-
-.worker-city-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-weight: 700;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.worker-city-icon {
-  width: 0.8rem;
-  height: 0.8rem;
-  flex: 0 0 auto;
-  opacity: 0.55;
-}
-
-.worker-rate-label {
-  flex: 0 0 auto;
-  font-size: 0.88rem;
-  font-weight: 900;
-  color: #3f4a35;
-}
-
-/* ─── Worker card: skill chips ─── */
-.worker-chips-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.65rem;
-}
-
-.worker-skill-chip {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid rgba(31, 31, 28, 0.075);
-  border-radius: 999px;
-  background: rgba(255, 253, 248, 0.78);
-  color: rgba(29, 29, 27, 0.72);
-  padding: 0.22rem 0.65rem;
-  font-size: 0.75rem;
-  font-weight: 900;
-  white-space: nowrap;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
-}
-
-.worker-skill-more {
-  display: inline-flex;
-  align-items: center;
-  border: 1px dashed rgba(31, 31, 28, 0.1);
-  border-radius: 999px;
-  color: rgba(29, 29, 27, 0.45);
-  padding: 0.22rem 0.6rem;
-  font-size: 0.75rem;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-/* ─── Worker card: profile completeness signal ─── */
-.worker-complete-signal {
-  margin-top: 0.6rem;
-  font-size: 0.75rem;
-  font-weight: 900;
-  color: #3e5533;
-  opacity: 0.8;
-}
-
-/* ─── Worker card: footer row ─── */
-.worker-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.875rem;
-  padding-top: 0.875rem;
-  border-top: 1px solid var(--border);
-}
-
-.worker-availability {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  font-weight: 900;
-  color: #3e5533;
-}
-
-.worker-avail-dot {
-  display: inline-block;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 999px;
-  background: #4caf79;
-  box-shadow: 0 0 0 3px rgba(76, 175, 121, 0.18);
-  animation: pulse-avail 2.2s ease-in-out infinite;
-}
-
-.worker-profile-link {
-  flex: 0 0 auto;
-  font-size: 0.8rem;
-  font-weight: 900;
-  color: #465638;
-  text-decoration: none;
-  border-radius: 999px;
-  padding: 0.2rem 0.6rem;
-  border: 1px solid rgba(111, 127, 91, 0.22);
-  background: rgba(111, 127, 91, 0.06);
-  transition: background 160ms ease, border-color 160ms ease;
-}
-
-.worker-profile-link:hover {
-  background: rgba(111, 127, 91, 0.14);
-  border-color: rgba(111, 127, 91, 0.38);
-  transform: none;
-}
-
-/* ─── Hero: social proof stats bar ─── */
+/* ── Hero social proof stats bar ── */
 .hero-stats {
   display: flex;
   align-items: center;
@@ -1135,7 +1230,7 @@ textarea::placeholder {
   flex: 0 0 auto;
 }
 
-/* ─── Hero: "En vivo" pulsing dot ─── */
+/* ── Hero "En vivo" status ── */
 .hero-proof-status {
   display: inline-flex;
   align-items: center;
@@ -1151,7 +1246,7 @@ textarea::placeholder {
   animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
-/* ─── Filter result count tag ─── */
+/* ── Filter result count tag ── */
 .results-count-tag {
   display: inline-flex;
   align-items: baseline;
@@ -1177,32 +1272,42 @@ textarea::placeholder {
   font-weight: 700;
 }
 
-/* ─── Accessibility: reduced motion overrides ─── */
-@media (prefers-reduced-motion: reduce) {
-  .worker-avail-dot,
-  .hero-proof-dot {
-    animation: none;
-  }
+/* ── Homepage: city activity signal ── */
+.hero-cities {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: rgba(29, 29, 27, 0.52);
+  letter-spacing: 0.01em;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   MARKETPLACE ACTIVATION — Profile page + Share button CSS
-   Added for: app/trabajador/[slug]/page.tsx + components/share-profile-button.tsx
-   ═══════════════════════════════════════════════════════════════════════════ */
+.hero-cities-dot {
+  display: inline-block;
+  width: 0.38rem;
+  height: 0.38rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #4caf79;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
 
-/* ── Share button: animation ── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   MARKETPLACE ACTIVATION — Profile page + Share button CSS
+   ══════════════════════════════════════════════════════════════════════════════ */
+
 @keyframes share-menu-in {
   from { opacity: 0; transform: translateY(6px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)   scale(1);    }
 }
 
-/* ── Share button: wrapper ── */
 .share-wrap {
   position: relative;
   width: 100%;
 }
 
-/* ── Share button: primary variant ── */
 .share-btn-primary {
   display: flex;
   align-items: center;
@@ -1220,7 +1325,7 @@ textarea::placeholder {
   box-shadow:
     0 14px 32px rgba(31, 122, 76, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transition: box-shadow 180ms ease, transform 180ms ease;
+  transition: box-shadow var(--mid) var(--smooth), transform var(--mid) var(--smooth);
 }
 
 .share-btn-primary:hover {
@@ -1230,7 +1335,6 @@ textarea::placeholder {
   transform: translateY(-1px);
 }
 
-/* ── Share button: secondary variant ── */
 .share-btn-secondary {
   display: flex;
   align-items: center;
@@ -1246,7 +1350,7 @@ textarea::placeholder {
   font-weight: 900;
   cursor: pointer;
   box-shadow: 0 8px 20px rgba(29, 29, 27, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.78);
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: border-color var(--mid) var(--smooth), box-shadow var(--mid) var(--smooth), transform var(--mid) var(--smooth);
 }
 
 .share-btn-secondary:hover {
@@ -1255,7 +1359,6 @@ textarea::placeholder {
   transform: translateY(-1px);
 }
 
-/* ── Share button: dropdown menu ── */
 .share-menu {
   position: absolute;
   bottom: calc(100% + 0.5rem);
@@ -1273,7 +1376,6 @@ textarea::placeholder {
   animation: share-menu-in 160ms ease forwards;
 }
 
-/* ── Share button: individual option row ── */
 .share-option {
   display: flex;
   align-items: center;
@@ -1289,7 +1391,7 @@ textarea::placeholder {
   cursor: pointer;
   text-align: left;
   text-decoration: none;
-  transition: background 140ms ease;
+  transition: background var(--fast) var(--smooth);
 }
 
 .share-option:hover {
@@ -1302,7 +1404,10 @@ textarea::placeholder {
   flex: 0 0 auto;
 }
 
-/* ── Profile page: photo wrap ── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   PROFILE PAGE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
 .profile-photo-wrap {
   position: relative;
   width: 100%;
@@ -1314,7 +1419,6 @@ textarea::placeholder {
     linear-gradient(135deg, rgba(237, 241, 231, 0.95), rgba(255, 250, 238, 0.88));
 }
 
-/* ── Profile page: initials fallback ── */
 .profile-photo-fallback {
   display: grid;
   width: 100%;
@@ -1326,7 +1430,6 @@ textarea::placeholder {
   letter-spacing: -0.02em;
 }
 
-/* ── Profile page: "Nuevo en ListoRD" badge on photo ── */
 .profile-new-badge {
   position: absolute;
   bottom: 0.75rem;
@@ -1343,7 +1446,6 @@ textarea::placeholder {
   pointer-events: none;
 }
 
-/* ── Profile page: verified pill (dark) ── */
 .profile-verified-pill {
   display: inline-flex;
   align-items: center;
@@ -1359,7 +1461,6 @@ textarea::placeholder {
   box-shadow: 0 4px 12px rgba(29, 29, 27, 0.18);
 }
 
-/* ── Profile page: worker motivation share card ── */
 .profile-share-card {
   border: 1px solid rgba(111, 127, 91, 0.22);
   border-radius: 1.25rem;
@@ -1398,7 +1499,6 @@ textarea::placeholder {
   font-weight: 700;
 }
 
-/* ── Profile page: "Cómo contactar" 3-step ── */
 .profile-how-step {
   display: flex;
   align-items: flex-start;
@@ -1424,7 +1524,6 @@ textarea::placeholder {
   margin-top: 0.05rem;
 }
 
-/* ── Profile page: trust card ── */
 .profile-trust-card {
   border: 1px solid rgba(111, 127, 91, 0.18);
   border-radius: 1.25rem;
@@ -1448,7 +1547,6 @@ textarea::placeholder {
   margin-bottom: 0.75rem;
 }
 
-/* ── Profile page layout helpers ── */
 .profile-layout {
   display: grid;
   gap: 1.5rem;
@@ -1557,7 +1655,7 @@ textarea::placeholder {
   color: rgba(29, 29, 27, 0.55);
   text-decoration: none;
   margin-bottom: 0.5rem;
-  transition: color 160ms ease;
+  transition: color var(--fast) var(--smooth);
 }
 
 .profile-back-link:hover {
@@ -1613,7 +1711,7 @@ textarea::placeholder {
     0 18px 42px rgba(29, 29, 27, 0.24),
     0 3px 14px rgba(82, 104, 61, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  transition: box-shadow 180ms ease, transform 180ms ease;
+  transition: box-shadow var(--mid) var(--smooth), transform var(--mid) var(--smooth);
 }
 
 .profile-whatsapp-btn:hover {
@@ -1641,7 +1739,7 @@ textarea::placeholder {
   box-shadow:
     0 18px 42px rgba(29, 29, 27, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  transition: box-shadow 180ms ease, transform 180ms ease;
+  transition: box-shadow var(--mid) var(--smooth), transform var(--mid) var(--smooth);
 }
 
 .profile-paywall-cta:hover {
@@ -1656,7 +1754,6 @@ textarea::placeholder {
   padding: 5rem 1.5rem;
 }
 
-/* ── Profile responsive: 2-column on tablet+ ── */
 @media (min-width: 768px) {
   .profile-layout {
     grid-template-columns: 22rem minmax(0, 1fr);
@@ -1665,18 +1762,10 @@ textarea::placeholder {
   }
 }
 
-/* ── Reduced motion: share menu ── */
-@media (prefers-reduced-motion: reduce) {
-  .share-menu {
-    animation: none;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════════════
    CATEGORY PAGES — /categorias/[slug]
-   ═══════════════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Category hero section ── */
 .cat-hero {
   border-bottom: 1px solid var(--border);
   background:
@@ -1690,7 +1779,6 @@ textarea::placeholder {
   max-width: min(100%, 56rem);
 }
 
-/* ── Breadcrumb ── */
 .cat-breadcrumb {
   display: flex;
   align-items: center;
@@ -1703,7 +1791,7 @@ textarea::placeholder {
 .cat-breadcrumb-link {
   color: rgba(29, 29, 27, 0.45);
   text-decoration: none;
-  transition: color 160ms ease;
+  transition: color var(--fast) var(--smooth);
 }
 
 .cat-breadcrumb-link:hover {
@@ -1719,7 +1807,6 @@ textarea::placeholder {
   color: rgba(29, 29, 27, 0.65);
 }
 
-/* ── Kicker ── */
 .cat-kicker {
   display: inline-flex;
   align-items: center;
@@ -1743,7 +1830,6 @@ textarea::placeholder {
   text-transform: none;
 }
 
-/* ── Title ── */
 .cat-title {
   font-size: clamp(1.9rem, 5.5vw, 3.2rem);
   line-height: 1.05;
@@ -1762,7 +1848,6 @@ textarea::placeholder {
   margin: 0 0 1.1rem;
 }
 
-/* ── Live worker count ── */
 .cat-count-row {
   display: inline-flex;
   align-items: center;
@@ -1788,7 +1873,6 @@ textarea::placeholder {
   font-weight: 900;
 }
 
-/* ── Trust pills row ── */
 .cat-trust-row {
   display: flex;
   flex-wrap: wrap;
@@ -1811,39 +1895,45 @@ textarea::placeholder {
   box-shadow: 0 3px 8px rgba(29, 29, 27, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
-/* ── "Otras categorías" section ── */
 .cat-more-section {
   padding-top: 3rem;
   padding-bottom: 5rem;
   border-top: 1px solid var(--border);
 }
 
-/* ── Homepage: city activity signal ── */
-.hero-cities {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.9rem;
-  font-size: 0.8rem;
-  font-weight: 900;
-  color: rgba(29, 29, 27, 0.52);
-  letter-spacing: 0.01em;
-}
+/* ══════════════════════════════════════════════════════════════════════════════
+   REDUCED MOTION
+   ══════════════════════════════════════════════════════════════════════════════ */
 
-.hero-cities-dot {
-  display: inline-block;
-  width: 0.38rem;
-  height: 0.38rem;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  background: #4caf79;
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-
-/* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
+  .worker-card {
+    animation: none;
+  }
+
+  .worker-card:hover {
+    transform: none;
+  }
+
+  .worker-card:active {
+    transform: none;
+  }
+
+  .category-card:hover {
+    transform: none;
+  }
+
+  .category-card:active {
+    transform: none;
+  }
+
+  .worker-avail-dot,
+  .hero-proof-dot,
   .cat-count-dot,
   .hero-cities-dot {
+    animation: none;
+  }
+
+  .share-menu {
     animation: none;
   }
 }
