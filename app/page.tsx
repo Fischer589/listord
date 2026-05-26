@@ -12,7 +12,7 @@ const CATEGORY_ITEMS = [
   { emoji: "🧹", label: "Limpieza",      slug: "limpiadora"   },
   { emoji: "🍳", label: "Cocina",        slug: "cocinera"     },
   { emoji: "🔧", label: "Plomería",      slug: "plomero"      },
-  { emoji: "⚡", label: "Electricidad",  slug: "electricista" },
+  { emoji: "⚡", label: "Electricodad",  slug: "electricista" },
   { emoji: "🏗️", label: "Construcción",  slug: "albanil"      },
   { emoji: "🎨", label: "Pintura",       slug: "pintor"       },
   { emoji: "📚", label: "Clases",        slug: "tutor"        },
@@ -68,8 +68,7 @@ export default async function Home({
   const socialProofCount =
     totalVerified >= 5 ? Math.floor(totalVerified / 5) * 5 : totalVerified;
 
-  // Live city signal — extracted from all workers (unfiltered would be ideal but
-  // this gives a real, honest snapshot of who is currently active)
+  // Live city signal — real snapshot of active workers
   const activeCities = extractCities(workers);
 
   return (
@@ -178,7 +177,6 @@ export default async function Home({
         </section>
 
         {/* ── CATEGORY DISCOVERY GRID ── */}
-        {/* Immersive 4×2 tap grid — each card links to a dedicated SEO category page */}
         <section className="container category-section">
           <p className="mb-4 text-sm font-black uppercase tracking-wide text-hoja">
             ¿Qué necesitas?
@@ -199,6 +197,46 @@ export default async function Home({
           </div>
         </section>
 
+        {/* ── NETWORK PULSE ─ living activity signal ── */}
+        {totalVerified > 0 && (
+          <section className="container network-pulse-section">
+            <div className="network-pulse-bar">
+              <div className="network-pulse-item network-pulse-item--inline">
+                <span className="network-pulse-dot" aria-hidden="true" />
+                <span className="network-pulse-label">Red activa ahora</span>
+              </div>
+              <div className="network-pulse-divider" aria-hidden="true" />
+              <div className="network-pulse-item">
+                <span className="network-pulse-number">
+                  {socialProofCount > 0 ? `${socialProofCount}+` : totalVerified}
+                </span>
+                <span className="network-pulse-label">perfiles</span>
+              </div>
+              {activeCities.length > 0 && (
+                <>
+                  <div className="network-pulse-divider" aria-hidden="true" />
+                  <div className="network-pulse-item">
+                    <span className="network-pulse-number">
+                      {activeCities.length}+
+                    </span>
+                    <span className="network-pulse-label">ciudades</span>
+                  </div>
+                </>
+              )}
+              <div className="network-pulse-divider" aria-hidden="true" />
+              <div className="network-pulse-item">
+                <span className="network-pulse-number">8</span>
+                <span className="network-pulse-label">categorías</span>
+              </div>
+              <div className="network-pulse-divider" aria-hidden="true" />
+              <div className="network-pulse-item">
+                <span className="network-pulse-number">1</span>
+                <span className="network-pulse-label">contacto gratis</span>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* ── FILTER BAR ── */}
         <section className="container filter-section">
           <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -210,7 +248,6 @@ export default async function Home({
                 Filtra por lo que necesitas hoy
               </h2>
             </div>
-            {/* Result count feedback when filters are active */}
             {showingFiltered && (
               <div className="results-count-tag">
                 {hasWorkers ? (
@@ -290,7 +327,6 @@ export default async function Home({
                 <WorkerCard key={worker.id} worker={worker} />
               ))
             ) : filterActive ? (
-              /* ── No results for this filter ── */
               <div className="empty-state md:col-span-2 lg:col-span-3">
                 <p className="text-4xl">🔍</p>
                 <h3 className="mt-3 text-2xl font-black text-ink">
@@ -316,7 +352,6 @@ export default async function Home({
                 </div>
               </div>
             ) : (
-              /* ── Platform empty state ── */
               <div className="empty-state md:col-span-2 lg:col-span-3">
                 <p className="text-4xl">🇩🇴</p>
                 <h3 className="mt-3 text-2xl font-black text-ink">
@@ -378,7 +413,7 @@ export default async function Home({
                 ¿Tienes un servicio que ofrecer?
               </h2>
               <p className="mt-2 leading-7 text-ink/70">
-                Hazte visible hoy. Los clientes te encuentran y te escriben
+                Hazwe visible hoy. Los clientes te encuentran y te escriben
                 directo por WhatsApp — sin pagar comisiones.
               </p>
             </div>

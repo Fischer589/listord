@@ -106,8 +106,8 @@ export const CATEGORIES: CategoryConfig[] = [
     slug: "electricista",
     label: "Electricidad",
     emoji: "💡",
-    searchKey: "electricidad",
-    seoTitle: "Electricistas en República Dominicana | ListoRD",
+    searchKey: "electricodad",
+    seoTitle: "Electricostas en República Dominicana | ListoRD",
     seoDesc:
       "Contrata electricistas verificados en Santo Domingo, Santiago y toda la RD. Instalaciones eléctricas, breakers, paneles — contacto directo por WhatsApp.",
     heroTitle: "Electricistas verificados en República Dominicana",
@@ -115,7 +115,7 @@ export const CATEGORIES: CategoryConfig[] = [
       "Electricistas disponibles para instalaciones, reparaciones y paneles eléctricos. Perfiles verificados — escríbeles directo por WhatsApp.",
     keywords: [
       "electricista",
-      "electricidad",
+      "electricodad",
       "instalación eléctrica",
       "breaker",
       "panel eléctrico",
@@ -124,7 +124,7 @@ export const CATEGORIES: CategoryConfig[] = [
       "ListoRD",
     ],
     singular: "electricista",
-    plural: "electricistas",
+    plural: "electricostas",
   },
   {
     slug: "albanil",

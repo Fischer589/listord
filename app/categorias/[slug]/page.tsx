@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { AppHeader } from "@/components/app-header";
-import { WorkerCard } from "@/components/worker-card";
+import { WorkerDiscovery } from "@/components/worker-discovery";
 import { getCategoryBySlug, CATEGORIES } from "@/lib/categories";
 import { getWorkersResult } from "@/lib/workers";
 
@@ -71,9 +71,7 @@ function CategoryJsonLd({
       name: "República Dominicana",
     },
     url: profileUrl,
-    ...(workerCount > 0
-      ? { numberOfItems: workerCount }
-      : {}),
+    ...(workerCount > 0 ? { numberOfItems: workerCount } : {}),
   };
 
   const breadcrumbSchema = {
@@ -134,6 +132,7 @@ export default async function CategoryPage({
         {/* ── CATEGORY HERO ── */}
         <section className="cat-hero">
           <div className="container cat-hero-inner">
+
             {/* Breadcrumb */}
             <nav aria-label="Breadcrumb" className="cat-breadcrumb">
               <Link href="/" className="cat-breadcrumb-link">
@@ -169,26 +168,12 @@ export default async function CategoryPage({
               <span className="cat-trust-pill">💬 Directo a WhatsApp</span>
               <span className="cat-trust-pill">🇩🇴 Solo en RD</span>
             </div>
+
           </div>
         </section>
 
-        {/* ── WORKER GRID ── */}
-        <section className="container workers-section">
-          <div className="section-heading">
-            <div>
-              <h2 className="text-2xl font-black text-ink">
-                {hasWorkers
-                  ? `${count} ${count === 1 ? cat.singular : cat.plural} encontrado${count !== 1 ? "s" : ""}`
-                  : `${cat.plural.charAt(0).toUpperCase() + cat.plural.slice(1)} en ListoRD`}
-              </h2>
-              <p className="mt-1 text-sm font-bold text-ink/55">
-                {hasWorkers
-                  ? "Los más recientes primero · perfiles verificados"
-                  : "Sé el primero en esta categoría"}
-              </p>
-            </div>
-          </div>
-
+        {/* ── IMMERSIVE WORKER DISCOVERY ── */}
+        <section className="container cat-discovery-section">
           {!workersResult.ok ? (
             <div className="empty-state">
               <p className="text-sm font-black uppercase tracking-wide text-hoja">
@@ -208,11 +193,7 @@ export default async function CategoryPage({
               </Link>
             </div>
           ) : hasWorkers ? (
-            <div className="worker-grid">
-              {workers.map((worker) => (
-                <WorkerCard key={worker.id} worker={worker} />
-              ))}
-            </div>
+            <WorkerDiscovery workers={workers} categoryLabel={cat.label} />
           ) : (
             /* Empty — still a useful SEO page + CTA for workers */
             <div className="empty-state">
