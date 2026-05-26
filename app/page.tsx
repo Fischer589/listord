@@ -7,16 +7,16 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// Each pill maps directly to a /categorias/[slug] SEO page
-const CATEGORY_PILLS = [
-  { label: "🧹 Limpieza",     slug: "limpiadora"   },
-  { label: "🍳 Cocina",       slug: "cocinera"     },
-  { label: "🔧 Plomería",     slug: "plomero"      },
-  { label: "🏗️ Construcción", slug: "albanil"      },
-  { label: "💡 Electricidad", slug: "electricista" },
-  { label: "🎨 Pintura",      slug: "pintor"       },
-  { label: "📚 Clases",       slug: "tutor"        },
-  { label: "💅 Belleza",      slug: "belleza"      },
+// Each card maps directly to a /categorias/[slug] SEO page
+const CATEGORY_ITEMS = [
+  { emoji: "🧹", label: "Limpieza",      slug: "limpiadora"   },
+  { emoji: "🍳", label: "Cocina",        slug: "cocinera"     },
+  { emoji: "🔧", label: "Plomería",      slug: "plomero"      },
+  { emoji: "⚡", label: "Electricidad",  slug: "electricista" },
+  { emoji: "🏗️", label: "Construcción",  slug: "albanil"      },
+  { emoji: "🎨", label: "Pintura",       slug: "pintor"       },
+  { emoji: "📚", label: "Clases",        slug: "tutor"        },
+  { emoji: "💅", label: "Belleza",       slug: "belleza"      },
 ];
 
 function isFilterActive(searchParams: {
@@ -177,20 +177,23 @@ export default async function Home({
           </div>
         </section>
 
-        {/* ── CATEGORY QUICK-FILTERS ── */}
-        {/* Pills link to dedicated SEO category pages */}
+        {/* ── CATEGORY DISCOVERY GRID ── */}
+        {/* Immersive 4×2 tap grid — each card links to a dedicated SEO category page */}
         <section className="container category-section">
           <p className="mb-4 text-sm font-black uppercase tracking-wide text-hoja">
             ¿Qué necesitas?
           </p>
-          <div className="category-pill-row">
-            {CATEGORY_PILLS.map(({ label, slug }) => (
+          <div className="category-grid">
+            {CATEGORY_ITEMS.map(({ emoji, label, slug }) => (
               <Link
                 key={slug}
                 href={`/categorias/${slug}`}
-                className="category-pill"
+                className="category-card"
               >
-                {label}
+                <span className="category-card-emoji" aria-hidden="true">
+                  {emoji}
+                </span>
+                <span className="category-card-label">{label}</span>
               </Link>
             ))}
           </div>

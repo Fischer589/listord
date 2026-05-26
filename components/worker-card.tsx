@@ -93,7 +93,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
   const city = worker.city || "República Dominicana";
   const skills = getWorkerSkills(worker);
   const primarySkill = getPrimarySkill(skills);
-  // Show primary skill in header; supporting skills as chips (skip first)
+  // Photo overlay shows primary skill; body shows supporting chips
   const chipSkills = skills.slice(1, 4);
   const overflowCount = Math.max(0, skills.length - 1 - chipSkills.length);
   const workStyle =
@@ -293,7 +293,8 @@ export function WorkerCard({ worker }: { worker: Worker }) {
 
   return (
     <article className="worker-card" ref={cardRef}>
-      {/* ── Photo ── */}
+
+      {/* ── Photo hero — full-bleed with gradient overlay ── */}
       <div className="worker-photo">
         {photoUrl ? (
           <Image
@@ -307,48 +308,46 @@ export function WorkerCard({ worker }: { worker: Worker }) {
         ) : (
           <div className="worker-photo-fallback">{getInitials(fullName)}</div>
         )}
-        {/* Activity badge — "Nuevo hoy" or "Nuevo" */}
+
+        {/* Gradient: transparent → dark at bottom */}
+        <div className="worker-photo-grad" aria-hidden="true" />
+
+        {/* Live availability signal — top left glass pill */}
+        <div className="worker-live-signal" aria-hidden="true">
+          <span className="worker-avail-dot" />
+          Disponible
+        </div>
+
+        {/* New profile badge — top right */}
         {profileAge && (
           <span className="worker-badge-new">
             {profileAge === "today" ? "✦ Nuevo hoy" : "✦ Nuevo"}
           </span>
         )}
+
+        {/* Name / primary skill / location — bottom overlay */}
+        <div className="worker-photo-overlay">
+          <p className="worker-overlay-skill">{primarySkill}</p>
+          <h2 className="worker-overlay-name">{fullName}</h2>
+          {(worker.city || worker.desired_income) && (
+            <p className="worker-overlay-meta">
+              {worker.city && <span>{worker.city}</span>}
+              {worker.city && worker.desired_income && (
+                <span aria-hidden="true"> · </span>
+              )}
+              {worker.desired_income && (
+                <span>{formatIncomeShort(worker.desired_income)}</span>
+              )}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* ── Body ── */}
       <div className="worker-main flex flex-1 flex-col">
         <div className="flex-1">
 
-          {/* Name + verification row */}
-          <div className="worker-name-row">
-            <div className="min-w-0 flex-1">
-              <h2 className="worker-name text-ink">{fullName}</h2>
-              <p className="worker-primary-skill" title={primarySkill}>
-                <span className="worker-primary-skill-text">{primarySkill}</span>
-              </p>
-            </div>
-            <span className="worker-verified-pill">✓</span>
-          </div>
-
-          {/* City + rate info row */}
-          <div className="worker-info-row">
-            <span className="worker-city-label">
-              <svg aria-hidden="true" viewBox="0 0 16 16" className="worker-city-icon" fill="currentColor">
-                <path d="M8 1.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9ZM2 6a6 6 0 1 1 10.74 3.67l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04A6 6 0 0 1 2 6Z"/>
-              </svg>
-              {city}
-            </span>
-            <span className="worker-rate-label">
-              {formatIncomeShort(worker.desired_income)}
-            </span>
-          </div>
-
-          {/* Bio */}
-          {worker.short_intro && (
-            <p className="worker-bio line-clamp-2">{worker.short_intro}</p>
-          )}
-
-          {/* Skill chips */}
+          {/* Supporting skill chips */}
           {(chipSkills.length > 0 || workStyle) && (
             <div className="worker-chips-row">
               {chipSkills.map((skill) => (
@@ -365,18 +364,23 @@ export function WorkerCard({ worker }: { worker: Worker }) {
             </div>
           )}
 
-          {/* Profile quality signal */}
+          {/* Bio */}
+          {worker.short_intro && (
+            <p className="worker-bio line-clamp-2">{worker.short_intro}</p>
+          )}
+
+          {/* Complete profile signal */}
           {isComplete && (
             <p className="worker-complete-signal">✓ Perfil completo</p>
           )}
         </div>
 
-        {/* Availability + profile link footer */}
+        {/* Footer: verified badge + profile link */}
         <div className="worker-card-footer">
-          <div className="worker-availability">
-            <span className="worker-avail-dot" aria-hidden="true" />
-            Disponible hoy
-          </div>
+          <span className="worker-verified-row">
+            <span className="worker-verified-pill">✓</span>
+            <span className="worker-verified-text">Verificado</span>
+          </span>
           <Link
             href={`/trabajador/${worker.id}`}
             className="worker-profile-link"
@@ -405,7 +409,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           )}
         </div>
 
-        {/* ── Paywall Modal (unchanged) ── */}
+        {/* ── Paywall Modal (UNCHANGED) ── */}
         {showPaywall && (
           <div
             className="fixed inset-0 z-50 grid place-items-end bg-black/45 p-3 sm:place-items-center"
