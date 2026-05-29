@@ -292,114 +292,88 @@ export function WorkerCard({ worker }: { worker: Worker }) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <article className="worker-card" ref={cardRef}>
+    <article className="wc" ref={cardRef}>
 
-      {/* ── Photo hero — full-bleed with gradient overlay ── */}
-      <div className="worker-photo">
+      {/* ── Photo ── */}
+      <div className="wc-photo">
         {photoUrl ? (
           <Image
             src={photoUrl}
             alt={`Foto de ${fullName}`}
             fill
             sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-            className="worker-photo-image"
+            className="wc-photo-img"
             priority={false}
           />
         ) : (
-          <div className="worker-photo-fallback">{getInitials(fullName)}</div>
+          <div className="wc-photo-initials">{getInitials(fullName)}</div>
         )}
-
-        {/* Gradient: transparent → dark at bottom */}
-        <div className="worker-photo-grad" aria-hidden="true" />
-
-        {/* Live availability signal — top left glass pill */}
-        <div className="worker-live-signal" aria-hidden="true">
-          <span className="worker-avail-dot" />
-          Disponible
-        </div>
 
         {/* New profile badge — top right */}
         {profileAge && (
-          <span className="worker-badge-new">
+          <span className="wc-badge-new">
             {profileAge === "today" ? "✦ Nuevo hoy" : "✦ Nuevo"}
           </span>
         )}
-
-        {/* Name / primary skill / location — bottom overlay */}
-        <div className="worker-photo-overlay">
-          <p className="worker-overlay-skill">{primarySkill}</p>
-          <h2 className="worker-overlay-name">{fullName}</h2>
-          {(worker.city || worker.desired_income) && (
-            <p className="worker-overlay-meta">
-              {worker.city && <span>{worker.city}</span>}
-              {worker.city && worker.desired_income && (
-                <span aria-hidden="true"> · </span>
-              )}
-              {worker.desired_income && (
-                <span>{formatIncomeShort(worker.desired_income)}</span>
-              )}
-            </p>
-          )}
-        </div>
       </div>
 
       {/* ── Body ── */}
-      <div className="worker-main flex flex-1 flex-col">
-        <div className="flex-1">
-
-          {/* Supporting skill chips */}
-          {(chipSkills.length > 0 || workStyle) && (
-            <div className="worker-chips-row">
-              {chipSkills.map((skill) => (
-                <span key={skill} className="worker-skill-chip">{skill}</span>
-              ))}
-              {overflowCount > 0 && (
-                <span className="worker-skill-more">+{overflowCount}</span>
-              )}
-              {workStyle && chipSkills.length === 0 && (
-                <span className="worker-skill-chip">
-                  {workStyleLabels[workStyle]}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Bio */}
-          {worker.short_intro && (
-            <p className="worker-bio line-clamp-2">{worker.short_intro}</p>
-          )}
-
-          {/* Complete profile signal */}
-          {isComplete && (
-            <p className="worker-complete-signal">✓ Perfil completo</p>
-          )}
+      <div className="wc-body">
+        {/* Live availability signal */}
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--green)] opacity-80" />
+          <span className="text-[0.67rem] font-bold text-[var(--green)] uppercase tracking-wide">Disponible</span>
         </div>
 
-        {/* Footer: verified badge + profile link */}
-        <div className="worker-card-footer">
-          <span className="worker-verified-row">
-            <span className="worker-verified-pill">✓</span>
-            <span className="worker-verified-text">Verificado</span>
+        {/* Name / Skill / City */}
+        <div className="wc-info">
+          <h2 className="wc-name">{fullName}</h2>
+          <p className="wc-skill">{primarySkill}</p>
+          {worker.city && <p className="wc-city">{city}{worker.desired_income ? ` · ${formatIncomeShort(worker.desired_income)}` : ""}</p>}
+        </div>
+
+        {/* Supporting skill chips */}
+        {(chipSkills.length > 0 || workStyle) && (
+          <div className="wc-chips">
+            {chipSkills.map((skill) => (
+              <span key={skill} className="wc-chip">{skill}</span>
+            ))}
+            {overflowCount > 0 && (
+              <span className="wc-chip" style={{ color: "rgba(26,61,43,0.4)" }}>+{overflowCount}</span>
+            )}
+            {workStyle && chipSkills.length === 0 && (
+              <span className="wc-chip">{workStyleLabels[workStyle]}</span>
+            )}
+          </div>
+        )}
+
+        {/* Bio */}
+        {worker.short_intro && (
+          <p className="wc-bio line-clamp-2">{worker.short_intro}</p>
+        )}
+
+        {/* Footer: verified + profile link */}
+        <div className="wc-footer">
+          <span className="wc-verified">
+            <span>✓</span>
+            <span>Verificado</span>
           </span>
-          <Link
-            href={`/trabajador/${worker.id}`}
-            className="worker-profile-link"
-          >
+          <Link href={`/trabajador/${worker.id}`} className="wc-link">
             Ver perfil →
           </Link>
         </div>
 
         {/* ── WhatsApp CTA ── */}
-        <div className="contact-cta-shell">
+        <div className="wc-cta-shell">
           <button
             type="button"
             onClick={() => handleContactClick(worker)}
-            className="tap-target whatsapp-cta flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1f7a4c] px-4 py-4 font-black text-white hover:bg-[#17613c]"
+            className="tap-target wc-whatsapp-btn"
           >
             <WhatsAppIcon />
             Contactar por WhatsApp
           </button>
-          <p className="mt-2 text-center text-xs font-bold text-ink/50">
+          <p className="mt-2 text-center text-xs font-bold text-[var(--ink)]/50">
             Mensaje directo — sin intermediarios
           </p>
           {contactError && (
@@ -409,7 +383,6 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           )}
         </div>
 
-        {/* ── Paywall Modal (UNCHANGED) ── */}
         {showPaywall && (
           <div
             className="fixed inset-0 z-50 grid place-items-end bg-black/45 p-3 sm:place-items-center"
