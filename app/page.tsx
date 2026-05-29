@@ -7,7 +7,7 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// Each card maps directly to a /categorias/[slug] SEO page
+// Each item links directly to a /categorias/[slug] SEO page
 const CATEGORY_ITEMS = [
   { emoji: "🧹", label: "Limpieza",      slug: "limpiadora"   },
   { emoji: "🍳", label: "Cocina",        slug: "cocinera"     },
@@ -33,7 +33,6 @@ function isFilterActive(searchParams: {
   );
 }
 
-/** Extract unique cities from workers (ES5-safe, no Set spread). */
 function extractCities(workers: Array<{ city?: string | null }>): string[] {
   const seen: Record<string, boolean> = {};
   const result: string[] = [];
@@ -64,14 +63,9 @@ export default async function Home({
   const filterActive = isFilterActive(searchParams);
   const showingFiltered = filterActive && workersResult.ok;
 
-  // Social proof counter — round down to nearest 5 for "X+" feel
   const socialProofCount =
     totalVerified >= 5 ? Math.floor(totalVerified / 5) * 5 : totalVerified;
-
-  // Live city signal — real snapshot of active workers
   const activeCities = extractCities(workers);
-
-  // Label for carousel aria / heading when filter is active
   const filterLabel =
     searchParams.skill?.trim() || searchParams.city?.trim() || undefined;
 
@@ -80,150 +74,104 @@ export default async function Home({
       <AppHeader />
       <main className="page-shell">
 
-        {/* ── HERO — editorial, confident, no over-explanation ── */}
-        <section className="hero-section">
-          <div className="container hero-inner">
+        {/* ══════════════════════════════════════════
+            HERO — "the ad became a website"
+        ══════════════════════════════════════════ */}
+        <section className="hero">
+          <div className="container">
+            <div className="hero-inner">
 
-            <p className="hero-eyebrow">
-              Solo en República Dominicana 🇩🇴
-            </p>
+              <p className="hero-eyebrow">
+                <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--green)", marginRight: "0.5rem", opacity: 0.85 }} />
+                Solo en República Dominicana 🇩🇴
+              </p>
 
-            <h1 className="hero-title">
-              Trabajas.<br />Te buscan.
-            </h1>
+              <h1 className="hero-title">
+                Trabajas.<br />
+                Te buscan.
+              </h1>
 
-            <p className="hero-subline">
-              Perfiles verificados en RD. Contacta directo por WhatsApp — sin agencias, sin comisiones.
-            </p>
+              <p className="hero-body">
+                Perfiles verificados. Contacto directo por WhatsApp.<br />
+                Sin agencias, sin comisiones.
+              </p>
 
-            {/* Inline stats — no boxes, just typography */}
-            {totalVerified > 0 && (
-              <div className="hero-stats">
-                <span className="hero-stat-num">
-                  {socialProofCount > 0 ? `${socialProofCount}+` : totalVerified}
-                </span>
-                <span className="hero-stat-sep">trabajadores</span>
-                <span className="hero-stat-sep">·</span>
-                <span>1 contacto gratis</span>
-                <span className="hero-stat-sep">·</span>
-                <span>aprobación 24h</span>
-                {activeCities.length > 0 && (
-                  <>
-                    <span className="hero-stat-sep">·</span>
-                    <span className="flex items-center gap-1">
-                      <span className="hero-cities-dot" aria-hidden="true" />
-                      {activeCities[0]}{activeCities.length > 1 ? ` · ${activeCities[1]}` : ""}
-                    </span>
-                  </>
-                )}
+              {totalVerified > 0 && (
+                <p className="hero-stats">
+                  <span className="hero-stat-num">
+                    {socialProofCount > 0 ? `${socialProofCount}+` : totalVerified}
+                  </span>
+                  <span className="hero-stat-sep">trabajadores</span>
+                  <span className="hero-stat-sep">·</span>
+                  <span>1 contacto gratis</span>
+                  {activeCities.length > 0 && (
+                    <>
+                      <span className="hero-stat-sep">·</span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                        <span className="hero-cities-dot" aria-hidden="true" />
+                        {activeCities[0]}{activeCities.length > 1 ? ` · ${activeCities[1]}` : ""}
+                      </span>
+                    </>
+                  )}
+                </p>
+              )}
+
+              <div className="hero-actions">
+                <a
+                  href="#descubre"
+                  className="btn-primary tap-target"
+                >
+                  Ver trabajadores
+                </a>
+                <Link
+                  href="/trabajadores/registro"
+                  className="btn-secondary tap-target"
+                >
+                  Busco trabajo
+                </Link>
               </div>
-            )}
 
-            <div className="hero-actions">
-              <a
-                href="#descubre"
-                className="btn-primary tap-target inline-flex min-w-0 items-center justify-center px-7 py-4 text-base text-white"
-              >
-                Descubrir trabajadores
-              </a>
-              <Link
-                href="/trabajadores/registro"
-                className="btn-secondary tap-target inline-flex min-w-0 items-center justify-center px-7 py-4 text-base"
-              >
-                Crear mi perfil
-              </Link>
             </div>
-
           </div>
         </section>
 
-        {/* ── CATEGORY GRID ── */}
-        <section className="container category-section">
-          <p className="category-eyebrow">
-            ¿Qué necesitas?
-          </p>
-          <div className="category-grid">
+        {/* ── CATEGORY SHORTCUTS ── */}
+        <section className="container">
+          <div className="cat-pills">
             {CATEGORY_ITEMS.map(({ emoji, label, slug }) => (
               <Link
                 key={slug}
                 href={`/categorias/${slug}`}
-                className="category-card"
+                className="cat-pill"
               >
-                <span className="category-card-emoji" aria-hidden="true">
-                  {emoji}
-                </span>
-                <span className="category-card-label">{label}</span>
+                <span aria-hidden="true">{emoji}</span>
+                {label}
               </Link>
             ))}
           </div>
         </section>
 
-        {/* ── NETWORK PULSE — minimal activity signal ── */}
-        {totalVerified > 0 && (
-          <section className="container network-pulse-section">
-            <div className="network-pulse-bar">
-              <div className="network-pulse-item network-pulse-item--inline">
-                <span className="network-pulse-dot" aria-hidden="true" />
-                <span className="network-pulse-label">Activos ahora</span>
-              </div>
-              <div className="network-pulse-divider" aria-hidden="true" />
-              <div className="network-pulse-item">
-                <span className="network-pulse-number">
-                  {socialProofCount > 0 ? `${socialProofCount}+` : totalVerified}
-                </span>
-                <span className="network-pulse-label">perfiles</span>
-              </div>
-              {activeCities.length > 0 && (
-                <>
-                  <div className="network-pulse-divider" aria-hidden="true" />
-                  <div className="network-pulse-item">
-                    <span className="network-pulse-number">
-                      {activeCities.length}+
-                    </span>
-                    <span className="network-pulse-label">ciudades</span>
-                  </div>
-                </>
-              )}
-              <div className="network-pulse-divider" aria-hidden="true" />
-              <div className="network-pulse-item">
-                <span className="network-pulse-number">8</span>
-                <span className="network-pulse-label">categorías</span>
-              </div>
-              <div className="network-pulse-divider" aria-hidden="true" />
-              <div className="network-pulse-item">
-                <span className="network-pulse-number">1</span>
-                <span className="network-pulse-label">gratis / día</span>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* ══════════════════════════════════════════════
-            DISCOVERY CAROUSEL — primary browsing surface
-        ══════════════════════════════════════════════ */}
+        {/* ══════════════════════════════════════════
+            WORKER DISCOVERY
+        ══════════════════════════════════════════ */}
         <section id="descubre" className="container discovery-section">
-          <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                {showingFiltered ? "Resultados" : "Explora perfiles"}
+
+          <div className="section-header">
+            <p className="section-eyebrow">
+              {showingFiltered ? "Resultados" : "Disponibles ahora"}
+            </p>
+            {filterActive && hasWorkers && (
+              <p className="section-title">
+                {workers.length} trabajador{workers.length !== 1 ? "es" : ""} encontrado{workers.length !== 1 ? "s" : ""}
               </p>
-              <h2 className="mt-1 text-2xl font-black text-ink">
-                {filterActive && hasWorkers
-                  ? `${workers.length} trabajador${workers.length !== 1 ? "es" : ""} encontrado${workers.length !== 1 ? "s" : ""}`
-                  : "Trabajadores disponibles ahora"}
-              </h2>
-              {filterActive && hasWorkers && (
-                <p className="mt-1 text-sm font-bold text-ink/55">
-                  Ordenados por relevancia · perfiles verificados
-                </p>
-              )}
-            </div>
+            )}
             {showingFiltered && hasWorkers && (
               <Link
                 href="/"
-                className="shrink-0 rounded-full border border-[rgba(26,26,23,0.07)] bg-white px-3 py-2 text-sm font-black text-ink/60 shadow-soft hover:text-ink"
+                className="btn-ghost"
+                style={{ marginTop: "0.5rem", display: "inline-flex" }}
               >
-                Ver todos
+                Ver todos →
               </Link>
             )}
           </div>
@@ -231,19 +179,14 @@ export default async function Home({
           {/* Error state */}
           {!workersResult.ok && (
             <div className="empty-state">
-              <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                Conexión interrumpida
-              </p>
-              <h3 className="mt-2 text-2xl font-black text-ink">
-                No pudimos cargar los trabajadores ahora mismo.
+              <p className="section-eyebrow">Conexión interrumpida</p>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", fontWeight: 400, color: "var(--ink)", margin: "0.75rem 0" }}>
+                No pudimos cargar los trabajadores.
               </h3>
-              <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
+              <p style={{ color: "rgba(26,61,43,0.65)", marginBottom: "1.5rem" }}>
                 Intenta de nuevo en unos minutos.
               </p>
-              <Link
-                href="/"
-                className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-white"
-              >
+              <Link href="/" className="btn-primary tap-target">
                 Intentar de nuevo
               </Link>
             </div>
@@ -252,70 +195,53 @@ export default async function Home({
           {/* Filter active — no results */}
           {workersResult.ok && filterActive && !hasWorkers && (
             <div className="empty-state">
-              <p className="text-4xl">🔍</p>
-              <h3 className="mt-3 text-2xl font-black text-ink">
-                No encontramos trabajadores con ese filtro.
+              <p style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🔍</p>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", fontWeight: 400, color: "var(--ink)", marginBottom: "0.75rem" }}>
+                No encontramos resultados con ese filtro.
               </h3>
-              <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
-                Prueba con una búsqueda más amplia o revisa todos los
-                trabajadores disponibles.
+              <p style={{ color: "rgba(26,61,43,0.65)", marginBottom: "1.5rem" }}>
+                Prueba con una búsqueda más amplia.
               </p>
-              <div className="mt-5 flex flex-wrap justify-center gap-3">
-                <Link
-                  href="/"
-                  className="btn-primary tap-target inline-flex items-center justify-center px-6 py-3 text-white"
-                >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", justifyContent: "center" }}>
+                <Link href="/" className="btn-primary tap-target">
                   Ver todos los trabajadores
                 </Link>
-                <Link
-                  href="/trabajadores/registro"
-                  className="btn-secondary tap-target inline-flex items-center justify-center px-6 py-3"
-                >
+                <Link href="/trabajadores/registro" className="btn-secondary tap-target">
                   ¿Eres trabajador? Regístrate
                 </Link>
               </div>
             </div>
           )}
 
-          {/* No workers at all (empty DB) */}
+          {/* No workers at all */}
           {workersResult.ok && !filterActive && !hasWorkers && (
             <div className="empty-state">
-              <p className="text-4xl">🇩🇴</p>
-              <h3 className="mt-3 text-2xl font-black text-ink">
+              <p style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🇩🇴</p>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", fontWeight: 400, color: "var(--ink)", marginBottom: "0.75rem" }}>
                 Estamos agregando trabajadores verificados en RD.
               </h3>
-              <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
-                ¿Ofreces un servicio? Crea tu perfil gratis y empieza a
-                recibir oportunidades por WhatsApp hoy mismo.
+              <p style={{ color: "rgba(26,61,43,0.65)", marginBottom: "1.5rem" }}>
+                ¿Ofreces un servicio? Crea tu perfil gratis hoy.
               </p>
-              <Link
-                href="/trabajadores/registro"
-                className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-lg text-white"
-              >
+              <Link href="/trabajadores/registro" className="btn-primary tap-target">
                 Crear mi perfil gratis
               </Link>
             </div>
           )}
 
-          {/* ── THE CAROUSEL — only rendered when there are workers ── */}
+          {/* The carousel */}
           {workersResult.ok && hasWorkers && (
-            <WorkerDiscovery
-              workers={workers}
-              categoryLabel={filterLabel}
-            />
+            <WorkerDiscovery workers={workers} categoryLabel={filterLabel} />
           )}
+
         </section>
 
-        {/* ── FILTER BAR — deeper exploration ── */}
+        {/* ── FILTER BAR ── */}
         <section className="container filter-section">
-          <div className="mb-5 flex flex-col gap-1">
-            <p className="text-sm font-black uppercase tracking-wide text-hoja">
-              Búsqueda avanzada
-            </p>
-            <h2 className="mt-1 text-xl font-black text-ink">
-              Filtra por ciudad, oficio o disponibilidad
-            </h2>
-          </div>
+          <p className="section-eyebrow">Búsqueda avanzada</p>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.02em", marginBottom: "1.5rem" }}>
+            Filtra por ciudad, oficio o disponibilidad
+          </h2>
           <FilterBar
             city={searchParams.city}
             skill={searchParams.skill}
@@ -324,56 +250,48 @@ export default async function Home({
           />
         </section>
 
-        {/* ── TRUST SECTION ── */}
+        {/* ── TRUST ── */}
         <section className="container trust-section">
-          <p className="trust-eyebrow">
-            ¿Por qué ListoRD?
-          </p>
+          <p className="trust-eyebrow">¿Por qué ListoRD?</p>
           <div className="trust-section-grid">
             <div className="trust-item">
               <span className="trust-item-icon">✓</span>
               <h3 className="trust-item-title">Verificados manualmente</h3>
               <p className="trust-item-body">
-                Cada perfil es revisado por nuestro equipo antes de publicarse.
-                Nada automático, nada falso.
+                Cada perfil es revisado por nuestro equipo antes de publicarse. Nada automático, nada falso.
               </p>
             </div>
             <div className="trust-item">
               <span className="trust-item-icon">💬</span>
               <h3 className="trust-item-title">Directo a WhatsApp</h3>
               <p className="trust-item-body">
-                Sin formularios, sin esperas. Hablas con la persona, no con un
-                sistema. Un contacto gratis cada día.
+                Sin formularios, sin esperas. Hablas con la persona — no con un sistema. Un contacto gratis cada día.
               </p>
             </div>
             <div className="trust-item">
               <span className="trust-item-icon">🇩🇴</span>
               <h3 className="trust-item-title">Hecho para RD</h3>
               <p className="trust-item-body">
-                Diseñado para el mercado dominicano. Trabajadores reales, en tu
-                ciudad, disponibles hoy.
+                Diseñado para el mercado dominicano. Trabajadores reales, en tu ciudad, disponibles hoy.
               </p>
             </div>
           </div>
         </section>
 
-        {/* ── WORKER CTA BANNER ── */}
+        {/* ── WORKER CTA ── */}
         <section className="container worker-cta-banner">
           <div className="worker-cta-inner">
             <div>
-              <h2>
-                ¿Tienes un servicio que ofrecer?
-              </h2>
+              <h2>¿Tienes un servicio que ofrecer?</h2>
               <p>
-                Hazte visible hoy. Los clientes te encuentran y te escriben
-                directo por WhatsApp — sin comisiones.
+                Hazte visible. Los clientes te encuentran y te escriben directo por WhatsApp — sin comisiones.
               </p>
             </div>
             <Link
               href="/trabajadores/registro"
-              className="btn-primary tap-target inline-flex shrink-0 items-center justify-center px-6 py-4 text-base text-white"
+              className="btn-primary tap-target"
             >
-              Crear mi perfil gratis
+              Crear mi perfil gratis →
             </Link>
           </div>
         </section>
