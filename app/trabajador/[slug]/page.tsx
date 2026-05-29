@@ -223,177 +223,196 @@ export default async function WorkerProfilePage({
       <AppHeader />
       <WorkerJsonLd worker={worker} skills={skills} profileUrl={profileUrl} />
 
-      <main className="container py-8 md:py-12">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold text-hoja hover:underline">
-          ← Volver al inicio
-        </Link>
+      <main className="page-shell">
 
-        <div className="mt-5 grid gap-6 md:grid-cols-[320px_1fr] md:items-start">
+        {/* ── PROFILE HERO — photo + identity ── */}
+        <section style={{ background: "var(--cream)", paddingTop: "clamp(2rem,5vw,4rem)", paddingBottom: "0" }}>
+          <div className="container">
+            <Link
+              href="/"
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.82rem", fontWeight: 700, color: "rgba(26,61,43,0.55)", marginBottom: "2rem" }}
+              className="hover:text-[var(--ink)] transition-colors"
+            >
+              ← Volver al inicio
+            </Link>
 
-          {/* ── LEFT: Photo card + Share card ── */}
-          <div className="flex flex-col gap-4">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "2rem" }} className="md:grid-cols-[380px_1fr]">
 
-            {/* Profile card */}
-            <div className="overflow-hidden rounded-2xl border border-[rgba(31,31,28,0.07)] bg-white shadow-soft">
-              {/* Photo */}
-              <div className="profile-photo-wrap">
-                {worker.photo_url ? (
-                  <Image
-                    src={worker.photo_url}
-                    alt={`Foto de ${fullName}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 320px"
-                    className="object-contain object-center"
-                    priority
+              {/* LEFT: Photo + share */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+
+                {/* Photo card */}
+                <div
+                  style={{
+                    overflow: "hidden",
+                    borderRadius: "var(--r-2xl)",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface-pure)",
+                    boxShadow: "var(--shadow-sm)",
+                  }}
+                >
+                  <div className="profile-photo-wrap">
+                    {worker.photo_url ? (
+                      <Image
+                        src={worker.photo_url}
+                        alt={`Foto de ${fullName}`}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 380px"
+                        className="object-cover object-center"
+                        priority
+                      />
+                    ) : (
+                      <div className="profile-photo-fallback">
+                        {getInitials(fullName)}
+                      </div>
+                    )}
+                    {isNew && (
+                      <span className="profile-new-badge">✦ Nuevo en ListoRD</span>
+                    )}
+                  </div>
+
+                  {/* Quick identity */}
+                  <div style={{ padding: "1.375rem 1.5rem 1.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem", marginBottom: "1rem" }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.5rem,4vw,2rem)", fontWeight: 400, letterSpacing: "-0.025em", color: "var(--ink)", lineHeight: 1.1 }}>
+                          {fullName}
+                        </h1>
+                        <p style={{ marginTop: "0.3rem", fontSize: "0.85rem", fontWeight: 700, color: "var(--green)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--green)", opacity: 0.85 }} />
+                          {primarySkill}
+                        </p>
+                      </div>
+                      <span className="profile-verified-pill">✓ Verificado</span>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.625rem" }}>
+                      <div style={{ borderRadius: "var(--r-lg)", border: "1px solid var(--border)", background: "var(--surface)", padding: "0.75rem" }}>
+                        <p style={{ fontSize: "0.67rem", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(26,61,43,0.45)", marginBottom: "0.2rem" }}>Ciudad</p>
+                        <p style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--ink)" }}>{city}</p>
+                      </div>
+                      <div style={{ borderRadius: "var(--r-lg)", border: "1px solid var(--border)", background: "var(--surface)", padding: "0.75rem" }}>
+                        <p style={{ fontSize: "0.67rem", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(26,61,43,0.45)", marginBottom: "0.2rem" }}>Tarifa</p>
+                        <p style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--green)" }}>{formatIncomeShort(worker.desired_income)}</p>
+                      </div>
+                    </div>
+
+                    {memberSince && (
+                      <p style={{ marginTop: "0.75rem", fontSize: "0.72rem", fontWeight: 700, color: "rgba(26,61,43,0.4)" }}>
+                        Miembro desde {memberSince}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Share card */}
+                <div className="profile-share-card">
+                  <p className="profile-share-eyebrow">¿Eres tú en este perfil?</p>
+                  <p className="profile-share-headline">Comparte y consigue más clientes hoy</p>
+                  <p className="profile-share-body">
+                    Publica en WhatsApp Status, Facebook o Messenger — tus contactos pueden contratarte directo.
+                  </p>
+                  <ShareProfileButton
+                    profileUrl={profileUrl}
+                    workerName={fullName}
+                    primarySkill={primarySkill}
+                    city={city}
+                    variant="primary"
                   />
-                ) : (
-                  <div className="profile-photo-fallback">
-                    {getInitials(fullName)}
-                  </div>
-                )}
-                {/* Activity signal */}
-                {isNew && (
-                  <span className="profile-new-badge">✦ Nuevo en ListoRD</span>
-                )}
-              </div>
-
-              {/* Quick info */}
-              <div className="p-5">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <h1 className="text-2xl font-black text-ink">{fullName}</h1>
-                    <p className="mt-1 flex items-center gap-1.5 text-sm font-black text-hoja">
-                      <span className="inline-block h-2 w-2 rounded-full bg-hoja/70" />
-                      {primarySkill}
-                    </p>
-                  </div>
-                  <span className="profile-verified-pill">✓ Verificado</span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-xl border border-[rgba(31,31,28,0.07)] bg-crema p-3">
-                    <p className="text-xs font-black uppercase tracking-wide text-ink/50">
-                      Ciudad
-                    </p>
-                    <p className="mt-0.5 font-black text-ink">{city}</p>
+              </div>
+
+              {/* RIGHT: About + Skills + How + Trust + CTA */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+                {/* About */}
+                {worker.short_intro && (
+                  <div style={{ borderRadius: "var(--r-xl)", border: "1px solid var(--border)", background: "var(--surface-pure)", padding: "1.5rem", boxShadow: "var(--shadow-xs)" }}>
+                    <p className="section-eyebrow" style={{ marginBottom: "0.75rem" }}>Sobre mí</p>
+                    <p style={{ lineHeight: 1.7, color: "rgba(26,61,43,0.75)", fontSize: "1rem" }}>{worker.short_intro}</p>
                   </div>
-                  <div className="rounded-xl border border-[rgba(31,31,28,0.07)] bg-crema p-3">
-                    <p className="text-xs font-black uppercase tracking-wide text-ink/50">
-                      Tarifa
-                    </p>
-                    <p className="mt-0.5 font-black text-hoja">
-                      {formatIncomeShort(worker.desired_income)}
-                    </p>
+                )}
+
+                {/* Skills */}
+                {(supportingSkills.length > 0 || workStyle) && (
+                  <div style={{ borderRadius: "var(--r-xl)", border: "1px solid var(--border)", background: "var(--surface-pure)", padding: "1.5rem", boxShadow: "var(--shadow-xs)" }}>
+                    <p className="section-eyebrow" style={{ marginBottom: "0.75rem" }}>Habilidades</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.25rem" }}>
+                      {supportingSkills.map((skill) => (
+                        <span
+                          key={skill}
+                          style={{
+                            display: "inline-flex", alignItems: "center",
+                            padding: "0.3rem 0.875rem",
+                            borderRadius: "var(--r-full)",
+                            border: "1px solid var(--border)",
+                            background: "var(--green-bg)",
+                            fontSize: "0.82rem", fontWeight: 700,
+                            color: "var(--ink)",
+                          }}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                      {workStyle && (
+                        <span
+                          style={{
+                            display: "inline-flex", alignItems: "center",
+                            padding: "0.3rem 0.875rem",
+                            borderRadius: "var(--r-full)",
+                            border: "1px solid var(--border)",
+                            background: "var(--surface)",
+                            fontSize: "0.82rem", fontWeight: 700,
+                            color: "var(--ink)",
+                          }}
+                        >
+                          {workStyleLabels[workStyle]}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* How to contact */}
+                <div style={{ borderRadius: "var(--r-xl)", border: "1px solid var(--border)", background: "var(--surface-pure)", padding: "1.5rem", boxShadow: "var(--shadow-xs)" }}>
+                  <p className="section-eyebrow" style={{ marginBottom: "1rem" }}>Cómo contactar</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+                    {HOW_IT_WORKS.map(({ step, text }) => (
+                      <div key={step} className="profile-how-step">
+                        <span className="profile-how-num">{step}</span>
+                        <p style={{ fontSize: "0.88rem", fontWeight: 600, lineHeight: 1.6, color: "rgba(26,61,43,0.7)" }}>{text}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {memberSince && (
-                  <p className="mt-3 text-xs font-bold text-ink/40">
-                    Miembro desde {memberSince}
-                  </p>
-                )}
+                {/* Verification trust */}
+                <div className="profile-trust-card">
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "0.875rem" }}>
+                    <span className="profile-trust-icon">✓</span>
+                    <div>
+                      <p style={{ fontWeight: 800, color: "var(--ink)", marginBottom: "0.375rem" }}>Perfil revisado por nuestro equipo</p>
+                      <p style={{ fontSize: "0.83rem", lineHeight: 1.65, color: "rgba(26,61,43,0.65)" }}>
+                        Cada perfil en ListoRD es verificado manualmente antes de publicarse. Sin bots, sin perfiles falsos. Estás hablando con una persona real en República Dominicana.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact CTA */}
+                <WorkerProfileContactButton
+                  workerId={worker.id}
+                  workerName={fullName}
+                  primarySkill={primarySkill}
+                />
+
               </div>
-            </div>
 
-            {/* ── Share motivation card ── */}
-            <div className="profile-share-card">
-              <p className="profile-share-eyebrow">¿Eres tú en este perfil?</p>
-              <p className="profile-share-headline">
-                Comparte y consigue más clientes hoy
-              </p>
-              <p className="profile-share-body">
-                Publica en WhatsApp Status, Facebook o Messenger — tus contactos
-                pueden contratarte directo.
-              </p>
-              <ShareProfileButton
-                profileUrl={profileUrl}
-                workerName={fullName}
-                primarySkill={primarySkill}
-                city={city}
-                variant="primary"
-              />
             </div>
-
           </div>
+        </section>
 
-          {/* ── RIGHT: About + Skills + How + Trust + CTA ── */}
-          <div className="flex flex-col gap-5">
-
-            {/* About */}
-            {worker.short_intro && (
-              <div className="rounded-2xl border border-[rgba(31,31,28,0.07)] bg-white p-5 shadow-soft">
-                <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                  Sobre mí
-                </p>
-                <p className="mt-3 leading-7 text-ink/80">{worker.short_intro}</p>
-              </div>
-            )}
-
-            {/* Skills */}
-            {(supportingSkills.length > 0 || workStyle) && (
-              <div className="rounded-2xl border border-[rgba(31,31,28,0.07)] bg-white p-5 shadow-soft">
-                <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                  Habilidades
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {supportingSkills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="rounded-full border border-[rgba(31,31,28,0.07)] bg-sage/20 px-3 py-1.5 text-sm font-black text-ink/80"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                  {workStyle && (
-                    <span className="rounded-full border border-[rgba(31,31,28,0.07)] bg-cielo px-3 py-1.5 text-sm font-black text-ink/80">
-                      {workStyleLabels[workStyle]}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* How to contact — for employers arriving cold */}
-            <div className="rounded-2xl border border-[rgba(31,31,28,0.07)] bg-white p-5 shadow-soft">
-              <p className="text-sm font-black uppercase tracking-wide text-hoja">
-                Cómo contactar
-              </p>
-              <div className="mt-4 grid gap-3">
-                {HOW_IT_WORKS.map(({ step, text }) => (
-                  <div key={step} className="profile-how-step">
-                    <span className="profile-how-num">{step}</span>
-                    <p className="text-sm font-bold leading-6 text-ink/75">{text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Verification trust */}
-            <div className="profile-trust-card">
-              <div className="flex items-start gap-3">
-                <span className="profile-trust-icon">✓</span>
-                <div>
-                  <p className="font-black text-ink">
-                    Perfil revisado por nuestro equipo
-                  </p>
-                  <p className="mt-1.5 text-sm leading-6 text-ink/62">
-                    Cada perfil en ListoRD es verificado manualmente antes de
-                    publicarse. Sin bots, sin perfiles falsos. Estás hablando
-                    con una persona real en República Dominicana.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* WhatsApp contact CTA */}
-            <WorkerProfileContactButton
-              workerId={worker.id}
-              workerName={fullName}
-              primarySkill={primarySkill}
-            />
-
-          </div>
-        </div>
       </main>
     </>
   );
