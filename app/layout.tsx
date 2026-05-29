@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { DM_Serif_Display } from "next/font/google";
 import { AnalyticsTracker } from "@/components/analytics-tracker";
 import "./globals.css";
+
+const dmSerifDisplay = DM_Serif_Display({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://listordapp.com"),
@@ -85,24 +93,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className={dmSerifDisplay.variable}>
       <body className="min-h-screen antialiased">
         <Suspense fallback={null}>
           <AnalyticsTracker />
         </Suspense>
         {children}
-        <footer className="border-t border-hoja/15 bg-card py-8 text-center text-sm font-bold text-ink/55">
-          <p className="text-base font-black text-ink">
+        <footer className="border-t border-[var(--border)] bg-[var(--surface)] py-10 text-center text-sm font-bold text-[var(--ink)]/55">
+          <p className="text-base font-black text-[var(--ink)]">
             Encuentra. Conecta. Listo. 🇩🇴
           </p>
-          <p className="mt-1 text-ink/55">© 2026 ListoRD</p>
-          <nav className="mt-4 flex flex-wrap items-center justify-center gap-4 text-ink/70">
-            <Link href="/" className="hover:text-ink">Inicio</Link>
-            <Link href="/empleadores" className="hover:text-ink">Para empleadores</Link>
-            <Link href="/trabajadores/registro" className="hover:text-ink">Busco trabajo</Link>
-            <Link href="/trabajadores/editar" className="hover:text-ink">Editar mi perfil</Link>
+          <p className="mt-1 text-[var(--ink)]/55">© 2026 ListoRD</p>
+          <nav className="mt-4 flex flex-wrap items-center justify-center gap-4 text-[var(--ink)]/70">
+            <Link href="/" className="hover:text-[var(--ink)] transition-colors">Inicio</Link>
+            <Link href="/empleadores" className="hover:text-[var(--ink)] transition-colors">Para empleadores</Link>
+            <Link href="/trabajadores/registro" className="hover:text-[var(--ink)] transition-colors">Busco trabajo</Link>
+            <Link href="/trabajadores/editar" className="hover:text-[var(--ink)] transition-colors">Editar mi perfil</Link>
           </nav>
-          <p className="mt-4 text-xs text-ink/40">
+          <p className="mt-4 text-xs text-[var(--ink)]/40">
             Trabajadores verificados en República Dominicana · Contacto directo por WhatsApp
           </p>
         </footer>
