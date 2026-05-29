@@ -7,7 +7,6 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// Each item links directly to a /categorias/[slug] SEO page
 const CATEGORY_ITEMS = [
   { emoji: "🧹", label: "Limpieza",      slug: "limpiadora"   },
   { emoji: "🍳", label: "Cocina",        slug: "cocinera"     },
@@ -75,7 +74,7 @@ export default async function Home({
       <main className="page-shell">
 
         {/* ══════════════════════════════════════════
-            HERO — "the ad became a website"
+            1. HERO
         ══════════════════════════════════════════ */}
         <section className="hero">
           <div className="container">
@@ -117,16 +116,10 @@ export default async function Home({
               )}
 
               <div className="hero-actions">
-                <a
-                  href="#descubre"
-                  className="btn-primary tap-target"
-                >
+                <a href="#descubre" className="btn-primary tap-target">
                   Ver trabajadores
                 </a>
-                <Link
-                  href="/trabajadores/registro"
-                  className="btn-secondary tap-target"
-                >
+                <Link href="/trabajadores/registro" className="btn-secondary tap-target">
                   Busco trabajo
                 </Link>
               </div>
@@ -135,26 +128,47 @@ export default async function Home({
           </div>
         </section>
 
-        {/* ── CATEGORY SHORTCUTS ── */}
-        <section className="container">
-          <div className="cat-pills">
+        {/* ══════════════════════════════════════════
+            2. DISCOVERY CONTROLS
+            Categories + Filter — starts the marketplace
+        ══════════════════════════════════════════ */}
+        <section className="container" style={{ paddingTop: "1.75rem", paddingBottom: "0.25rem" }}>
+
+          {/* Category shortcuts */}
+          <div className="cat-pills" style={{ paddingTop: 0, paddingBottom: "1.25rem" }}>
             {CATEGORY_ITEMS.map(({ emoji, label, slug }) => (
-              <Link
-                key={slug}
-                href={`/categorias/${slug}`}
-                className="cat-pill"
-              >
+              <Link key={slug} href={`/categorias/${slug}`} className="cat-pill">
                 <span aria-hidden="true">{emoji}</span>
                 {label}
               </Link>
             ))}
           </div>
+
+          {/* Filter bar — immediately below categories */}
+          <div style={{
+            padding: "1.25rem 1.375rem",
+            borderRadius: "var(--r-xl)",
+            background: "var(--surface-pure)",
+            border: "1px solid var(--border)",
+            boxShadow: "var(--shadow-xs)",
+          }}>
+            <p className="section-eyebrow" style={{ marginBottom: "0.875rem" }}>
+              Busca por oficio, ciudad o modalidad
+            </p>
+            <FilterBar
+              city={searchParams.city}
+              skill={searchParams.skill}
+              income={searchParams.income}
+              workStyle={searchParams.workStyle}
+            />
+          </div>
+
         </section>
 
         {/* ══════════════════════════════════════════
-            WORKER DISCOVERY
+            3. WORKER RESULTS
         ══════════════════════════════════════════ */}
-        <section id="descubre" className="container discovery-section">
+        <section id="descubre" className="container discovery-section" style={{ paddingTop: "2.5rem" }}>
 
           <div className="section-header">
             <p className="section-eyebrow">
@@ -166,11 +180,7 @@ export default async function Home({
               </p>
             )}
             {showingFiltered && hasWorkers && (
-              <Link
-                href="/"
-                className="btn-ghost"
-                style={{ marginTop: "0.5rem", display: "inline-flex" }}
-              >
+              <Link href="/" className="btn-ghost" style={{ marginTop: "0.5rem", display: "inline-flex" }}>
                 Ver todos →
               </Link>
             )}
@@ -186,9 +196,7 @@ export default async function Home({
               <p style={{ color: "rgba(26,61,43,0.65)", marginBottom: "1.5rem" }}>
                 Intenta de nuevo en unos minutos.
               </p>
-              <Link href="/" className="btn-primary tap-target">
-                Intentar de nuevo
-              </Link>
+              <Link href="/" className="btn-primary tap-target">Intentar de nuevo</Link>
             </div>
           )}
 
@@ -203,12 +211,8 @@ export default async function Home({
                 Prueba con una búsqueda más amplia.
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", justifyContent: "center" }}>
-                <Link href="/" className="btn-primary tap-target">
-                  Ver todos los trabajadores
-                </Link>
-                <Link href="/trabajadores/registro" className="btn-secondary tap-target">
-                  ¿Eres trabajador? Regístrate
-                </Link>
+                <Link href="/" className="btn-primary tap-target">Ver todos los trabajadores</Link>
+                <Link href="/trabajadores/registro" className="btn-secondary tap-target">¿Eres trabajador? Regístrate</Link>
               </div>
             </div>
           )}
@@ -236,21 +240,9 @@ export default async function Home({
 
         </section>
 
-        {/* ── FILTER BAR ── */}
-        <section className="container filter-section">
-          <p className="section-eyebrow">Búsqueda avanzada</p>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.02em", marginBottom: "1.5rem" }}>
-            Filtra por ciudad, oficio o disponibilidad
-          </h2>
-          <FilterBar
-            city={searchParams.city}
-            skill={searchParams.skill}
-            income={searchParams.income}
-            workStyle={searchParams.workStyle}
-          />
-        </section>
-
-        {/* ── TRUST ── */}
+        {/* ══════════════════════════════════════════
+            4. TRUST + CTA (below the fold)
+        ══════════════════════════════════════════ */}
         <section className="container trust-section">
           <p className="trust-eyebrow">¿Por qué ListoRD?</p>
           <div className="trust-section-grid">
@@ -278,7 +270,6 @@ export default async function Home({
           </div>
         </section>
 
-        {/* ── WORKER CTA ── */}
         <section className="container worker-cta-banner">
           <div className="worker-cta-inner">
             <div>
@@ -287,10 +278,7 @@ export default async function Home({
                 Hazte visible. Los clientes te encuentran y te escriben directo por WhatsApp — sin comisiones.
               </p>
             </div>
-            <Link
-              href="/trabajadores/registro"
-              className="btn-primary tap-target"
-            >
+            <Link href="/trabajadores/registro" className="btn-primary tap-target">
               Crear mi perfil gratis →
             </Link>
           </div>
