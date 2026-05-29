@@ -294,14 +294,14 @@ export function WorkerCard({ worker }: { worker: Worker }) {
   return (
     <article className="wc" ref={cardRef}>
 
-      {/* ── Photo ── */}
+      {/* ── Portrait photo ── */}
       <div className="wc-photo">
         {photoUrl ? (
           <Image
             src={photoUrl}
             alt={`Foto de ${fullName}`}
             fill
-            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+            sizes="(min-width: 1024px) 320px, (min-width: 768px) 300px, 85vw"
             className="wc-photo-img"
             priority={false}
           />
@@ -309,7 +309,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           <div className="wc-photo-initials">{getInitials(fullName)}</div>
         )}
 
-        {/* New profile badge — top right */}
+        {/* New profile badge */}
         {profileAge && (
           <span className="wc-badge-new">
             {profileAge === "today" ? "✦ Nuevo hoy" : "✦ Nuevo"}
@@ -317,54 +317,26 @@ export function WorkerCard({ worker }: { worker: Worker }) {
         )}
       </div>
 
-      {/* ── Body ── */}
+      {/* ── Card body ── */}
       <div className="wc-body">
-        {/* Live availability signal */}
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--green)] opacity-80" />
-          <span className="text-[0.67rem] font-bold text-[var(--green)] uppercase tracking-wide">Disponible</span>
+
+        {/* Availability */}
+        <div className="wc-avail">
+          <span className="wc-avail-dot" />
+          <span>Disponible</span>
         </div>
 
-        {/* Name / Skill / City */}
-        <div className="wc-info">
-          <h2 className="wc-name">{fullName}</h2>
-          <p className="wc-skill">{primarySkill}</p>
-          {worker.city && <p className="wc-city">{city}{worker.desired_income ? ` · ${formatIncomeShort(worker.desired_income)}` : ""}</p>}
-        </div>
-
-        {/* Supporting skill chips */}
-        {(chipSkills.length > 0 || workStyle) && (
-          <div className="wc-chips">
-            {chipSkills.map((skill) => (
-              <span key={skill} className="wc-chip">{skill}</span>
-            ))}
-            {overflowCount > 0 && (
-              <span className="wc-chip" style={{ color: "rgba(26,61,43,0.4)" }}>+{overflowCount}</span>
-            )}
-            {workStyle && chipSkills.length === 0 && (
-              <span className="wc-chip">{workStyleLabels[workStyle]}</span>
-            )}
-          </div>
+        {/* Identity */}
+        <h2 className="wc-name">{fullName}</h2>
+        <p className="wc-skill">{primarySkill}</p>
+        {worker.city && (
+          <p className="wc-city">
+            {city}{worker.desired_income ? ` · ${formatIncomeShort(worker.desired_income)}` : ""}
+          </p>
         )}
 
-        {/* Bio */}
-        {worker.short_intro && (
-          <p className="wc-bio line-clamp-2">{worker.short_intro}</p>
-        )}
-
-        {/* Footer: verified + profile link */}
-        <div className="wc-footer">
-          <span className="wc-verified">
-            <span>✓</span>
-            <span>Verificado</span>
-          </span>
-          <Link href={`/trabajador/${worker.id}`} className="wc-link">
-            Ver perfil →
-          </Link>
-        </div>
-
-        {/* ── WhatsApp CTA ── */}
-        <div className="wc-cta-shell">
+        {/* Actions */}
+        <div className="wc-actions">
           <button
             type="button"
             onClick={() => handleContactClick(worker)}
@@ -373,16 +345,16 @@ export function WorkerCard({ worker }: { worker: Worker }) {
             <WhatsAppIcon />
             Contactar por WhatsApp
           </button>
-          <p className="mt-2 text-center text-xs font-bold text-[var(--ink)]/50">
-            Mensaje directo — sin intermediarios
-          </p>
-          {contactError && (
-            <p className="mt-2 rounded-lg bg-red-50 p-2 text-center text-xs font-black text-red-700">
-              {contactError}
-            </p>
-          )}
+          <Link href={`/trabajador/${worker.id}`} className="wc-profile-link">
+            Ver perfil completo →
+          </Link>
         </div>
 
+        {contactError && (
+          <p className="wc-error">{contactError}</p>
+        )}
+
+        {/* ── Paywall Modal ── */}
         {showPaywall && (
           <div
             className="fixed inset-0 z-50 grid place-items-end bg-black/45 p-3 sm:place-items-center"
@@ -390,40 +362,40 @@ export function WorkerCard({ worker }: { worker: Worker }) {
             aria-modal="true"
             aria-labelledby={`paywall-title-${worker.id}`}
           >
-            <div className="w-full max-w-md rounded-3xl border border-[rgba(31,31,28,0.06)] bg-card p-5 shadow-lift">
+            <div className="w-full max-w-md rounded-3xl border border-[rgba(31,31,28,0.06)] bg-[var(--surface-pure)] p-5 shadow-[var(--shadow-lg)]">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 text-center">
                   <h3
                     id={`paywall-title-${worker.id}`}
-                    className="text-2xl font-black text-ink"
+                    className="text-2xl font-black text-[var(--ink)]"
+                    style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                   >
                     Habla con trabajadores ahora
                   </h3>
-                  <p className="mt-2 text-sm font-bold text-ink/65">
+                  <p className="mt-2 text-sm font-bold text-[var(--ink)]/65">
                     Ya usaste tu contacto gratis de hoy
                   </p>
-                  <p className="mt-1 text-sm font-black text-hoja">
+                  <p className="mt-1 text-sm font-black text-[var(--green)]">
                     Solo RD$7 al día
                   </p>
-                  <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-hoja/10 p-3 text-sm font-bold leading-6 text-ink/75">
-                    Contacto directo por WhatsApp con perfiles verificados que
-                    responden en minutos.
+                  <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-[var(--green-bg)] p-3 text-sm font-bold leading-6 text-[var(--ink)]/75">
+                    Contacto directo por WhatsApp con perfiles verificados que responden en minutos.
                   </p>
-                  <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-cielo p-3 text-sm font-black text-ink">
+                  <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-[var(--surface)] p-3 text-sm font-black text-[var(--ink)]">
                     Acceso sin compromisos — cancela cuando quieras
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowPaywall(false)}
-                  className="tap-target rounded-lg px-3 text-2xl font-black text-ink/55 hover:bg-crema"
+                  className="tap-target rounded-lg px-3 text-2xl font-black text-[var(--ink)]/55 hover:bg-[var(--surface)]"
                   aria-label="Cerrar"
                 >
                   ×
                 </button>
               </div>
               <div className="mt-5 grid gap-3">
-                <label className="grid gap-1 text-left text-sm font-bold text-ink">
+                <label className="grid gap-1 text-left text-sm font-bold text-[var(--ink)]">
                   Tu WhatsApp
                   <input
                     className="premium-input tap-target"
@@ -440,7 +412,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
                   type="button"
                   onClick={() => handleStripeCheckout("weekly")}
                   disabled={checkoutPlan !== null}
-                  className="btn-primary tap-target p-4 text-center text-white disabled:opacity-70"
+                  className="btn-primary tap-target p-4 text-center disabled:opacity-70"
                 >
                   {checkoutPlan
                     ? "Procesando pago..."
@@ -450,7 +422,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
                   type="button"
                   onClick={() => handleStripeCheckout("monthly")}
                   disabled={checkoutPlan !== null}
-                  className="btn-primary tap-target p-4 text-center text-white disabled:opacity-70"
+                  className="btn-primary tap-target p-4 text-center disabled:opacity-70"
                 >
                   {checkoutPlan
                     ? "Procesando pago..."
@@ -462,9 +434,8 @@ export function WorkerCard({ worker }: { worker: Worker }) {
                   {paymentError}
                 </p>
               )}
-              <p className="mt-5 text-center text-xs font-bold text-ink/55">
-                ¿Problemas con la tarjeta? Escríbenos para ayuda con el pago
-                por transferencia.
+              <p className="mt-5 text-center text-xs font-bold text-[var(--ink)]/55">
+                ¿Problemas con la tarjeta? Escríbenos para ayuda con el pago por transferencia.
               </p>
               <button
                 type="button"
@@ -473,16 +444,18 @@ export function WorkerCard({ worker }: { worker: Worker }) {
               >
                 Pagar por WhatsApp
               </button>
-              <p className="mt-3 text-center text-xs font-bold text-ink/55">
+              <p className="mt-3 text-center text-xs font-bold text-[var(--ink)]/55">
                 Sin compromiso. Cancela cuando quieras.
               </p>
             </div>
           </div>
         )}
+
       </div>
     </article>
   );
 }
+
 
 function WhatsAppIcon() {
   return (
