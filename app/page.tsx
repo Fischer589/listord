@@ -1,1 +1,384 @@
-aW1wb3J0IHsgQXBwSGVhZGVyIH0gZnJvbSAiQC9jb21wb25lbnRzL2FwcC1oZWFkZXIiOwppbXBvcnQgeyBGaWx0ZXJCYXIgfSBmcm9tICJAL2NvbXBvbmVudHMvZmlsdGVyLWJhciI7CmltcG9ydCB7IFdvcmtlckRpc2NvdmVyeSB9IGZyb20gIkAvY29tcG9uZW50cy93b3JrZXItZGlzY292ZXJ5IjsKaW1wb3J0IHsgZ2V0V29ya2Vyc1Jlc3VsdCB9IGZyb20gIkAvbGliL3dvcmtlcnMiOwppbXBvcnQgTGluayBmcm9tICJuZXh0L2xpbmsiOwoKZXhwb3J0IGNvbnN0IGR5bmFtaWMgPSAiZm9yY2UtZHluYW1pYyI7CmV4cG9ydCBjb25zdCByZXZhbGlkYXRlID0gMDsKCi8vIEVhY2ggY2FyZCBtYXBzIGRpcmVjdGx5IHRvIGEgL2NhdGVnb3JpYXMvW3NsdWddIFNFTyBwYWdlCmNvbnN0IENBVEVHT1JZX0lURU1TID0gWwogIHsgZW1vamk6ICLwn6m5IiwgbGFiZWw6ICJMaW1waWV6YSIsICAgICAgc2x1ZzogImxpbXBpYWRvcmEiICAgfSwKICB7IGVtb2ppOiAi8J+Msz8iLCBsYWJlbDogIkNvY2luYSIsICAgICAgICBzbHVnOiAiY29jaW5lcmEiICAgICB9LAogIHsgZW1vamk6ICLwn5eHIiwgbGFiZWw6ICJQbG9tZXLDrWEiLCAgICAgIHNsdWc6ICJwbG9tZXJvIiAgICAgIH0sCiAgeyBlbW9qaTogIuKaoSIsIGxhYmVsOiAiRWxlY3RyaWNpZGFkIiwgIHNsdWc6ICJlbGVjdHJpY2lzdGEiIH0sCiAgeyBlbW9qaTogIvCfj5fvuI8iLCBsYWJlbDogIkNvbnN0cnVjY2nDs24iLCAgc2x1ZzogImFsYmFuaWwiICAgICAgfSwKICB7IGVtb2ppOiAi8J+OiCIsIGxhYmVsOiAiUGludHVyYSIsICAgICAgIHNsdWc6ICJwaW50b3IiICAgICAgIH0sCiAgeyBlbW9qaTogIvCfk5oiLCBsYWJlbDogIkNsYXNlcyIsICAgICAgICBzbHVnOiAidHV0b3IiICAgICAgICB9LAogIHsgZW1vamk6ICLwn4+lIiwgbGFiZWw6ICJCZWxsZXphIiwgICAgICAgc2x1ZzogImJlbGxlemEiICAgICAgfSwKXTsKCmZ1bmN0aW9uIGlzRmlsdGVyQWN0aXZlKHNlYXJjaFBhcmFtczoggewogIGNpdHk/OiBzdHJpbmc7CiAgc2tpbGw/OiBzdHJpbmc7CiAgaW5jb21lPzogc3RyaW5nOwogIHdvcmtTdHlsZT86IHN0cmluZzsKfSkgewogIHJldHVybiBCb29sZWFuKAogICAgc2VhcmNoUGFyYW1zLmNpdHk/LnRyaW0oKSB8fAogICAgICBzZWFyY2hQYXJhbXMuc2tpbGw/LnRyaW0oKSB8fAogICAgICBzZWFyY2hQYXJhbXMuaW5jb21lPy50cmltKCkgfHwKICAgICAgc2VhcmNoUGFyYW1zLndvcmtTdHlsZT8udHJpbSgpCiAgKTsKfQoKLyoqIEV4dHJhY3QgdW5pcXVlIGNpdGllcyBmcm9tIHdvcmtlcnMgKEVTNS1zYWZlLCBubyBTZXQgc3ByZWFkKS4gKi8KZnVuY3Rpb24gZXh0cmFjdENpdGllcyh3b3JrZXJzOiBBcnJheTx7IGNpdHk/OiBzdHJpbmcgfCBudWxsIH0+KTogc3RyaW5nW10gewogIGNvbnN0IHNlZW46IFJlY29yZDxzdHJpbmcsIGJvb2xlYW4+ID0ge307CiAgY29uc3QgcmVzdWx0OiBzdHJpbmdbXSA9IFtdOwogIGZvciAobGV0IGkgPSAwOyBpIDwgd29ya2Vycy5sZW5ndGg7IGkrKykgewogICAgY29uc3QgYyA9IHdvcmtlcnNbaV0uY2l0eT8udHJpbSgpOwogICAgaWYgKGMgJiYgIXNlZW5bY10pIHsKICAgICAgc2VlbltjXSA9IHRydWU7CiAgICAgIHJlc3VsdC5wdXNoKGMpOwogICAgfQogIH0KICByZXR1cm4gcmVzdWx0LnNsaWNlKDAsIDUpOwp9CgpleHBvcnQgZGVmYXVsdCBhc3luYyBmdW5jdGlvbiBIb21lKHsKICBzZWFyY2hQYXJhbXMsCn06IHsKICBzZWFyY2hQYXJhbXM6IHsKICAgIGNpdHk/OiBzdHJpbmc7CiAgICBza2lsbD86IHN0cmluZzsKICAgIGluY29tZT86IHN0cmluZzsKICAgIHdvcmtTdHlsZT86IHN0cmluZzsKICB9Owp9KSB7CiAgY29uc3Qgd29ya2Vyc1Jlc3VsdCA9IGF3YWl0IGdldFdvcmtlcnNSZXN1bHQoc2VhcmNoUGFyYW1zKTsKICBjb25zdCB3b3JrZXJzID0gd29ya2Vyc1Jlc3VsdC53b3JrZXJzOwogIGNvbnN0IGhhc1dvcmtlcnMgPSB3b3JrZXJzLmxlbmd0aCA+IDA7CiAgY29uc3QgdG90YWxWZXJpZmllZCA9IHdvcmtlcnNSZXN1bHQudmVyaWZpZWRXb3JrZXJDb3VudDsKICBjb25zdCBmaWx0ZXJBY3RpdmUgPSBpc0ZpbHRlckFjdGl2ZShzZWFyY2hQYXJhbXMpOwogIGNvbnN0IHNob3dpbmdGaWx0ZXJlZCA9IGZpbHRlckFjdGl2ZSAmJiB3b3JrZXJzUmVzdWx0Lm9rOwoKICAvLyBTb2NpYWwgcHJvb2YgY291bnRlciDilIAgcm91bmQgZG93biB0byBuZWFyZXN0IDUgZm9yICJYKyIgZmVlbAogIGNvbnN0IHNvY2lhbFByb29mQ291bnQgPQogICAgdG90YWxWZXJpZmllZCA+PSA1ID8gTWF0aC5mbG9vcih0b3RhbFZlcmlmaWVkIC8gNSkgKiA1IDogdG90YWxWZXJpZmllZDsKCiAgLy8gTGl2ZSBjaXR5IHNpZ25hbCDilIAgcmVhbCBzbmFwc2hvdCBvZiBhY3RpdmUgd29ya2VycwogIGNvbnN0IGFjdGl2ZUNpdGllcyA9IGV4dHJhY3RDaXRpZXMod29ya2Vycyk7CgogIC8vIExhYmVsIGZvciBjYXJvdXNlbCBhcmlhIC8gaGVhZGluZyB3aGVuIGZpbHRlciBpcyBhY3RpdmUKICBjb25zdCBmaWx0ZXJMYWJlbCA9CiAgICBzZWFyY2hQYXJhbXMuc2tpbGw/LnRyaW0oKSB8fCBzZWFyY2hQYXJhbXMuY2l0eT8udHJpbSgpIHx8IHVuZGVmaW5lZDsKCiAgcmV0dXJuICgKICAgIDw+CiAgICAgIDxBcHBIZWFkZXIgLz4KICAgICAgPG1haW4gY2xhc3NOYW1lPSJwYWdlLXNoZWxsIj4KCiAgICAgICAgey8qIOKUnOKUnCBIRVJPIOKUoOKUoCBlZGl0b3JpYWwsIGNvbmZpZGVudCwgbm8gb3Zlci1leHBsYW5hdGlvbiDilJzilJwgKi99CiAgICAgICAgPHNlY3Rpb24gY2xhc3NOYW1lPSJoZXJvLXNlY3Rpb24iPgogICAgICAgICAgPGRpdiBjbGFzc05hbWU9ImNvbnRhaW5lciBoZXJvLWlubmVyIj4KCiAgICAgICAgICAgIDxwIGNsYXNzTmFtZT0iaGVyby1leWVicm93Ij4KICAgICAgICAgICAgICBTb2xvIGVuIFJlcMO6YmxpY2EgRG9taW5pY2FuYSDwn47ACiAgICAgICAgICAgIDwvcD4KCiAgICAgICAgICAgIDxoMSBjbGFzc05hbWU9Imhlcm8tdGl0bGUiPgogICAgICAgICAgICAgIFRyYWJhamFzLjxicj4gVGUgYnVzY2FuLgogICAgICAgICAgICA8L2gxPgoKICAgICAgICAgICAgPHAgY2xhc3NOYW1lPSJoZXJvLXN1YmxpbmUiPgogICAgICAgICAgICAgIFBlcmZpbGVzIHZlcmlmaWNhZG9zIGVuIFJELiBDb250YWN0YSBkaXJlY3RvIHBvciBXaGF0c0FwcCDigJQgc2luIGFnZW5jaWFzLCBzaW4gY29taXNpb25lcy4KICAgICAgICAgICAgPC9wPgoKICAgICAgICAgICAgey8qIElubGluZSBzdGF0cyDilIAgbm8gYm94ZXMsIGp1c3QgdHlwb2dyYXBoeSAqL30KICAgICAgICAgICAge3RvdGFsVmVyaWZpZWQgPiAwICYmICgKICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iaGVyby1zdGF0cyI+CiAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9Imhlcm8tc3RhdC1udW0iPgogICAgICAgICAgICAgICAgICB7c29jaWFsUHJvb2ZDb3VudCA+IDAgPyBgJHtzb2NpYWxQcm9vZkNvdW50fStgIDogdG90YWxWZXJpZmllZH0KICAgICAgICAgICAgICAgIDwvc3Bhbj4KICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0iaGVyby1zdGF0LXNlcCI+dHJhYmFqYWRvcmVzPC9zcGFuPgogICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJoZXJvLXN0YXQtc2VwIj7Ctzwvc3Bhbj4KICAgICAgICAgICAgICAgIDxzcGFuPjEgY29udGFjdG8gZ3JhdGlzPC9zcGFuPgogICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJoZXJvLXN0YXQtc2VwIj7Ctzwvc3Bhbj4KICAgICAgICAgICAgICAgIDxzcGFuPmFwcm9iYWNpw7NuIDI0aDwvc3Bhbj4KICAgICAgICAgICAgICAgIHthY3RpdmVDaXRpZXMubGVuZ3RoID4gMCAmJiAoCiAgICAgICAgICAgICAgICAgIDw+CiAgICAgICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJoZXJvLXN0YXQtc2VwIj7Ctzwvc3Bhbj4KICAgICAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9ImZsZXggaXRlbXMtY2VudGVyIGdhcC0xIj4KICAgICAgICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0iaGVyby1jaXRpZXMtZG90IiBhcmlhLWhpZGRlbj0idHJ1ZSIgLz4KICAgICAgICAgICAgICAgICAgICAgIHthY3RpdmVDaXRpZXNbMF19e2FjdGl2ZUNpdGllcy5sZW5ndGggPiAxID8gYCDCtyAke2FjdGl2ZUNpdGllc1sxXX1gIDogIiJ9CiAgICAgICAgICAgICAgICAgICAgPC9zcGFuPgogICAgICAgICAgICAgICAgICA8Lz4KICAgICAgICAgICAgICAgICl9CiAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICl9CgogICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iaGVyby1hY3Rpb25zIj4KICAgICAgICAgICAgICA8YQogICAgICAgICAgICAgICAgaHJlZj0iI2Rlc2N1YnJlIgogICAgICAgICAgICAgICAgY2xhc3NOYW1lPSJidG4tcHJpbWFyeSB0YXAtdGFyZ2V0IGlubGluZS1mbGV4IG1pbi13LTAgaXRlbXMtY2VudGVyIGp1c3RpZnktY2VudGVyIHB4LTcgcHktNCB0ZXh0LWJhc2UgdGV4dC13aGl0ZSIKICAgICAgICAgICAgICA+CiAgICAgICAgICAgICAgICBEZXNjdWJyaXIgdHJhYmFqYWRvcmVzCiAgICAgICAgICAgICAgPC9hPgogICAgICAgICAgICAgIDxMaW5rCiAgICAgICAgICAgICAgICBocmVmPSIvdHJhYmFqYWRvcmVzL3JlZ2lzdHJvIgogICAgICAgICAgICAgICAgY2xhc3NOYW1lPSJidG4tc2Vjb25kYXJ5IHRhcC10YXJnZXQgaW5saW5lLWZsZXggbWluLXctMCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgcHgtNyBweS00IHRleHQtYmFzZSIKICAgICAgICAgICAgICA+CiAgICAgICAgICAgICAgICBDcmVhciBtaSBwZXJmaWwKICAgICAgICAgICAgICA8L0xpbms+CiAgICAgICAgICAgIDwvZGl2PgoKICAgICAgICAgIDwvZGl2PgogICAgICAgIDwvc2VjdGlvbj4KCiAgICAgICAgey8qIOKUnOKUnCBDQVRFR09SWSBHUklEIOKUoOKUoCAqL30KICAgICAgICA8c2VjdGlvbiBjbGFzc05hbWU9ImNvbnRhaW5lciBjYXRlZ29yeS1zZWN0aW9uIj4KICAgICAgICAgIDxwIGNsYXNzTmFtZT0iY2F0ZWdvcnktZXllYnJvdyI+CiAgICAgICAgICAgIMK/UXXDqSBuZWNlc2l0YXM/CiAgICAgICAgICA8L3A+CiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iY2F0ZWdvcnktZ3JpZCI+CiAgICAgICAgICAgIHtDQVRFR09SWV9JVEVNUy5tYXAoKHsgZW1vamksIGxhYmVsLCBzbHVnIH0pID0+ICgKICAgICAgICAgICAgICA8TGluawogICAgICAgICAgICAgICAga2V5PXtzbHVnfQogICAgICAgICAgICAgICAgaHJlZj17YC9jYXRlZ29yaWFzLyR7c2x1Z31gfQogICAgICAgICAgICAgICAgY2xhc3NOYW1lPSJjYXRlZ29yeS1jYXJkIgogICAgICAgICAgICAgID4KICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0iY2F0ZWdvcnktY2FyZC1lbW9qaSIgYXJpYS1oaWRkZW49InRydWUiPgogICAgICAgICAgICAgICAgICB7ZW1vaml9CiAgICAgICAgICAgICAgICA8L3NwYW4+CiAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9ImNhdGVnb3J5LWNhcmQtbGFiZWwiPntsYWJlbH08L3NwYW4+CiAgICAgICAgICAgICAgPC9MaW5rPgogICAgICAgICAgICApKX0KICAgICAgICAgIDwvZGl2PgogICAgICAgIDwvc2VjdGlvbj4KCiAgICAgICAgey8qIOKUnOKUnCBORVRXT1JLIFBVTFNFIOKUnCBtaW5pbWFsIGFjdGl2aXR5IHNpZ25hbCDilKDilKAgKi99CiAgICAgICAge3RvdGFsVmVyaWZpZWQgPiAwICYmICgKICAgICAgICAgIDxzZWN0aW9uIGNsYXNzTmFtZT0iY29udGFpbmVyIG5ldHdvcmstcHVsc2Utc2VjdGlvbiI+CiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJuZXR3b3JrLXB1bHNlLWJhciI+CiAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9Im5ldHdvcmstcHVsc2UtaXRlbSBuZXR3b3JrLXB1bHNlLWl0ZW0tLWlubGluZSI+CiAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9Im5ldHdvcmstcHVsc2UtZG90IiBhcmlhLWhpZGRlbj0idHJ1ZSIgLz4KICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0ibmV0d29yay1wdWxzZS1sYWJlbCI+QWN0aXZvcyBhaG9yYTwvc3Bhbj4KICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0ibmV0d29yay1wdWxzZS1kaXZpZGVyIiBhcmlhLWhpZGRlbj0idHJ1ZSIgLz4KICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0ibmV0d29yay1wdWxzZS1pdGVtIj4KICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0ibmV0d29yay1wdWxzZS1udW1iZXIiPgogICAgICAgICAgICAgICAgICB7c29jaWFsUHJvb2ZDb3VudCA+IDAgPyBgJHtzb2NpYWxQcm9vZkNvdW50fStgIDogdG90YWxWZXJpZmllZH0KICAgICAgICAgICAgICAgIDwvc3Bhbj4KICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0ibmV0d29yay1wdWxzZS1sYWJlbCI+cGVyZmlsZXM8L3NwYW4+CiAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICAge2FjdGl2ZUNpdGllcy5sZW5ndGggPiAwICYmICgKICAgICAgICAgICAgICAgIDw+CiAgICAgICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJuZXR3b3JrLXB1bHNlLWRpdmlkZXIiIGFyaWEtaGlkZGVuPSJ0cnVlIiAvPgogICAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0ibmV0d29yay1wdWxzZS1pdGVtIj4KICAgICAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9Im5ldHdvcmstcHVsc2UtbnVtYmVyIj4KICAgICAgICAgICAgICAgICAgICAgIHthY3RpdmVDaXRpZXMubGVuZ3RofSsKICAgICAgICAgICAgICAgICAgICA8L3NwYW4+CiAgICAgICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJuZXR3b3JrLXB1bHNlLWxhYmVsIj5jaXVkYWRlczwvc3Bhbj4KICAgICAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICAgICA8Lz4KICAgICAgICAgICAgICApfQogICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJuZXR3b3JrLXB1bHNlLWRpdmlkZXIiIGFyaWEtaGlkZGVuPSJ0cnVlIiAvPgogICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJuZXR3b3JrLXB1bHNlLWl0ZW0iPgogICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJuZXR3b3JrLXB1bHNlLW51bWJlciI+ODwvc3Bhbj4KICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0ibmV0d29yay1wdWxzZS1sYWJlbCI+Y2F0ZWdvcsOtYXM8L3NwYW4+CiAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9Im5ldHdvcmstcHVsc2UtZGl2aWRlciIgYXJpYS1oaWRkZW49InRydWUiIC8+CiAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9Im5ldHdvcmstcHVsc2UtaXRlbSI+CiAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9Im5ldHdvcmstcHVsc2UtbnVtYmVyIj4xPC9zcGFuPgogICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJuZXR3b3JrLXB1bHNlLWxhYmVsIj5ncmF0aXMgLyBkw61hPC9zcGFuPgogICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgIDwvc2VjdGlvbj4KICAgICAgICApfQoKICAgICAgICB7LyogPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQogICAgICAgICAgICBESVNDT1ZFUlkgQ0FST1VTRUwg4pSQIHByaW1hcnkgYnJvd3Npbmcgc3VyZmFjZQogICAgICAgICAgICA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09ICovfQogICAgICAgIDxzZWN0aW9uIGlkPSJkZXNjdWJyZSIgY2xhc3NOYW1lPSJjb250YWluZXIgZGlzY292ZXJ5LXNlY3Rpb24iPgogICAgICAgICAgPGRpdiBjbGFzc05hbWU9Im1iLTUgZmxleCBmbGV4LWNvbCBnYXAtMSBzbTpmbGV4LXJvdyBzbTppdGVtcy1lbmQgc206anVzdGlmeS1iZXR3ZWVuIj4KICAgICAgICAgICAgPGRpdj4KICAgICAgICAgICAgICA8cCBjbGFzc05hbWU9InRleHQtc20gZm9udC1ibGFjayB1cHBlcmNhc2UgdHJhY2tpbmctd2lkZSB0ZXh0LWhvamEiPgogICAgICAgICAgICAgICAge3Nob3dpbmdGaWx0ZXJlZCA/ICJSZXN1bHRhZG9zIiA6ICJFeHBsb3JhIHBlcmZpbGVzIn0KICAgICAgICAgICAgICA8L3A+CiAgICAgICAgICAgICAgPGgyIGNsYXNzTmFtZT0ibXQtMSB0ZXh0LTJ4bCBmb250LWJsYWNrIHRleHQtaW5rIj4KICAgICAgICAgICAgICAgIHtmaWx0ZXJBY3RpdmUgJiYgaGFzV29ya2VycwogICAgICAgICAgICAgICAgICA/IGAke3dvcmtlcnMubGVuZ3RofSB0cmFiYWphZG9yJHt3b3JrZXJzLmxlbmd0aCAhPT0gMSA/ICJlcyIgOiAiIn0gZW5jb250cmFkbyR7d29ya2Vycy5sZW5ndGggIT09IDEgPyAicyIgOiAiIn1gCiAgICAgICAgICAgICAgICAgIDogIlRyYWJhamFkb3JlcyBkaXNwb25pYmxlcyBhaG9yYSJ9CiAgICAgICAgICAgICAgPC9oMj4KICAgICAgICAgICAgICB7ZmlsdGVyQWN0aXZlICYmIGhhc1dvcmtlcnMgJiYgKAogICAgICAgICAgICAgICAgPHAgY2xhc3NOYW1lPSJtdC0xIHRleHQtc20gZm9udC1ib2xkIHRleHQtaW5rLzU1Ij4KICAgICAgICAgICAgICAgICAgT3JkZW5hZG9zIHBvciByZWxldmFuY2lhIMK3IHBlcmZpbGVzIHZlcmlmaWNhZG9zCiAgICAgICAgICAgICAgICA8L3A+CiAgICAgICAgICAgICAgKX0KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgIHtzaG93aW5nRmlsdGVyZWQgJiYgaGFzV29ya2VycyAmJiAoCiAgICAgICAgICAgICAgPExpbmsKICAgICAgICAgICAgICAgIGhyZWY9Ii8iCiAgICAgICAgICAgICAgICBjbGFzc05hbWU9InNocmluay0wIHJvdW5kZWQtZnVsbCBib3JkZXIgYm9yZGVyLVtyZ2JhKDI2LDI2LDIzLDAuMDcpXSBiZy13aGl0ZSBweC0zIHB5LTIgdGV4dC1zbSBmb250LWJsYWNrIHRleHQtaW5rLzYwIHNoYWRvdy1zb2Z0IGhvdmVyOnRleHQtaW5rIgogICAgICAgICAgICAgID4KICAgICAgICAgICAgICAgIFZlciB0b2RvcwogICAgICAgICAgICAgIDwvTGluaz4KICAgICAgICAgICAgKX0KICAgICAgICAgIDwvZGl2PgoKICAgICAgICAgIHsvKiBFcnJvciBzdGF0ZSAqL30KICAgICAgICAgIHsid29ya2Vyc1Jlc3VsdC5vayIgPT09ICJmYWxzZSIgJiYgIXdvcmtlcnNSZXN1bHQub2sgJiYgKAogICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iZW1wdHktc3RhdGUiPgogICAgICAgICAgICAgIDxwIGNsYXNzTmFtZT0idGV4dC1zbSBmb250LWJsYWNrIHVwcGVyY2FzZSB0cmFja2luZy13aWRlIHRleHQtaG9qYSI+CiAgICAgICAgICAgICAgICBDb25leGnDs24gaW50ZXJydW1waWRhCiAgICAgICAgICAgICAgPC9wPgogICAgICAgICAgICAgIDxoMyBjbGFzc05hbWU9Im10LTIgdGV4dC0yeGwgZm9udC1ibGFjayB0ZXh0LWluayI+CiAgICAgICAgICAgICAgICBObyBwdWRpbW9zIGNhcmdhciBsb3MgdHJhYmFqYWRvcmVzIGFob3JhIG1pc21vLgogICAgICAgICAgICAgIDwvaDM+CiAgICAgICAgICAgICAgPHAgY2xhc3NOYW1lPSJteC1hdXRvIG10LTIgbWF4LXcteGwgbGVhZGluZy03IHRleHQtaW5rLzcwIj4KICAgICAgICAgICAgICAgIEludGVudGEgZGUgbnVldm8gZW4gdW5vcyBtaW51dG9zLgogICAgICAgICAgICAgIDwvcD4KICAgICAgICAgICAgICA8TGluawogICAgICAgICAgICAgICAgaHJlZj0iLyIKICAgICAgICAgICAgICAgIGNsYXNzTmFtZT0iYnRuLXByaW1hcnkgdGFwLXRhcmdldCBtdC01IGlubGluZS1mbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciBweC02IHB5LTMgdGV4dC13aGl0ZSIKICAgICAgICAgICAgICA+CiAgICAgICAgICAgICAgICBJbnRlbnRhciBkZSBudWV2bwogICAgICAgICAgICAgIDwvTGluaz4KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICApfQoKICAgICAgICAgIHshd29ya2Vyc1Jlc3VsdC5vayAmJiAoCiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJlbXB0eS1zdGF0ZSI+CiAgICAgICAgICAgICAgPHAgY2xhc3NOYW1lPSJ0ZXh0LXNtIGZvbnQtYmxhY2sgdXBwZXJjYXNlIHRyYWNraW5nLXdpZGUgdGV4dC1ob2phIj4KICAgICAgICAgICAgICAgIENvbmV4acOzbiBpbnRlcnJ1bXBpZGEKICAgICAgICAgICAgICA8L3A+CiAgICAgICAgICAgICAgPGgzIGNsYXNzTmFtZT0ibXQtMiB0ZXh0LTJ4bCBmb250LWJsYWNrIHRleHQtaW5rIj4KICAgICAgICAgICAgICAgIE5vIHB1ZGltb3MgY2FyZ2FyIGxvcyB0cmFiYWphZG9yZXMgYWhvcmEgbWlzbW8uCiAgICAgICAgICAgICAgPC9oMz4KICAgICAgICAgICAgICA8cCBjbGFzc05hbWU9Im14LWF1dG8gbXQtMiBtYXgtdy14bCBsZWFkaW5nLTcgdGV4dC1pbmsvNzAiPgogICAgICAgICAgICAgICAgSW50ZW50YSBkZSBudWV2byBlbiB1bm9zIG1pbnV0b3MuCiAgICAgICAgICAgICAgPC9wPgogICAgICAgICAgICAgIDxMaW5rCiAgICAgICAgICAgICAgICBocmVmPSIvIgogICAgICAgICAgICAgICAgY2xhc3NOYW1lPSJidG4tcHJpbWFyeSB0YXAtdGFyZ2V0IG10LTUgaW5saW5lLWZsZXggaXRlbXMtY2VudGVyIGp1c3RpZnktY2VudGVyIHB4LTYgcHktMyB0ZXh0LXdoaXRlIgogICAgICAgICAgICAgID4KICAgICAgICAgICAgICAgIEludGVudGFyIGRlIG51ZXZvCiAgICAgICAgICAgICAgPC9MaW5rPgogICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICl9CgogICAgICAgICAgey8qIEZpbHRlciBhY3RpdmUg4pSAIG5vIHJlc3VsdHMgKi99CiAgICAgICAgICB7d29ya2Vyc1Jlc3VsdC5vayAmJiBmaWx0ZXJBY3RpdmUgJiYgIWhhc1dvcmtlcnMgJiYgKAogICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iZW1wdHktc3RhdGUiPgogICAgICAgICAgICAgIDxwIGNsYXNzTmFtZT0idGV4dC00eGwiPvCfkIs8L3A+CiAgICAgICAgICAgICAgPGgzIGNsYXNzTmFtZT0ibXQtMyB0ZXh0LTJ4bCBmb250LWJsYWNrIHRleHQtaW5rIj4KICAgICAgICAgICAgICAgIE5vIGVuY29udHJhbW9zIHRyYWJhamFkb3JlcyBjb24gZXNlIGZpbHRyby4KICAgICAgICAgICAgICA8L2gzPgogICAgICAgICAgICAgIDxwIGNsYXNzTmFtZT0ibXgtYXV0byBtdC0yIG1heC13LXhsIGxlYWRpbmctNyB0ZXh0LWluay83MCI+CiAgICAgICAgICAgICAgICBQcnVlYmEgY29uIHVuYSBiw7pzcXVlZGEgbcOhcyBhbXBsaWEgbyByZXZpc2EgdG9kb3MgbG9zCiAgICAgICAgICAgICAgICB0cmFiYWphZG9yZXMgZGlzcG9uaWJsZXMuCiAgICAgICAgICAgICAgPC9wPgogICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJtdC01IGZsZXggZmxleC13cmFwIGp1c3RpZnktY2VudGVyIGdhcC0zIj4KICAgICAgICAgICAgICAgIDxMaW5rCiAgICAgICAgICAgICAgICAgIGhyZWY9Ii8iCiAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT0iYnRuLXByaW1hcnkgdGFwLXRhcmdldCBpbmxpbmUtZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgcHgtNiBweS0zIHRleHQtd2hpdGUiCiAgICAgICAgICAgICAgICA+CiAgICAgICAgICAgICAgICAgIFZlciB0b2RvcyBsb3MgdHJhYmFqYWRvcmVzCiAgICAgICAgICAgICAgICA8L0xpbms+CiAgICAgICAgICAgICAgICA8TGluawogICAgICAgICAgICAgICAgICBocmVmPSIvdHJhYmFqYWRvcmVzL3JlZ2lzdHJvIgogICAgICAgICAgICAgICAgICBjbGFzc05hbWU9ImJ0bi1zZWNvbmRhcnkgdGFwLXRhcmdldCBpbmxpbmUtZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgcHgtNiBweS0zIgogICAgICAgICAgICAgICAgPgogICAgICAgICAgICAgICAgICDCv0VyZXMgdHJhYmFqYWRvcj8gUmVnw61zdHJhdGUKICAgICAgICAgICAgICAgIDwvTGluaz4KICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICApfQoKICAgICAgICAgIHsvKiBObyB3b3JrZXJzIGF0IGFsbCAoZW1wdHkgREIpICovfQogICAgICAgICAge3dvcmtlcnNSZXN1bHQub2sgJiYgIWZpbHRlckFjdGl2ZSAmJiAhaGFzV29ya2VycyAmJiAoCiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJlbXB0eS1zdGF0ZSI+CiAgICAgICAgICAgICAgPHAgY2xhc3NOYW1lPSJ0ZXh0LTR4bCI+8J+OoDwvcD4KICAgICAgICAgICAgICA8aDMgY2xhc3NOYW1lPSJtdC0zIHRleHQtMnhsIGZvbnQtYmxhY2sgdGV4dC1pbmsiPgogICAgICAgICAgICAgICAgRXN0YW1vcyBhZ3JlZ2FuZG8gdHJhYmFqYWRvcmVzIHZlcmlmaWNhZG9zIGVuIFJELgogICAgICAgICAgICAgIDwvaDM+CiAgICAgICAgICAgICAgPHAgY2xhc3NOYW1lPSJteC1hdXRvIG10LTIgbWF4LXcteGwgbGVhZGluZy03IHRleHQtaW5rLzcwIj4KICAgICAgICAgICAgICAgIMK/T2ZyZWNlcyB1biBzZXJ2aWNpbz8gQ3JlYSB0dSBwZXJmaWwgZ3JhdGlzIHkgZW1waWV6YSBhCiAgICAgICAgICAgICAgICByZWNpYmlyIG9wb3J0dW5pZGFkZXMgcG9yIFdoYXRzQXBwIGhveSBtaXNtby4KICAgICAgICAgICAgICA8L3A+CiAgICAgICAgICAgICAgPExpbmsKICAgICAgICAgICAgICAgIGhyZWY9Ii90cmFiYWphZG9yZXMvcmVnaXN0cm8iCiAgICAgICAgICAgICAgICBjbGFzc05hbWU9ImJ0bi1wcmltYXJ5IHRhcC10YXJnZXQgbXQtNSBpbmxpbmUtZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgcHgtNiBweS0zIHRleHQtbGcgdGV4dC13aGl0ZSIKICAgICAgICAgICAgICA+CiAgICAgICAgICAgICAgICBDcmVhciBtaSBwZXJmaWwgZ3JhdGlzCiAgICAgICAgICAgICAgPC9MaW5rPgogICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICl9CgogICAgICAgICAgey8qIOKUnOKUnCBUSEUgQ0FST1VTRUwg4pSQIG9ubHkgcmVuZGVyZWQgd2hlbiB0aGVyZSBhcmUgd29ya2VycyDilKDilKAgKi99CiAgICAgICAgICB7d29ya2Vyc1Jlc3VsdC5vayAmJiBoYXNXb3JrZXJzICYmICgKICAgICAgICAgICAgPFdvcmtlckRpc2NvdmVyeQogICAgICAgICAgICAgIHdvcmtlcnM9e3dvcmtlcnN9CiAgICAgICAgICAgICAgY2F0ZWdvcnlMYWJlbD17ZmlsdGVyTGFiZWx9CiAgICAgICAgICAgIC8+CiAgICAgICAgICApfQogICAgICAgIDwvc2VjdGlvbj4KCiAgICAgICAgey8qIOKUnOKUnCBGSUxURVIgQkFSIOKUoCBkZWVwZXIgZXhwbG9yYXRpb24g4pSg4pSgICovfQogICAgICAgIDxzZWN0aW9uIGNsYXNzTmFtZT0iY29udGFpbmVyIGZpbHRlci1zZWN0aW9uIj4KICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJtYi01IGZsZXggZmxleC1jb2wgZ2FwLTEiPgogICAgICAgICAgICA8cCBjbGFzc05hbWU9InRleHQtc20gZm9udC1ibGFjayB1cHBlcmNhc2UgdHJhY2tpbmctd2lkZSB0ZXh0LWhvamEiPgogICAgICAgICAgICAgIELDunNxdWVkYSBhdmFuemFkYQogICAgICAgICAgICA8L3A+CiAgICAgICAgICAgIDxoMiBjbGFzc05hbWU9Im10LTEgdGV4dC14bCBmb250LWJsYWNrIHRleHQtaW5rIj4KICAgICAgICAgICAgICBGaWx0cmEgcG9yIGNpdWRhZCwgb2ZpY2lvIG8gZGlzcG9uaWJpbGlkYWQKICAgICAgICAgICAgPC9oMj4KICAgICAgICAgIDwvZGl2PgogICAgICAgICAgPEZpbHRlckJhcgogICAgICAgICAgICBjaXR5PXtzZWFyY2hQYXJhbXMuY2l0eX0KICAgICAgICAgICAgc2tpbGw9e3NlYXJjaFBhcmFtcy5za2lsbH0KICAgICAgICAgICAgaW5jb21lPXtzZWFyY2hQYXJhbXMuaW5jb21lfQogICAgICAgICAgICB3b3JrU3R5bGU9e3NlYXJjaFBhcmFtcy53b3JrU3R5bGV9CiAgICAgICAgICAvPgogICAgICAgIDwvc2VjdGlvbj4KCiAgICAgICAgey8qIOKUnOKUnCBUUlVTVCBTRUNUSU9OIOKUoOKUoCAqL30KICAgICAgICA8c2VjdGlvbiBjbGFzc05hbWU9ImNvbnRhaW5lciB0cnVzdC1zZWN0aW9uIj4KICAgICAgICAgIDxwIGNsYXNzTmFtZT0idHJ1c3QtZXllYnJvdyI+CiAgICAgICAgICAgIMK/UG9yIHF1w6kgTGlzdG9SRD8KICAgICAgICAgIDwvcD4KICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJ0cnVzdC1zZWN0aW9uLWdyaWQiPgogICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0idHJ1c3QtaXRlbSI+CiAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJ0cnVzdC1pdGVtLWljb24iPuKcizwvc3Bhbj4KICAgICAgICAgICAgICA8aDMgY2xhc3NOYW1lPSJ0cnVzdC1pdGVtLXRpdGxlIj5WZXJpZmljYWRvcyBtYW51YWxtZW50ZTwvaDM+CiAgICAgICAgICAgICAgPHAgY2xhc3NOYW1lPSJ0cnVzdC1pdGVtLWJvZHkiPgogICAgICAgICAgICAgICAgQ2FkYSBwZXJmaWwgZXMgcmV2aXNhZG8gcG9yIG51ZXN0cm8gZXF1aXBvIGFudGVzIGRlIHB1YmxpY2Fyc2UuCiAgICAgICAgICAgICAgICBOYWRhIGF1dG9tw6F0aWNvLCBuYWRhIGZhbHNvLgogICAgICAgICAgICAgIDwvcD4KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJ0cnVzdC1pdGVtIj4KICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9InRydXN0LWl0ZW0taWNvbiI+8J+SrDwvc3Bhbj4KICAgICAgICAgICAgICA8aDMgY2xhc3NOYW1lPSJ0cnVzdC1pdGVtLXRpdGxlIj5EaXJlY3RvIGEgV2hhdHNBcHA8L2gzPgogICAgICAgICAgICAgIDxwIGNsYXNzTmFtZT0idHJ1c3QtaXRlbS1ib2R5Ij4KICAgICAgICAgICAgICAgIFNpbiBmb3JtdWxhcmlvcywgc2luIGVzcGVyYXMuIEhhYmxhcyBjb24gbGEgcGVyc29uYSwgbm8gY29uIHVuCiAgICAgICAgICAgICAgICBzaXN0ZW1hLiBVbiBjb250YWN0byBncmF0aXMgY2FkYSBkw61hLgogICAgICAgICAgICAgIDwvcD4KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJ0cnVzdC1pdGVtIj4KICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9InRydXN0LWl0ZW0taWNvbiI+8J+OoDwvc3Bhbj4KICAgICAgICAgICAgICA8aDMgY2xhc3NOYW1lPSJ0cnVzdC1pdGVtLXRpdGxlIj5IZWNobyBwYXJhIFJEPC9oMz4KICAgICAgICAgICAgICA8cCBjbGFzc05hbWU9InRydXN0LWl0ZW0tYm9keSI+CiAgICAgICAgICAgICAgICBEaXNlw7FhZG8gcGFyYSBlbCBtZXJjYWRvIGRvbWluaWNhbm8uIFRyYWJhamFkb3JlcyByZWFsZXMsIGVuIHR1CiAgICAgICAgICAgICAgICBjaXVkYWQsIGRpc3BvbmlibGVzIGhveS4KICAgICAgICAgICAgICA8L3A+CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgPC9kaXY+CiAgICAgICAgPC9zZWN0aW9uPgoKICAgICAgICB7Lyog4pSc4pScIFdPUktFUiBDVEEgQkFOTkVSIOKUoOKUoCAqL30KICAgICAgICA8c2VjdGlvbiBjbGFzc05hbWU9ImNvbnRhaW5lciB3b3JrZXItY3RhLWJhbm5lciI+CiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0id29ya2VyLWN0YS1pbm5lciI+CiAgICAgICAgICAgIDxkaXY+CiAgICAgICAgICAgICAgPGgyPgogICAgICAgICAgICAgICAgwqFUaWVuZXMgdW4gc2VydmljaW8gcXVlIG9mcmVjZXI/CiAgICAgICAgICAgICAgPC9oMj4KICAgICAgICAgICAgICA8cD4KICAgICAgICAgICAgICAgIEhhendhdGUgdmlzaWJsZSBob3kuIExvcyBjbGllbnRlcyB0ZSBlbmN1ZW50cmFuIHkgdGUgZXNjcmliZW4KICAgICAgICAgICAgICAgIGRpcmVjdG8gcG9yIFdoYXRzQXBwIOKAlCBzaW4gY29taXNpb25lcy4KICAgICAgICAgICAgICA8L3A+CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICA8TGluawogICAgICAgICAgICAgIGhyZWY9Ii90cmFiYWphZG9yZXMvcmVnaXN0cm8iCiAgICAgICAgICAgICAgY2xhc3NOYW1lPSJidG4tcHJpbWFyeSB0YXAtdGFyZ2V0IGlubGluZS1mbGV4IHNocmluay0wIGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciBweC02IHB5LTQgdGV4dC1iYXNlIHRleHQtd2hpdGUiCiAgICAgICAgICAgID4KICAgICAgICAgICAgICBDcmVhciBtaSBwZXJmaWwgZ3JhdGlzCiAgICAgICAgICAgIDwvTGluaz4KICAgICAgICAgIDwvZGl2PgogICAgICAgIDwvc2VjdGlvbj4KCiAgICAgIDwvbWFpbj4KICAgIDwvPgogICk7Cn0K
+import { AppHeader } from "@/components/app-header";
+import { FilterBar } from "@/components/filter-bar";
+import { WorkerDiscovery } from "@/components/worker-discovery";
+import { getWorkersResult } from "@/lib/workers";
+import Link from "next/link";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+// Each card maps directly to a /categorias/[slug] SEO page
+const CATEGORY_ITEMS = [
+  { emoji: "🧹", label: "Limpieza",      slug: "limpiadora"   },
+  { emoji: "🍳", label: "Cocina",        slug: "cocinera"     },
+  { emoji: "🔧", label: "Plomería",      slug: "plomero"      },
+  { emoji: "⚡", label: "Electricidad",  slug: "electricista" },
+  { emoji: "🏗️", label: "Construcción",  slug: "albanil"      },
+  { emoji: "🎨", label: "Pintura",       slug: "pintor"       },
+  { emoji: "📚", label: "Clases",        slug: "tutor"        },
+  { emoji: "💅", label: "Belleza",       slug: "belleza"      },
+];
+
+function isFilterActive(searchParams: {
+  city?: string;
+  skill?: string;
+  income?: string;
+  workStyle?: string;
+}) {
+  return Boolean(
+    searchParams.city?.trim() ||
+      searchParams.skill?.trim() ||
+      searchParams.income?.trim() ||
+      searchParams.workStyle?.trim()
+  );
+}
+
+/** Extract unique cities from workers (ES5-safe, no Set spread). */
+function extractCities(workers: Array<{ city?: string | null }>): string[] {
+  const seen: Record<string, boolean> = {};
+  const result: string[] = [];
+  for (let i = 0; i < workers.length; i++) {
+    const c = workers[i].city?.trim();
+    if (c && !seen[c]) {
+      seen[c] = true;
+      result.push(c);
+    }
+  }
+  return result.slice(0, 5);
+}
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: {
+    city?: string;
+    skill?: string;
+    income?: string;
+    workStyle?: string;
+  };
+}) {
+  const workersResult = await getWorkersResult(searchParams);
+  const workers = workersResult.workers;
+  const hasWorkers = workers.length > 0;
+  const totalVerified = workersResult.verifiedWorkerCount;
+  const filterActive = isFilterActive(searchParams);
+  const showingFiltered = filterActive && workersResult.ok;
+
+  // Social proof counter — round down to nearest 5 for "X+" feel
+  const socialProofCount =
+    totalVerified >= 5 ? Math.floor(totalVerified / 5) * 5 : totalVerified;
+
+  // Live city signal — real snapshot of active workers
+  const activeCities = extractCities(workers);
+
+  // Label for carousel aria / heading when filter is active
+  const filterLabel =
+    searchParams.skill?.trim() || searchParams.city?.trim() || undefined;
+
+  return (
+    <>
+      <AppHeader />
+      <main className="page-shell">
+
+        {/* ── HERO — editorial, confident, no over-explanation ── */}
+        <section className="hero-section">
+          <div className="container hero-inner">
+
+            <p className="hero-eyebrow">
+              Solo en República Dominicana 🇩🇴
+            </p>
+
+            <h1 className="hero-title">
+              Trabajas.<br />Te buscan.
+            </h1>
+
+            <p className="hero-subline">
+              Perfiles verificados en RD. Contacta directo por WhatsApp — sin agencias, sin comisiones.
+            </p>
+
+            {/* Inline stats — no boxes, just typography */}
+            {totalVerified > 0 && (
+              <div className="hero-stats">
+                <span className="hero-stat-num">
+                  {socialProofCount > 0 ? `${socialProofCount}+` : totalVerified}
+                </span>
+                <span className="hero-stat-sep">trabajadores</span>
+                <span className="hero-stat-sep">·</span>
+                <span>1 contacto gratis</span>
+                <span className="hero-stat-sep">·</span>
+                <span>aprobación 24h</span>
+                {activeCities.length > 0 && (
+                  <>
+                    <span className="hero-stat-sep">·</span>
+                    <span className="flex items-center gap-1">
+                      <span className="hero-cities-dot" aria-hidden="true" />
+                      {activeCities[0]}{activeCities.length > 1 ? ` · ${activeCities[1]}` : ""}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+
+            <div className="hero-actions">
+              <a
+                href="#descubre"
+                className="btn-primary tap-target inline-flex min-w-0 items-center justify-center px-7 py-4 text-base text-white"
+              >
+                Descubrir trabajadores
+              </a>
+              <Link
+                href="/trabajadores/registro"
+                className="btn-secondary tap-target inline-flex min-w-0 items-center justify-center px-7 py-4 text-base"
+              >
+                Crear mi perfil
+              </Link>
+            </div>
+
+          </div>
+        </section>
+
+        {/* ── CATEGORY GRID ── */}
+        <section className="container category-section">
+          <p className="category-eyebrow">
+            ¿Qué necesitas?
+          </p>
+          <div className="category-grid">
+            {CATEGORY_ITEMS.map(({ emoji, label, slug }) => (
+              <Link
+                key={slug}
+                href={`/categorias/${slug}`}
+                className="category-card"
+              >
+                <span className="category-card-emoji" aria-hidden="true">
+                  {emoji}
+                </span>
+                <span className="category-card-label">{label}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ── NETWORK PULSE — minimal activity signal ── */}
+        {totalVerified > 0 && (
+          <section className="container network-pulse-section">
+            <div className="network-pulse-bar">
+              <div className="network-pulse-item network-pulse-item--inline">
+                <span className="network-pulse-dot" aria-hidden="true" />
+                <span className="network-pulse-label">Activos ahora</span>
+              </div>
+              <div className="network-pulse-divider" aria-hidden="true" />
+              <div className="network-pulse-item">
+                <span className="network-pulse-number">
+                  {socialProofCount > 0 ? `${socialProofCount}+` : totalVerified}
+                </span>
+                <span className="network-pulse-label">perfiles</span>
+              </div>
+              {activeCities.length > 0 && (
+                <>
+                  <div className="network-pulse-divider" aria-hidden="true" />
+                  <div className="network-pulse-item">
+                    <span className="network-pulse-number">
+                      {activeCities.length}+
+                    </span>
+                    <span className="network-pulse-label">ciudades</span>
+                  </div>
+                </>
+              )}
+              <div className="network-pulse-divider" aria-hidden="true" />
+              <div className="network-pulse-item">
+                <span className="network-pulse-number">8</span>
+                <span className="network-pulse-label">categorías</span>
+              </div>
+              <div className="network-pulse-divider" aria-hidden="true" />
+              <div className="network-pulse-item">
+                <span className="network-pulse-number">1</span>
+                <span className="network-pulse-label">gratis / día</span>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ══════════════════════════════════════════════
+            DISCOVERY CAROUSEL — primary browsing surface
+        ══════════════════════════════════════════════ */}
+        <section id="descubre" className="container discovery-section">
+          <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-black uppercase tracking-wide text-hoja">
+                {showingFiltered ? "Resultados" : "Explora perfiles"}
+              </p>
+              <h2 className="mt-1 text-2xl font-black text-ink">
+                {filterActive && hasWorkers
+                  ? `${workers.length} trabajador${workers.length !== 1 ? "es" : ""} encontrado${workers.length !== 1 ? "s" : ""}`
+                  : "Trabajadores disponibles ahora"}
+              </h2>
+              {filterActive && hasWorkers && (
+                <p className="mt-1 text-sm font-bold text-ink/55">
+                  Ordenados por relevancia · perfiles verificados
+                </p>
+              )}
+            </div>
+            {showingFiltered && hasWorkers && (
+              <Link
+                href="/"
+                className="shrink-0 rounded-full border border-[rgba(26,26,23,0.07)] bg-white px-3 py-2 text-sm font-black text-ink/60 shadow-soft hover:text-ink"
+              >
+                Ver todos
+              </Link>
+            )}
+          </div>
+
+          {/* Error state */}
+          {!workersResult.ok && (
+            <div className="empty-state">
+              <p className="text-sm font-black uppercase tracking-wide text-hoja">
+                Conexión interrumpida
+              </p>
+              <h3 className="mt-2 text-2xl font-black text-ink">
+                No pudimos cargar los trabajadores ahora mismo.
+              </h3>
+              <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
+                Intenta de nuevo en unos minutos.
+              </p>
+              <Link
+                href="/"
+                className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-white"
+              >
+                Intentar de nuevo
+              </Link>
+            </div>
+          )}
+
+          {/* Filter active — no results */}
+          {workersResult.ok && filterActive && !hasWorkers && (
+            <div className="empty-state">
+              <p className="text-4xl">🔍</p>
+              <h3 className="mt-3 text-2xl font-black text-ink">
+                No encontramos trabajadores con ese filtro.
+              </h3>
+              <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
+                Prueba con una búsqueda más amplia o revisa todos los
+                trabajadores disponibles.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/"
+                  className="btn-primary tap-target inline-flex items-center justify-center px-6 py-3 text-white"
+                >
+                  Ver todos los trabajadores
+                </Link>
+                <Link
+                  href="/trabajadores/registro"
+                  className="btn-secondary tap-target inline-flex items-center justify-center px-6 py-3"
+                >
+                  ¿Eres trabajador? Regístrate
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* No workers at all (empty DB) */}
+          {workersResult.ok && !filterActive && !hasWorkers && (
+            <div className="empty-state">
+              <p className="text-4xl">🇩🇴</p>
+              <h3 className="mt-3 text-2xl font-black text-ink">
+                Estamos agregando trabajadores verificados en RD.
+              </h3>
+              <p className="mx-auto mt-2 max-w-xl leading-7 text-ink/70">
+                ¿Ofreces un servicio? Crea tu perfil gratis y empieza a
+                recibir oportunidades por WhatsApp hoy mismo.
+              </p>
+              <Link
+                href="/trabajadores/registro"
+                className="btn-primary tap-target mt-5 inline-flex items-center justify-center px-6 py-3 text-lg text-white"
+              >
+                Crear mi perfil gratis
+              </Link>
+            </div>
+          )}
+
+          {/* ── THE CAROUSEL — only rendered when there are workers ── */}
+          {workersResult.ok && hasWorkers && (
+            <WorkerDiscovery
+              workers={workers}
+              categoryLabel={filterLabel}
+            />
+          )}
+        </section>
+
+        {/* ── FILTER BAR — deeper exploration ── */}
+        <section className="container filter-section">
+          <div className="mb-5 flex flex-col gap-1">
+            <p className="text-sm font-black uppercase tracking-wide text-hoja">
+              Búsqueda avanzada
+            </p>
+            <h2 className="mt-1 text-xl font-black text-ink">
+              Filtra por ciudad, oficio o disponibilidad
+            </h2>
+          </div>
+          <FilterBar
+            city={searchParams.city}
+            skill={searchParams.skill}
+            income={searchParams.income}
+            workStyle={searchParams.workStyle}
+          />
+        </section>
+
+        {/* ── TRUST SECTION ── */}
+        <section className="container trust-section">
+          <p className="trust-eyebrow">
+            ¿Por qué ListoRD?
+          </p>
+          <div className="trust-section-grid">
+            <div className="trust-item">
+              <span className="trust-item-icon">✓</span>
+              <h3 className="trust-item-title">Verificados manualmente</h3>
+              <p className="trust-item-body">
+                Cada perfil es revisado por nuestro equipo antes de publicarse.
+                Nada automático, nada falso.
+              </p>
+            </div>
+            <div className="trust-item">
+              <span className="trust-item-icon">💬</span>
+              <h3 className="trust-item-title">Directo a WhatsApp</h3>
+              <p className="trust-item-body">
+                Sin formularios, sin esperas. Hablas con la persona, no con un
+                sistema. Un contacto gratis cada día.
+              </p>
+            </div>
+            <div className="trust-item">
+              <span className="trust-item-icon">🇩🇴</span>
+              <h3 className="trust-item-title">Hecho para RD</h3>
+              <p className="trust-item-body">
+                Diseñado para el mercado dominicano. Trabajadores reales, en tu
+                ciudad, disponibles hoy.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── WORKER CTA BANNER ── */}
+        <section className="container worker-cta-banner">
+          <div className="worker-cta-inner">
+            <div>
+              <h2>
+                ¿Tienes un servicio que ofrecer?
+              </h2>
+              <p>
+                Hazte visible hoy. Los clientes te encuentran y te escriben
+                directo por WhatsApp — sin comisiones.
+              </p>
+            </div>
+            <Link
+              href="/trabajadores/registro"
+              className="btn-primary tap-target inline-flex shrink-0 items-center justify-center px-6 py-4 text-base text-white"
+            >
+              Crear mi perfil gratis
+            </Link>
+          </div>
+        </section>
+
+      </main>
+    </>
+  );
+}
