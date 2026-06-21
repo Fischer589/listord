@@ -41,7 +41,9 @@ const HOMEPAGE_WORKER_SELECT = `
   rating_count,
   hired_count,
   experience,
-  income_type
+  income_type,
+  is_featured,
+  is_pro
 `;
 
 type HomepageWorkerRow = Pick<
@@ -62,6 +64,8 @@ type HomepageWorkerRow = Pick<
   | "hired_count"
   | "experience"
   | "income_type"
+  | "is_featured"
+  | "is_pro"
 >;
 
 type SupabaseErrorDetails = {
@@ -81,7 +85,12 @@ export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
  * All filtering is done post-fetch so no Supabase schema changes are needed.
  */
 function applyFilters(workers: Worker[], filters: WorkerFilters): Worker[] {
-  return workers.filter(worker => {
+  // Sort: featured first, then by original order (created_at DESC from DB)
+  const featured = workers.filter(w => w.is_featured === true);
+  const regular  = workers.filter(w => w.is_featured !== true);
+  const sorted   = [...featured, ...regular];
+
+  return sorted.filter(worker => {
     // City — normalized partial match
     if (filters.city?.trim()) {
       if (!workerMatchesCity(worker, filters.city)) return false;
