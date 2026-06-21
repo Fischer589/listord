@@ -309,8 +309,18 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           <div className="wc-photo-initials">{getInitials(fullName)}</div>
         )}
 
+        {/* Featured badge */}
+        {worker.is_featured && (
+          <span
+            className="wc-badge-new"
+            style={{ background: "var(--green)", color: "#fff", top: "0.5rem", left: "0.5rem", right: "auto" }}
+          >
+            ⭐ Destacado
+          </span>
+        )}
+
         {/* New profile badge */}
-        {profileAge && (
+        {!worker.is_featured && profileAge && (
           <span className="wc-badge-new">
             {profileAge === "today" ? "✦ Nuevo hoy" : "✦ Nuevo"}
           </span>
