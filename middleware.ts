@@ -3,49 +3,10 @@ import type { NextRequest } from 'next/server'
 
 const COOKIE_NAME = 'admin_session'
 
-async function verifySessionToken(token: string, secret: string): Promise<boolean> {
-  try {
-    const dotIndex = token.lastIndexOf('.')
-    if (dotIndex < 1) return false
-
-    const payloadB64 = token.slice(0, dotIndex)
-    const sigHex = token.slice(dotIndex + 1)
-
-    if (!payloadB64 || sigHex.length < 64) return false
-
-    const encoder = new TextEncoder()
-
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
-    )
-
-    const sigBytes = new Uint8Array(
-      (sigHex.match(/.{1,2}/g) ?? []).map((b) => parseInt(b, 16))
-    )
-
-    const isValid = await crypto.subtle.verify(
-      'HMAC',
-      key,
-      sigBytes,
-      encoder.encode(payloadB64)
-    )
-
-    if (!isValid) return false
-
-    const payload = JSON.parse(atob(payloadB64)) as { expires?: unknown }
-    return typeof payload.expires === 'number' && payload.expires > Date.now()
-  } catch {
-    return false
-  }
-}
-
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Always allow the login page through
   if (pathname === '/admin/login') {
     return NextResponse.next()
   }
@@ -57,12 +18,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const sessionCookie = request.cookies.get(COOKIE_NAME)
-  if (!sessionCookie?.value) {
-    return NextResponse.redirect(new URL('/admin/login', request.url))
-  }
-
-  const valid = await verifySessionToken(sessionCookie.value, secret)
-  if (!valid) {
+  if (sessionCookie?.value !== secret) {
     const res = NextResponse.redirect(new URL('/admin/login', request.url))
     res.cookies.delete(COOKIE_NAME)
     return res
