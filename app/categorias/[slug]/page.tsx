@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { AppHeader } from "@/components/app-header";
 import { WorkerDiscovery } from "@/components/worker-discovery";
 import { getCategoryBySlug, CATEGORIES } from "@/lib/categories";
+import { CITIES } from "@/lib/cities";
 import { getWorkersResult } from "@/lib/workers";
 
 export const dynamic = "force-dynamic";
@@ -242,6 +243,18 @@ export default async function CategoryPage({
             >
               Crear mi perfil gratis
             </Link>
+          </div>
+        </section>
+
+        {/* ── BUSCAR POR CIUDAD ── */}
+        <section className="container cat-more-section">
+          <p className="section-eyebrow">Buscar por ciudad</p>
+          <div className="category-pill-row" style={{ marginTop: "0.75rem" }}>
+            {CITIES.map((c) => (
+              <Link key={c.slug} href={`/categorias/${cat.slug}/${c.slug}`} className="category-pill">
+                📍 {c.name}
+              </Link>
+            ))}
           </div>
         </section>
 
