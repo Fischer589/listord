@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { createHmac, timingSafeEqual } from 'crypto'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -10,17 +9,6 @@ export const metadata: Metadata = {
 
 const COOKIE_NAME = 'admin_session'
 const SESSION_DAYS = 7
-
-function safeCompare(a: string, b: string): boolean {
-  try {
-    const ab = Buffer.from(a)
-    const bb = Buffer.from(b)
-    if (ab.byteLength !== bb.byteLength) return false
-    return timingSafeEqual(ab, bb)
-  } catch {
-    return false
-  }
-}
 
 async function handleLogin(formData: FormData) {
   'use server'
@@ -32,24 +20,19 @@ async function handleLogin(formData: FormData) {
   const expectedPassword = process.env.ADMIN_PASSWORD ?? ''
   const secret = process.env.ADMIN_SESSION_SECRET ?? ''
 
-  const credentialsValid =
+  const isValid =
     Boolean(expectedUsername) &&
     Boolean(expectedPassword) &&
     Boolean(secret) &&
-    safeCompare(username, expectedUsername) &&
-    safeCompare(password, expectedPassword)
+    username === expectedUsername &&
+    password === expectedPassword
 
-  if (!credentialsValid) {
+  if (!isValid) {
     redirect('/admin/login?error=1')
   }
 
-  const expires = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000
-  const payload = Buffer.from(JSON.stringify({ username, expires })).toString('base64')
-  const sig = createHmac('sha256', secret).update(payload).digest('hex')
-  const token = `${payload}.${sig}`
-
   const cookieStore = cookies()
-  cookieStore.set(COOKIE_NAME, token, {
+  cookieStore.set(COOKIE_NAME, secret, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
