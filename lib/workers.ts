@@ -25,6 +25,10 @@ export type WorkersResult =
 
 const WORKERS_LOAD_ERROR =
   "No pudimos cargar los trabajadores ahora mismo. Intenta de nuevo en unos minutos.";
+
+// NOTE: is_featured and is_pro are NOT selected here.
+// They require the Phase 6 DB migration to exist.
+// Until that migration is confirmed, they default to false in the mapping below.
 const HOMEPAGE_WORKER_SELECT = `
   id,
   full_name,
@@ -41,9 +45,7 @@ const HOMEPAGE_WORKER_SELECT = `
   rating_count,
   hired_count,
   experience,
-  income_type,
-  is_featured,
-  is_pro
+  income_type
 `;
 
 type HomepageWorkerRow = Pick<
@@ -64,8 +66,6 @@ type HomepageWorkerRow = Pick<
   | "hired_count"
   | "experience"
   | "income_type"
-  | "is_featured"
-  | "is_pro"
 >;
 
 type SupabaseErrorDetails = {
@@ -155,6 +155,10 @@ export async function getWorkersResult(
     const rows = (data ?? []) as HomepageWorkerRow[];
     const allWorkers = rows.map((worker) => ({
       ...worker,
+      // Safe defaults — is_featured/is_pro require the Phase 6 DB migration.
+      // Once migration is confirmed, restore these columns to HOMEPAGE_WORKER_SELECT.
+      is_featured: false as const,
+      is_pro: false as const,
       is_verified: true
     }));
 
