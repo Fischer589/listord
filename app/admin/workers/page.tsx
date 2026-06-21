@@ -200,12 +200,20 @@ export default async function AdminWorkersPage({
               <p className="text-sm font-black uppercase tracking-wide text-hoja">Admin</p>
               <h1 className="mt-2 text-3xl font-black text-ink">Trabajadores registrados</h1>
             </div>
-            <a
-              href="/admin/logout"
-              className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5"
-            >
-              Cerrar sesión
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href="/admin/dashboard"
+                className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5"
+              >
+                ← Dashboard
+              </a>
+              <a
+                href="/admin/logout"
+                className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5"
+              >
+                Cerrar sesión
+              </a>
+            </div>
           </div>
 
           {/* Stats */}
