@@ -35,7 +35,13 @@ const HOMEPAGE_WORKER_SELECT = `
   short_intro,
   skills,
   photo_url,
-  created_at
+  created_at,
+  available_now,
+  rating_average,
+  rating_count,
+  hired_count,
+  experience,
+  income_type
 `;
 
 type HomepageWorkerRow = Pick<
@@ -50,6 +56,12 @@ type HomepageWorkerRow = Pick<
   | "skills"
   | "photo_url"
   | "created_at"
+  | "available_now"
+  | "rating_average"
+  | "rating_count"
+  | "hired_count"
+  | "experience"
+  | "income_type"
 >;
 
 type SupabaseErrorDetails = {
