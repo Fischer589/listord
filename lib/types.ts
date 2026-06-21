@@ -32,6 +32,9 @@ export type Worker = {
   hired_count?: number | null;
   experience?: string | null;
   income_type?: IncomeType | null;
+  // Phase 6 — worker monetization tiers
+  is_featured?: boolean | null;
+  is_pro?: boolean | null;
 };
 
 export type Employer = {
