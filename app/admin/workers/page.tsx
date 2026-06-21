@@ -8,7 +8,7 @@ import type { Worker } from "@/lib/types";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// ─── Server Actions ────────────────────────────────────────────────────────────
+// ─── Server Actions ──────────────────────────────────────────────
 
 async function approveWorker(formData: FormData) {
   "use server";
@@ -89,7 +89,7 @@ async function approveLocalTestWorker() {
   revalidatePath("/");
 }
 
-// ─── Data ──────────────────────────────────────────────────────────────────────
+// ─── Data ───────────────────────────────────────────────────────────
 
 type AdminWorkersResult = {
   approvedCount: number;
@@ -116,8 +116,7 @@ async function getAdminWorkers(): Promise<AdminWorkersResult> {
       work_style,
       short_intro,
       is_verified,
-      created_at,
-      edit_token
+      created_at
     `)
     .order("created_at", { ascending: false });
 
@@ -131,29 +130,35 @@ async function getAdminWorkers(): Promise<AdminWorkersResult> {
     .select("id", { count: "exact", head: true })
     .eq("is_verified", true);
 
-  const [{ data, error }, { count: pc }, { count: ac }] = await Promise.all([
-    workersQuery,
-    pendingQ,
-    approvedQ
-  ]);
+  try {
+    const [{ data, error }, { count: pc }, { count: ac }] = await Promise.all([
+      workersQuery,
+      pendingQ,
+      approvedQ
+    ]);
 
-  if (error) {
-    console.warn("Admin workers query failed.", { code: error.code });
+    if (error) {
+      console.warn("Admin workers query failed.", { code: error.code, message: error.message });
+      return { approvedCount: 0, pendingCount: 0, workers: [] };
+    }
+
+    const workers = (data ?? []).map((w) => ({ ...w, is_verified: Boolean(w.is_verified) }));
+    const fallbackPending = workers.filter((w) => !w.is_verified).length;
+    const fallbackApproved = workers.filter((w) => w.is_verified).length;
+
+    return {
+      approvedCount: ac ?? fallbackApproved,
+      pendingCount: pc ?? fallbackPending,
+      workers
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Admin workers query threw unexpectedly.", msg);
     return { approvedCount: 0, pendingCount: 0, workers: [] };
   }
-
-  const workers = (data ?? []).map((w) => ({ ...w, is_verified: Boolean(w.is_verified) }));
-  const fallbackPending = workers.filter((w) => !w.is_verified).length;
-  const fallbackApproved = workers.filter((w) => w.is_verified).length;
-
-  return {
-    approvedCount: ac ?? fallbackApproved,
-    pendingCount: pc ?? fallbackPending,
-    workers
-  };
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "?";
@@ -170,7 +175,7 @@ function tabClass(active: boolean) {
     : "rounded-md border border-black/10 bg-white px-3 py-1.5 text-xs font-bold text-black/60 hover:bg-black/5";
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
+// ─── Page ───────────────────────────────────────────────────────────
 
 export default async function AdminWorkersPage({
   searchParams
@@ -383,9 +388,6 @@ export default async function AdminWorkersPage({
                             <button
                               type="submit"
                               className="tap-target rounded-md border border-red-200 bg-red-50 px-4 py-2 text-xs font-black text-red-700 hover:bg-red-100"
-                              onClick={(e) => {
-                                // Note: onClick only works client-side; the form submit is the real action
-                              }}
                             >
                               Rechazar y eliminar
                             </button>
