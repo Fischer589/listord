@@ -19,6 +19,12 @@ const CATEGORY_VERBS: Record<string, string> = {
   pintor:      "Pintas.",
   tutor:       "Enseñas.",
   belleza:     "Embelleces.",
+  jardinero:   "Plantas.",
+  chofer:      "Manejas.",
+  ninera:      "Cuidas.",
+  cuidadora:   "Sanas.",
+  carpintero:  "Creas.",
+  vigilante:   "Proteges.",
 };
 
 export function generateStaticParams() {
