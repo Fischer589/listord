@@ -7,6 +7,25 @@ export default function EmployersPage() {
       <AppHeader />
       <main className="mx-auto max-w-5xl px-4 py-10">
         {/* ── HERO ── */}
+        {/* Account status shortcut */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.75rem" }}>
+          <a
+            href="/empleadores/mi-cuenta"
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "var(--green)",
+              textDecoration: "none",
+              padding: "0.35rem 0.75rem",
+              border: "1px solid rgba(45,122,79,0.25)",
+              borderRadius: "999px",
+              background: "var(--surface)",
+            }}
+          >
+            Mi cuenta →
+          </a>
+        </div>
+
         <section className="grid gap-8 md:grid-cols-[1fr_0.85fr] md:items-start">
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-hoja">
