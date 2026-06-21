@@ -363,14 +363,20 @@ export default async function AdminWorkersPage({
 
                     {/* Actions */}
                     <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-black/5 pt-4">
-                      <a
-                        href={`/trabajador/${profileSlug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/55 hover:bg-black/5"
-                      >
-                        Ver perfil ↗
-                      </a>
+                      {worker.is_verified ? (
+                        <a
+                          href={`/trabajador/${profileSlug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/55 hover:bg-black/5"
+                        >
+                          Ver perfil ↗
+                        </a>
+                      ) : (
+                        <span className="rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/25 cursor-default select-none">
+                          Sin perfil público
+                        </span>
+                      )}
 
                       {!worker.is_verified ? (
                         <>
