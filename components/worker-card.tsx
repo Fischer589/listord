@@ -320,10 +320,15 @@ export function WorkerCard({ worker }: { worker: Worker }) {
       {/* ── Card body ── */}
       <div className="wc-body">
 
-        {/* Availability */}
+        {/* Availability — driven by available_now field */}
         <div className="wc-avail">
-          <span className="wc-avail-dot" />
-          <span>Disponible</span>
+          <span
+            className="wc-avail-dot"
+            style={worker.available_now === false ? { background: "rgba(26,61,43,0.22)" } : undefined}
+          />
+          <span style={worker.available_now === false ? { color: "rgba(26,61,43,0.45)" } : undefined}>
+            {worker.available_now === false ? "No disponible" : "Disponible"}
+          </span>
         </div>
 
         {/* Identity */}
@@ -333,6 +338,22 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           <p className="wc-city">
             {city}{worker.desired_income ? ` · ${formatIncomeShort(worker.desired_income)}` : ""}
           </p>
+        )}
+
+        {/* Social proof — rating + hired count */}
+        {((worker.rating_average ?? 0) > 0 || (worker.hired_count ?? 0) > 0) && (
+          <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", margin: "0.2rem 0 0" }}>
+            {(worker.rating_average ?? 0) > 0 && (
+              <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--ink)", opacity: 0.65 }}>
+                ⭐ {worker.rating_average!.toFixed(1)}
+              </span>
+            )}
+            {(worker.hired_count ?? 0) > 0 && (
+              <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--ink)", opacity: 0.65 }}>
+                ✓ {worker.hired_count} contrataci{worker.hired_count === 1 ? "ón" : "ones"}
+              </span>
+            )}
+          </div>
         )}
 
         {/* Actions */}
