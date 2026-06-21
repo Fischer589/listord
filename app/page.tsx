@@ -16,6 +16,12 @@ const CATEGORY_ITEMS = [
   { emoji: "🎨", label: "Pintura",       slug: "pintor"       },
   { emoji: "📚", label: "Clases",        slug: "tutor"        },
   { emoji: "💅", label: "Belleza",       slug: "belleza"      },
+  { emoji: "🌿", label: "Jardinería",    slug: "jardinero"    },
+  { emoji: "🚗", label: "Conductor",     slug: "chofer"       },
+  { emoji: "👶", label: "Cuidado niños", slug: "ninera"       },
+  { emoji: "🏥", label: "Cuidado adultos", slug: "cuidadora"  },
+  { emoji: "🔨", label: "Carpintería",   slug: "carpintero"   },
+  { emoji: "🔒", label: "Seguridad",     slug: "vigilante"    },
 ];
 
 function isFilterActive(searchParams: {
