@@ -25,6 +25,13 @@ export type Worker = {
   short_intro?: string | null;
   is_verified: boolean;
   created_at?: string;
+  // Phase 5 — surfaced from DB
+  available_now?: boolean | null;
+  rating_average?: number | null;
+  rating_count?: number | null;
+  hired_count?: number | null;
+  experience?: string | null;
+  income_type?: IncomeType | null;
 };
 
 export type Employer = {
