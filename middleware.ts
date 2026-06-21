@@ -11,6 +11,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Feature flag — set ADMIN_AUTH_ENABLED=true in env to re-enable protection.
+  // Any value other than exactly 'true' means auth is bypassed.
+  const authEnabled = process.env.ADMIN_AUTH_ENABLED === 'true'
+  if (!authEnabled) {
+    return NextResponse.next()
+  }
+
   const secret = process.env.ADMIN_SESSION_SECRET
   if (!secret) {
     console.warn('ADMIN_SESSION_SECRET not set — admin access blocked')
