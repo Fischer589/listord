@@ -330,14 +330,14 @@ export function WorkerCard({ worker }: { worker: Worker }) {
       {/* ── Card body ── */}
       <div className="wc-body">
 
-        {/* Availability — driven by available_now field */}
+        {/* Availability — only shows "Disponible ahora" when explicitly true.
+            available_now defaults to false in DB for all existing workers — never
+            show "No disponible" as that is a false negative for workers who never
+            set their availability. Neutral "Disponible" is the safe fallback. */}
         <div className="wc-avail">
-          <span
-            className="wc-avail-dot"
-            style={worker.available_now === false ? { background: "rgba(26,61,43,0.22)" } : undefined}
-          />
-          <span style={worker.available_now === false ? { color: "rgba(26,61,43,0.45)" } : undefined}>
-            {worker.available_now === false ? "No disponible" : "Disponible"}
+          <span className="wc-avail-dot" />
+          <span>
+            {worker.available_now === true ? "Disponible ahora" : "Disponible"}
           </span>
         </div>
 
