@@ -52,6 +52,12 @@ export function AppHeader() {
             Busco trabajo
           </Link>
           <Link
+            href="/soluciones-empresariales"
+            className="tap-target btn-ghost text-xs sm:text-sm px-3 py-2 sm:px-4 hidden sm:inline-flex"
+          >
+            Soluciones Empresariales
+          </Link>
+          <Link
             href="/empleadores"
             className="tap-target btn-primary text-xs sm:text-sm px-3 py-2 sm:px-4 text-white"
           >
