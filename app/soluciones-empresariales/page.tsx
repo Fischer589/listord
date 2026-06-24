@@ -10,7 +10,7 @@ const WA_URL = `https://wa.me/${WA_PHONE}?text=${encodeURIComponent(WA_MESSAGE)}
 function WhatsAppButton({ size = "default" }: { size?: "default" | "large" }) {
   function handleClick() {
     try {
-      trackEvent("business_whatsapp_click", { page: "soluciones-empresariales" });
+      trackEvent("contact_click", { page: "soluciones-empresariales", source: "business" });
     } catch {
       // analytics failure never blocks navigation
     }
