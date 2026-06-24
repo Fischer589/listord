@@ -1145,8 +1145,7 @@ h1, h2 {
 .profile-photo-wrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 5;
-  max-height: 280px;           /* cap: keeps it directory-feel, not social-media-hero */
+  aspect-ratio: 1 / 1;        /* square — compact directory card, not social-media hero */
   overflow: hidden;
   background: linear-gradient(160deg, var(--green-bg) 0%, var(--surface) 100%);
 }
