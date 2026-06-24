@@ -258,7 +258,7 @@ export default async function WorkerProfilePage({
                         alt={`Foto de ${fullName}`}
                         fill
                         sizes="(max-width: 768px) 100vw, 380px"
-                        className="object-cover object-center"
+                        className="object-cover object-top"
                         priority
                       />
                     ) : (
