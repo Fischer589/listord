@@ -51,11 +51,17 @@ export function AppHeader() {
           >
             Busco trabajo
           </Link>
+          {/*
+            Hidden on mobile (< 640px) — original two-item nav preserved.
+            640–767px (sm): short label "Empresas" to prevent overflow.
+            768px+ (md): full label "Soluciones Empresariales".
+          */}
           <Link
             href="/soluciones-empresariales"
             className="tap-target btn-ghost text-xs sm:text-sm px-3 py-2 sm:px-4 hidden sm:inline-flex"
           >
-            Soluciones Empresariales
+            <span className="md:hidden">Empresas</span>
+            <span className="hidden md:inline">Soluciones Empresariales</span>
           </Link>
           <Link
             href="/empleadores"
