@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/app-header";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { WorkStyle } from "@/lib/types";
 import {
+  findWorkerByWhatsAppNumber,
   getList,
   getMissingProfileQualityFields,
   getText,
@@ -15,6 +16,7 @@ import {
   uploadWorkerPhoto,
   workStyles
 } from "@/lib/worker-profile";
+import { BoostProfileButton } from "@/components/boost-profile-button";
 
 type EditableWorker = {
   id: string;
@@ -29,6 +31,10 @@ type EditableWorker = {
   short_intro: string;
   work_style: WorkStyle | null;
   photo_url: string | null;
+  last_boosted_at: string | null;
+  boost_expires_at: string | null;
+  consecutive_boost_count: number;
+  boost_cooldown_until: string | null;
 };
 
 const workerProfileSaveError =
@@ -84,7 +90,11 @@ async function findWorkerByEditToken(token?: string) {
       availability,
       short_intro,
       work_style,
-      photo_url
+      photo_url,
+      last_boosted_at,
+      boost_expires_at,
+      consecutive_boost_count,
+      boost_cooldown_until
     `)
     .eq("edit_token", editToken)
     .maybeSingle();
@@ -97,52 +107,6 @@ async function findWorkerByEditToken(token?: string) {
   }
 
   return (data as EditableWorker | null) ?? null;
-}
-
-async function findWorkerByWhatsAppNumber(whatsappNumber?: string) {
-  const normalizedWhatsAppNumber = normalizeWhatsAppNumber(
-    whatsappNumber?.trim() || ""
-  );
-
-  if (!normalizedWhatsAppNumber) {
-    return null;
-  }
-
-  const supabase = getSupabaseAdminClient();
-
-  if (!supabase) {
-    console.warn("Worker edit link lookup skipped: Supabase admin client unavailable.");
-    return null;
-  }
-
-  const { data, error } = await supabase
-    .from("workers")
-    .select("edit_token, whatsapp_number")
-    .not("whatsapp_number", "is", null);
-
-  if (error) {
-    console.warn("Worker edit link lookup failed.", {
-      code: error.code
-    });
-    return null;
-  }
-
-  const worker = (data ?? []).find((row) => {
-    const existingNumber =
-      typeof row.whatsapp_number === "string"
-        ? normalizeWhatsAppNumber(row.whatsapp_number)
-        : null;
-
-    return existingNumber === normalizedWhatsAppNumber;
-  });
-
-  if (!worker?.edit_token || !isValidEditToken(worker.edit_token)) {
-    return null;
-  }
-
-  return {
-    editToken: worker.edit_token
-  };
 }
 
 function getPrimaryJobCategory(skills?: string[] | null) {
@@ -387,7 +351,7 @@ export default async function EditWorkerPage({
         )}
         {state === "duplicado" && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            Ese WhatsApp ya esta usado por otro perfil.
+            Ese WhatsApp esta usado por otro perfil.
           </div>
         )}
         {state === "rechazado" && (
@@ -474,6 +438,17 @@ export default async function EditWorkerPage({
                 Completa tu perfil para recibir más clientes
               </div>
             )}
+
+            <div className="mt-5 rounded-lg border border-hoja/20 bg-hoja/5 p-4">
+              <p className="font-black text-ink">🚀 Impulsa tu perfil</p>
+              <p className="mt-1 text-sm font-semibold leading-6 text-black/65">
+                Por RD$100 tu perfil aparece primero en los resultados relevantes
+                (tu categoría y ciudad) durante 24 horas.
+              </p>
+              <div className="mt-3">
+                <BoostProfileButton editToken={worker.edit_token} />
+              </div>
+            </div>
 
             <form
               action={updateWorkerProfile}
