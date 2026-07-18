@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { DM_Serif_Display } from "next/font/google";
@@ -12,10 +12,15 @@ const dmSerifDisplay = DM_Serif_Display({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://listordapp.com"),
   title: {
-    default: "ListoRD – Trabajadores listos hoy",
+    default: "ListoRD — Trabajadores listos hoy",
     template: "%s | ListoRD"
   },
   description:
