@@ -6,7 +6,14 @@ export type AnalyticsEventName =
   | "contact_click"
   | "paywall_open"
   | "checkout_start"
-  | "checkout_success";
+  | "checkout_success"
+  // Worker profile boost — admin-only analytics, never shown publicly
+  | "boost_purchase_started"
+  | "boost_payment_success"
+  | "boost_activated"
+  | "boost_expired"
+  | "boosted_profile_view"
+  | "boost_contact_initiated";
 
 export type AnalyticsMetadata = Record<
   string,
