@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app-header";
 import { WorkerRegistrationForm } from "@/components/worker-registration-form";
 import type { WorkStyle } from "@/lib/types";
 import {
+  findWorkerByWhatsAppNumber,
   getList,
   normalizeWhatsAppNumber,
   uploadWorkerPhoto
@@ -13,6 +14,10 @@ export type WorkerRegistrationActionState = {
   success?: true;
   jobCategoryError?: true;
   supabaseError?: true;
+  existingProfile?: {
+    editToken: string;
+    fullName: string;
+  };
 };
 
 const fallbackWorkStyles: Array<{ value: WorkStyle; label: string }> = [
@@ -124,6 +129,20 @@ async function submitWorkerRegistration(
   if (!skills) {
     return {
       jobCategoryError: true
+    };
+  }
+
+  const whatsappNumberInput = String(formData.get("whatsapp_number") || "").trim();
+  const existingWorker = await findWorkerByWhatsAppNumber(whatsappNumberInput);
+
+  if (existingWorker) {
+    // Existing profile detected — never insert a duplicate. Surface the
+    // existing-profile options instead (Feature 1).
+    return {
+      existingProfile: {
+        editToken: existingWorker.editToken,
+        fullName: existingWorker.fullName
+      }
     };
   }
 
