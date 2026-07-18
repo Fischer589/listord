@@ -5,7 +5,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// ─── Data fetching ─────────────────────────────────────────────────────────────
+// ─── Data fetching ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 async function getDashboardStats() {
   noStore();
@@ -25,6 +25,8 @@ async function getDashboardStats() {
     { count: contactsToday   },
     { count: totalEmployers  },
     { count: premiumEmployers },
+    { count: activeBoostedWorkers },
+    { data: paidBoosts },
   ] = await Promise.all([
     supabase.from("workers").select("*", { count: "exact", head: true }),
     supabase.from("workers").select("*", { count: "exact", head: true }).eq("is_verified", false),
@@ -34,7 +36,43 @@ async function getDashboardStats() {
     supabase.from("contact_attempts").select("*", { count: "exact", head: true }).gte("created_at", startOfToday),
     supabase.from("employers").select("*", { count: "exact", head: true }),
     supabase.from("employers").select("*", { count: "exact", head: true }).eq("is_paid_employer", true),
+    supabase.from("workers").select("*", { count: "exact", head: true }).eq("is_verified", true).gt("boost_expires_at", now.toISOString()),
+    supabase.from("worker_boosts").select("amount, worker_id, workers(city, skills)").eq("payment_status", "paid"),
   ]);
+
+  type BoostJoinRow = {
+    amount: number;
+    worker_id: string;
+    workers: { city: string | null; skills: string[] | null } | { city: string | null; skills: string[] | null }[] | null;
+  };
+
+  const boostRows = (paidBoosts ?? []) as unknown as BoostJoinRow[];
+
+  function getBoostWorkerInfo(row: BoostJoinRow) {
+    if (Array.isArray(row.workers)) return row.workers[0] ?? null;
+    return row.workers;
+  }
+
+  const boostRevenueCents = boostRows.reduce((sum, row) => sum + (row.amount || 0), 0);
+
+  const boostsByCity = new Map<string, number>();
+  const boostsByCategory = new Map<string, number>();
+
+  for (const row of boostRows) {
+    const workerInfo = getBoostWorkerInfo(row);
+    const city = workerInfo?.city?.trim() || "Sin ciudad";
+    boostsByCity.set(city, (boostsByCity.get(city) || 0) + 1);
+
+    const category = workerInfo?.skills?.[0]?.trim() || "Sin categoría";
+    boostsByCategory.set(category, (boostsByCategory.get(category) || 0) + 1);
+  }
+
+  const topBoostCities = Array.from(boostsByCity.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const topBoostCategories = Array.from(boostsByCategory.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
 
   return {
     workers: {
@@ -51,10 +89,17 @@ async function getDashboardStats() {
       total:   totalEmployers   ?? 0,
       premium: premiumEmployers ?? 0,
     },
+    boosts: {
+      revenueRD: Math.round(boostRevenueCents / 100),
+      totalSuccessful: boostRows.length,
+      activeNow: activeBoostedWorkers ?? 0,
+      topCities: topBoostCities,
+      topCategories: topBoostCategories,
+    },
   };
 }
 
-// ─── Components ────────────────────────────────────────────────────────────────
+// ─── Components ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 function StatCard({
   label,
@@ -142,7 +187,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export default async function AdminDashboardPage() {
   const stats = await getDashboardStats();
@@ -266,6 +311,54 @@ export default async function AdminDashboardPage() {
                 accent={stats.employers.premium > 0}
               />
             </Section>
+
+            {/* Boosts — admin-only, never shown publicly */}
+            <Section title="Impulsos de perfil">
+              <StatCard
+                label="Ingresos por impulsos"
+                value={`RD$${stats.boosts.revenueRD.toLocaleString("es-DO")}`}
+                sub="Total histórico"
+                accent={stats.boosts.revenueRD > 0}
+              />
+              <StatCard label="Impulsos exitosos" value={stats.boosts.totalSuccessful} />
+              <StatCard
+                label="Activos ahora"
+                value={stats.boosts.activeNow}
+                sub="Con prioridad vigente"
+                accent={stats.boosts.activeNow > 0}
+              />
+            </Section>
+
+            {(stats.boosts.topCities.length > 0 || stats.boosts.topCategories.length > 0) && (
+              <section style={{ marginBottom: "2.5rem", display: "grid", gap: "1.5rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+                {stats.boosts.topCities.length > 0 && (
+                  <div style={{ background: "var(--surface)", borderRadius: "1rem", padding: "1.25rem 1.5rem", border: "1px solid rgba(26,61,43,0.08)" }}>
+                    <p style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(26,61,43,0.45)", marginBottom: "0.75rem" }}>
+                      Impulsos por ciudad
+                    </p>
+                    {stats.boosts.topCities.map(([city, count]) => (
+                      <div key={city} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", padding: "0.3rem 0", color: "var(--ink)" }}>
+                        <span>{city}</span>
+                        <span style={{ fontWeight: 800 }}>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {stats.boosts.topCategories.length > 0 && (
+                  <div style={{ background: "var(--surface)", borderRadius: "1rem", padding: "1.25rem 1.5rem", border: "1px solid rgba(26,61,43,0.08)" }}>
+                    <p style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(26,61,43,0.45)", marginBottom: "0.75rem" }}>
+                      Impulsos por categoría
+                    </p>
+                    {stats.boosts.topCategories.map(([category, count]) => (
+                      <div key={category} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", padding: "0.3rem 0", color: "var(--ink)" }}>
+                        <span>{category}</span>
+                        <span style={{ fontWeight: 800 }}>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* Quick actions */}
             <section>
