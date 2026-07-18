@@ -71,6 +71,65 @@ export function formatWhatsAppNumber(value: string) {
   return normalizeWhatsAppNumber(value);
 }
 
+export type ExistingWorkerLookup = {
+  editToken: string;
+  workerId: string;
+  fullName: string;
+};
+
+/**
+ * Looks up an existing worker profile by (normalized) WhatsApp number.
+ * Shared by the registration duplicate-detection screen and the profile
+ * edit-link recovery flow so both surfaces use one ownership mechanism.
+ */
+export async function findWorkerByWhatsAppNumber(
+  whatsappNumber?: string
+): Promise<ExistingWorkerLookup | null> {
+  const normalizedWhatsAppNumber = normalizeWhatsAppNumber(
+    whatsappNumber?.trim() || ""
+  );
+
+  if (!normalizedWhatsAppNumber) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    console.warn("Worker lookup by WhatsApp skipped: Supabase admin client unavailable.");
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("workers")
+    .select("id, edit_token, full_name, whatsapp_number")
+    .not("whatsapp_number", "is", null);
+
+  if (error) {
+    console.warn("Worker lookup by WhatsApp failed.", { code: error.code });
+    return null;
+  }
+
+  const worker = (data ?? []).find((row) => {
+    const existingNumber =
+      typeof row.whatsapp_number === "string"
+        ? normalizeWhatsAppNumber(row.whatsapp_number)
+        : null;
+
+    return existingNumber === normalizedWhatsAppNumber;
+  });
+
+  if (!worker?.edit_token || !isValidEditToken(worker.edit_token)) {
+    return null;
+  }
+
+  return {
+    editToken: worker.edit_token,
+    workerId: worker.id,
+    fullName: worker.full_name || "tu perfil"
+  };
+}
+
 export function hasBlockedText(values: string[]) {
   const text = values.join(" ").toLowerCase();
 
