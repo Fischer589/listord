@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { getBrowserSessionId, trackEvent } from "@/lib/analytics";
+import { isBoostActive } from "@/lib/boost";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import type { Worker } from "@/lib/types";
 import {
@@ -23,7 +24,7 @@ const INVALID_WHATSAPP_MESSAGE =
   "Escribe un WhatsApp válido para activar tu acceso.";
 const FALLBACK_PRIMARY_SKILL = "Trabajador disponible";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 function getWorkerSkills(worker: Worker) {
   return Array.isArray(worker.skills)
@@ -85,7 +86,7 @@ function hasCompleteProfile(worker: Worker): boolean {
   );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Component ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export function WorkerCard({ worker }: { worker: Worker }) {
   const fullName = worker.full_name || "Trabajador ListoRD";
@@ -103,6 +104,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
 
   const profileAge = getProfileAge(worker.created_at);
   const isComplete = hasCompleteProfile(worker);
+  const isBoosted = isBoostActive({ boostExpiresAt: worker.boost_expires_at ?? null });
 
   // ── State ──
   const [showPaywall, setShowPaywall] = useState(false);
@@ -121,6 +123,9 @@ export function WorkerCard({ worker }: { worker: Worker }) {
         if (!entry?.isIntersecting) return;
         try {
           trackEvent("worker_view", { worker_id: worker.id });
+          if (isBoosted) {
+            trackEvent("boosted_profile_view", { worker_id: worker.id });
+          }
         } catch (error) {
           console.warn("Worker view analytics failed.", {
             name: error instanceof Error ? error.name : "UnknownError"
@@ -132,7 +137,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
     );
     observer.observe(card);
     return () => observer.disconnect();
-  }, [worker.id]);
+  }, [worker.id, isBoosted]);
 
   // ── Handlers (ALL UNTOUCHED) ──
 
@@ -148,6 +153,9 @@ export function WorkerCard({ worker }: { worker: Worker }) {
     setContactError("");
     try {
       trackEvent("contact_click", { worker_id: selectedWorker.id });
+      if (isBoosted) {
+        trackEvent("boost_contact_initiated", { worker_id: selectedWorker.id });
+      }
     } catch (error) {
       console.warn("Contact click analytics failed.", {
         name: error instanceof Error ? error.name : "UnknownError"
@@ -289,7 +297,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────────────────────────────────────────
 
   return (
     <article className="wc" ref={cardRef}>
