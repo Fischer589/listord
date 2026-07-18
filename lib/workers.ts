@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseClient } from "./supabase";
 import { workerMatchesCity, workerMatchesSkill } from "./search";
+import { isBoostActive } from "./boost";
 import type { Worker } from "./types";
 
 type WorkerFilters = {
@@ -45,7 +46,9 @@ const HOMEPAGE_WORKER_SELECT = `
   rating_count,
   hired_count,
   experience,
-  income_type
+  income_type,
+  last_boosted_at,
+  boost_expires_at
 `;
 
 type HomepageWorkerRow = Pick<
@@ -66,6 +69,8 @@ type HomepageWorkerRow = Pick<
   | "hired_count"
   | "experience"
   | "income_type"
+  | "last_boosted_at"
+  | "boost_expires_at"
 >;
 
 type SupabaseErrorDetails = {
@@ -85,10 +90,23 @@ export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
  * All filtering is done post-fetch so no Supabase schema changes are needed.
  */
 function applyFilters(workers: Worker[], filters: WorkerFilters): Worker[] {
-  // Sort: featured first, then by original order (created_at DESC from DB)
-  const featured = workers.filter(w => w.is_featured === true);
-  const regular  = workers.filter(w => w.is_featured !== true);
-  const sorted   = [...featured, ...regular];
+  const now = new Date();
+
+  // Sort: active boosts first (most recently boosted wins), then featured,
+  // then original order (created_at DESC from DB). Boost priority never
+  // reorders across category/city — this sort runs on the already-scoped
+  // list, and the .filter() below still applies every existing filter.
+  const boosted = workers
+    .filter(w => isBoostActive({ boostExpiresAt: w.boost_expires_at ?? null }, now))
+    .sort((a, b) => {
+      const aTime = a.last_boosted_at ? new Date(a.last_boosted_at).getTime() : 0;
+      const bTime = b.last_boosted_at ? new Date(b.last_boosted_at).getTime() : 0;
+      return bTime - aTime;
+    });
+  const boostedIds = new Set(boosted.map(w => w.id));
+  const featured = workers.filter(w => !boostedIds.has(w.id) && w.is_featured === true);
+  const regular  = workers.filter(w => !boostedIds.has(w.id) && w.is_featured !== true);
+  const sorted   = [...boosted, ...featured, ...regular];
 
   return sorted.filter(worker => {
     // City — normalized partial match
