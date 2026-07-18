@@ -35,6 +35,9 @@ export type Worker = {
   // Phase 6 — worker monetization tiers
   is_featured?: boolean | null;
   is_pro?: boolean | null;
+  // Worker profile boost — paid visibility refresh
+  last_boosted_at?: string | null;
+  boost_expires_at?: string | null;
 };
 
 export type Employer = {
