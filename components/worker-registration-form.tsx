@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useFormState } from "react-dom";
 import type React from "react";
 import type { WorkerRegistrationActionState } from "@/app/trabajadores/registro/page";
+import { BoostProfileButton } from "@/components/boost-profile-button";
 import type { WorkStyle } from "@/lib/types";
 
 type WorkStyleOption = {
@@ -42,6 +44,29 @@ export function WorkerRegistrationForm({
   const success = state.success;
   const hasJobCategoryError = state.jobCategoryError;
   const supabaseError = state.supabaseError;
+  const existingProfile = state.existingProfile;
+
+  if (existingProfile) {
+    return (
+      <div className="mt-5 min-w-0 overflow-hidden rounded-2xl border border-hoja/25 bg-hoja/10 p-6 shadow-soft">
+        <p className="text-xl font-black text-ink">
+          Este número ya está registrado en ListoRD.
+        </p>
+        <p className="mt-2 font-semibold leading-7 text-ink/70">
+          Ya existe un perfil asociado con este número.
+        </p>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href={`/trabajadores/editar?token=${encodeURIComponent(existingProfile.editToken)}`}
+            className="tap-target inline-flex items-center justify-center rounded-xl border border-ink/15 bg-white px-4 py-3 text-center font-black text-ink"
+          >
+            Editar mi perfil
+          </Link>
+          <BoostProfileButton editToken={existingProfile.editToken} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
