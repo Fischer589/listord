@@ -9,6 +9,10 @@ import { normalizeWhatsAppNumber } from "@/lib/whatsapp";
 import { BOOST_AMOUNT_CENTS, BOOST_CURRENCY } from "@/lib/boost";
 import { activateWorkerBoost } from "@/lib/boost-data";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import {
+  EMPLOYER_DEPOSIT_AMOUNT_CENTS,
+  EMPLOYER_DEPOSIT_CURRENCY
+} from "@/lib/employer-deposit";
 
 export const runtime = "nodejs";
 
@@ -68,12 +72,17 @@ export async function POST(request: Request) {
 
   const session = event.data.object as Stripe.Checkout.Session;
 
-  // ─── Worker profile boost — one-time RD$100 payment ─────────────
+  // ─── Worker profile boost — one-time RD$100 payment ───────────
   // Handled separately from the employer premium-access flow below (which
   // owns the weekly/monthly subscription branch). Kept in the same route
   // per the existing single-webhook architecture.
   if (session.metadata?.purpose === "worker_boost") {
     return handleWorkerBoostWebhook(session);
+  }
+
+  // ─── Employer deposit — one-time RD$3,000 payment ──────────
+  if (session.metadata?.purpose === "employer_deposit") {
+    return handleEmployerDepositWebhook(session);
   }
 
   const plan = session.metadata?.plan;
@@ -188,6 +197,100 @@ async function handleWorkerBoostWebhook(session: Stripe.Checkout.Session) {
     });
     return NextResponse.json(
       { error: "No pudimos activar el impulso." },
+      { status: 500 }
+    );
+  }
+}
+
+
+async function handleEmployerDepositWebhook(session: Stripe.Checkout.Session) {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    console.warn("Employer deposit webhook skipped: Supabase admin client unavailable.");
+    return NextResponse.json(
+      { error: "No pudimos procesar el evento de pago." },
+      { status: 500 }
+    );
+  }
+
+  // Idempotency guard: if this session was already marked paid, do nothing.
+  const { data: existing } = await supabase
+    .from("employer_payments")
+    .select("status")
+    .eq("stripe_session_id", session.id)
+    .maybeSingle();
+
+  if (existing?.status === "paid") {
+    return NextResponse.json({ received: true, already_processed: true });
+  }
+
+  // Verify payment actually succeeded before touching anything.
+  if (session.payment_status !== "paid") {
+    if (session.payment_status === "unpaid" && session.status === "expired") {
+      await supabase
+        .from("employer_payments")
+        .update({ status: "failed" })
+        .eq("stripe_session_id", session.id);
+    }
+    return NextResponse.json({ received: true });
+  }
+
+  // Verify amount + currency match the expected deposit price — never trust
+  // the client, and never mark a payment as paid for a tampered/partial amount.
+  const amountTotal = session.amount_total ?? 0;
+  const currency = (session.currency || "").toLowerCase();
+
+  if (amountTotal !== EMPLOYER_DEPOSIT_AMOUNT_CENTS || currency !== EMPLOYER_DEPOSIT_CURRENCY) {
+    console.error("Employer deposit webhook amount/currency mismatch — refusing to mark paid.", {
+      sessionId: session.id,
+      amountTotal,
+      currency
+    });
+    return NextResponse.json(
+      { error: "Monto o moneda no coinciden con el depósito esperado." },
+      { status: 400 }
+    );
+  }
+
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id ?? null;
+  const customerDetails = session.customer_details;
+
+  try {
+    const { error } = await supabase
+      .from("employer_payments")
+      .update({
+        status: "paid",
+        stripe_payment_id: paymentIntentId,
+        customer_name: customerDetails?.name ?? null,
+        customer_email: customerDetails?.email ?? null,
+        customer_phone: customerDetails?.phone ?? null,
+        paid_at: new Date().toISOString()
+      })
+      .eq("stripe_session_id", session.id);
+
+    if (error) {
+      console.error("Employer deposit payment update failed.", {
+        sessionId: session.id,
+        code: error.code
+      });
+      return NextResponse.json(
+        { error: "No pudimos registrar el pago." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("Employer deposit webhook failed unexpectedly.", {
+      sessionId: session.id,
+      message: error instanceof Error ? error.message : String(error)
+    });
+    return NextResponse.json(
+      { error: "No pudimos registrar el pago." },
       { status: 500 }
     );
   }
