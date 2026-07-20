@@ -8,7 +8,7 @@ import type { Worker } from "@/lib/types";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// ─── Server Actions ──────────────────────────────────────────────
+// ─── Server Actions ──────────────────────────────────
 
 async function approveWorker(formData: FormData) {
   "use server";
@@ -89,7 +89,7 @@ async function approveLocalTestWorker() {
   revalidatePath("/");
 }
 
-// ─── Data ───────────────────────────────────────────────────────────
+// ─── Data ──────────────────────────────────────────────────────────────
 
 type AdminWorkersResult = {
   approvedCount: number;
@@ -158,7 +158,7 @@ async function getAdminWorkers(): Promise<AdminWorkersResult> {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "?";
@@ -175,7 +175,7 @@ function tabClass(active: boolean) {
     : "rounded-md border border-black/10 bg-white px-3 py-1.5 text-xs font-bold text-black/60 hover:bg-black/5";
 }
 
-// ─── Page ───────────────────────────────────────────────────────────
+// ─── Page ──────────────────────────────────────────────────────────────
 
 export default async function AdminWorkersPage({
   searchParams
@@ -211,6 +211,12 @@ export default async function AdminWorkersPage({
                 className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5"
               >
                 ← Dashboard
+              </a>
+              <a
+                href="/admin/employer-requests"
+                className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5"
+              >
+                Solicitudes
               </a>
               <a
                 href="/admin/logout"
