@@ -146,6 +146,14 @@ export function AppHeader() {
                 >
                   Soluciones Empresariales
                 </Link>
+                <Link
+                  href="/employee-request-form"
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                  className="tap-target rounded-xl px-3 py-3 text-sm font-bold text-[var(--ink)] hover:bg-[var(--surface)]"
+                >
+                  Solicitar personal
+                </Link>
               </nav>
             </div>
           )}
