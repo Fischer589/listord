@@ -11,7 +11,7 @@ import {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// ─── Server Actions ──────────────────────────────────
+// ─── Server Actions ──────────────────
 
 async function updateEmployerRequestStatus(formData: FormData) {
   "use server";
@@ -37,7 +37,7 @@ async function updateEmployerRequestStatus(formData: FormData) {
   revalidatePath("/admin/employer-requests");
 }
 
-// ─── Data ──────────────────────────────────────────────────────────────
+// ─── Data ──────────────────────────────────────────────────
 
 async function getEmployerRequests(): Promise<{
   requests: EmployerRequest[];
@@ -83,7 +83,7 @@ async function getEmployerRequests(): Promise<{
   return { requests, countsByStatus };
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────
 
 function tabClass(active: boolean) {
   return active
@@ -106,7 +106,7 @@ function statusBadgeClass(status: EmployerRequestStatus) {
   }
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────
 
 export default async function AdminEmployerRequestsPage({
   searchParams
@@ -146,6 +146,12 @@ export default async function AdminEmployerRequestsPage({
                 className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5"
               >
                 Trabajadores
+              </a>
+              <a
+                href="/admin/employer-payments"
+                className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5"
+              >
+                Depósitos
               </a>
             </div>
           </div>
