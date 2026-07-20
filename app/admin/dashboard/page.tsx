@@ -5,7 +5,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// ─── Data fetching ────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─── Data fetching ────────────────────────────────────────────────────────────────────────────────
 
 async function getDashboardStats() {
   noStore();
@@ -99,7 +99,7 @@ async function getDashboardStats() {
   };
 }
 
-// ─── Components ────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─── Components ────────────────────────────────────────────────────────────────────────────────
 
 function StatCard({
   label,
@@ -187,7 +187,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─── Page ────────────────────────────────────────────────────────────────────────────────
 
 export default async function AdminDashboardPage() {
   const stats = await getDashboardStats();
@@ -246,6 +246,17 @@ export default async function AdminDashboardPage() {
               }}
             >
               Solicitudes
+            </Link>
+            <Link
+              href="/admin/employer-payments"
+              style={{
+                color: "rgba(255,255,255,0.5)",
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                textDecoration: "none",
+              }}
+            >
+              Depósitos
             </Link>
           </nav>
         </div>
