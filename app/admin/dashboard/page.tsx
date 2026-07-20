@@ -236,6 +236,17 @@ export default async function AdminDashboardPage() {
             >
               Trabajadores
             </Link>
+            <Link
+              href="/admin/employer-requests"
+              style={{
+                color: "rgba(255,255,255,0.5)",
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                textDecoration: "none",
+              }}
+            >
+              Solicitudes
+            </Link>
           </nav>
         </div>
         <Link
