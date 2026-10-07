@@ -16,6 +16,9 @@ const imageHosts = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Serve stable source URLs directly to avoid Vercel image transformations
+    // and image-cache writes. next/image still preserves layout and lazy loading.
+    unoptimized: true,
     remotePatterns: imageHosts.map((hostname) => ({
       protocol: "https",
       hostname
