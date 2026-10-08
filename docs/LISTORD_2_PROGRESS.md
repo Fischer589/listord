@@ -240,3 +240,61 @@ No deployment, push, charge, outbound worker message or production migration.
 Next milestone: Phase 2C production acceptance — read-only SQL catalog/grants,
 compatibility-safe privacy/incident plan and staged migration/authorization tests;
 obtain explicit approval before any production changes. Do not expand feature scope.
+
+## 2026-10-08 — Privacy repair candidate and consent-based activation preparation
+
+Continued clean checkpoint `4650db3`; no previous phases repeated or live worker
+records accessed/changed. Prior live audit remains the source of the 378 approved,
+4 publicly visible unapproved, and zero declared-available counts.
+
+Implemented:
+
+- Transactional, unapplied worker privacy candidate: revoke table and column client
+  grants, grant only the existing public query projection, restrictive approved-only
+  SELECT and denied client writes. Existing service-role grants are preserved.
+- Fail the migration atomically if inherited roles retain sensitive-column or write
+  access, or client roles bypass RLS. No token/photo/profile/availability data edits.
+- Self-ownership boolean helper for existing authenticated contact-read policies;
+  private owner IDs remain unavailable. Identified legacy invoker outcome-trigger
+  writes as a hosted staging/rollout dependency; not silently elevated.
+- Read-only SQL catalog preflight covering roles, grants, policies, views/functions
+  and triggers. Actual live definitions and hosted staging access remain unavailable.
+- Separate server-enforced link-delivery consent and owner-verification attestations
+  in admin issuance. Worker confirmation remains explicit, fresh for 30 days, with
+  no bulk activation or automatic messages. Existing private-link/photo guards stay.
+- `docs/WORKER_PRIVACY_ACTIVATION.md`: staging gates, forward recovery, exposed-token
+  incident/recovery requirements and an inbound-first, consent-based activation pilot.
+  No claim that approved profiles consented to outreach or are currently available.
+
+Verification in this checkpoint:
+
+- `npm test`: **44 tests pass**, including new isolated PostgreSQL privacy, inherited
+  grant rejection/rollback, untouched records/photos, anonymous/authenticated private
+  column denial (including filters/order), unapproved exclusions, owner contact reads,
+  service-role free contact and explicit renew/pause. Admin/CSRF, consent, expiry,
+  matching, upload normalization and existing regression tests pass.
+- `npm run lint`: pass, no warnings/errors.
+- `npm run typecheck`: pass after correcting types in the new SQL test fixtures.
+- `npm run build`: pass, 169 generated pages.
+- `npm run test:e2e:request`: **42 desktop/mobile Chromium cases pass** against the
+  local production build, with service-role configuration explicitly blank.
+- `git diff --check`: pass. Expected missing local Supabase configuration and
+  existing React fetchPriority/color-environment test warnings do not fail checks.
+- Rechecked the photo doctrine against `lib/worker-photo.ts` and
+  `docs/PHOTO_PIPELINE.md`: varying dimensions, content validation, EXIF orientation,
+  bounded 800×800 WebP, metadata removal, deterministic worker-scoped storage and
+  direct responsive delivery remain intact. Existing photo references are untouched;
+  Vercel optimizer bypass remains enabled. Live storage/caching/Node 24 acceptance
+  and any legacy-photo backfill require the documented safe inventory/staging plan.
+
+No hosted staging validation, production migration, deployment, worker message,
+activation, token rotation, push or charge occurred. RD$299 Express stays disabled.
+Remaining blockers: authorized live SQL catalog results, hosted Supabase acceptance,
+legacy outcome trigger permissions, exposed-token containment/recovery, verified
+admin configuration and consent evidence. Existing dependency/abuse/storage P0s
+remain in the release checklist. This checkpoint prepares the privacy repair; it
+**does not establish that production access is secure**.
+
+Exact next milestone: reconcile the candidate with authorized catalog findings,
+resolve compatibility/incident gates and validate in hosted Supabase staging; obtain
+explicit approval before production remediation or the consent-based activation pilot.

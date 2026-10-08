@@ -367,3 +367,22 @@ of old edit tokens, phones and payment references; it does not erase historical
 logs, repair column grants or revoke exposed legacy tokens. Those actions require
 an approved incident/compatibility plan. Runtime/dependency and abuse-control P0s
 remain; local verification is not authorization for production activation.
+
+### Privacy/activation preparation after Phase 2C
+
+The unapplied `202610081600_worker_public_privacy.sql` candidate retains the direct
+anonymous worker-read architecture through explicit public column grants plus
+restrictive approved-only RLS. Private fields and client writes are denied, including
+pre-existing column grants; inherited privilege/bypass findings abort the transaction.
+Server-role registration, moderation, contact and availability remain separate.
+A pinned-search-path, self-only boolean ownership function supports existing contact
+read policies without granting owner-ID reads. Legacy outcome statistics triggers
+must be reconciled in hosted staging before rollout; they are not promoted to
+security definer. Public views/RPCs and actual deployed privileges require catalog
+review. No live schema or token change is implied by this local migration file.
+
+Private availability issuance now requires distinct owner-verification and
+link-consent attestations. It sends nothing and never activates a worker. The
+30-day worker-confirmation rule and default-off renewal gate remain unchanged.
+See `WORKER_PRIVACY_ACTIVATION.md` for hosted acceptance, incident/recovery gates
+and the consent-based pilot. RD$299 Express remains disabled and out of scope.

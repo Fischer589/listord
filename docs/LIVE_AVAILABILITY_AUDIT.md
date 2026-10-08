@@ -74,3 +74,20 @@ new server-side administration; no credentials were created or changed here.
 The reusable `scripts/audit-live-matching.ts` accepts a local JSON config path
 containing a public URL/anon key and prints only aggregate results. Keep credentials
 out of shell history/Git; do not run other tests with production credentials.
+
+## Privacy preparation follow-up (2026-10-08)
+
+No new live database reads or writes in this checkpoint; the counts above remain
+historical evidence. Repository history contains an April public SELECT policy
+with USING(true) and a later approved-only replacement. That history offers a
+possible drift mechanism, not proof of the current live policy definition.
+
+Prepared `supabase/preflight_worker_privacy.sql` and transactional candidate
+`202610081600_worker_public_privacy.sql`. Local PostgreSQL fixtures test broad
+legacy grants/policies, inherited-grant abort/rollback, private-column denial,
+approved-only reads and compatibility with private availability. No hosted staging
+credentials are available, so no hosted migration or full Supabase acceptance is
+claimed. The legacy contact outcome invoker trigger requires compatibility work
+before rollout. Existing potentially exposed edit tokens still need approved
+containment/rotation and recovery; column restrictions alone do not revoke them.
+See `WORKER_PRIVACY_ACTIVATION.md` for gates, forward recovery and consent pilot.

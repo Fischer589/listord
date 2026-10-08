@@ -125,7 +125,8 @@ test("HTTP renewal requires private key, server gate, CSRF checks and admin auth
         if (cookie !== "test-admin") await assert.rejects(issue(req({ workerId: id, ownershipConfirmed: true })), /NEXT_REDIRECT/);
         else {
           assert.equal((await issue(req({ workerId: id, ownershipConfirmed: false }))).status, 400);
-          const issued = await issue(req({ workerId: id, ownershipConfirmed: true }));
+          assert.equal((await issue(req({ workerId: id, ownershipConfirmed: true }))).status, 400, "consent is required separately from ownership");
+          const issued = await issue(req({ workerId: id, ownershipConfirmed: true, consentConfirmed: true }));
           assert.equal(issued.status, 200); assert.match((await issued.json()).path, /^\/trabajadores\/disponibilidad#clave=[a-f0-9]{64}$/);
         }
       });

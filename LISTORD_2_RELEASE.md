@@ -33,6 +33,11 @@ feature work and prepare the explicitly approved deployment.
   and confirmed-state matching implemented behind a default-off gate. Additive
   SQL is local/unapplied. See `docs/LIVE_AVAILABILITY_AUDIT.md`.
 
+- Privacy/activation preparation after `4650db3`: transactional public-column grants,
+  restrictive approval policies, inherited-grant rejection and consent-attested link
+  issuance. Candidate SQL tested against isolated PostgreSQL fixtures; hosted
+  staging and production remain untouched. See `docs/WORKER_PRIVACY_ACTIVATION.md`.
+
 ## Remaining release-critical work
 
 **P0 — safe release**
@@ -40,7 +45,9 @@ feature work and prepare the explicitly approved deployment.
 - Live HEAD queries confirmed anonymous access to edit-token/phone/owner columns
   and four unapproved rows. Complete the SQL catalog/RLS/grant preflight, repair
   public projections safely, and approve an exposed-token/log assessment and
-  rotation plan. No production privacy repair or token rotation has occurred.
+  rotation plan. Candidate repair and pilot runbook are prepared; no production
+  privacy repair or token rotation has occurred. Hosted staging must resolve legacy
+  outcome-trigger writes and audit inherited grants/views/RPCs before rollout.
 - Verify admin credentials before deploying fail-closed guards; implement secure
   worker/employer ownership and recovery without phone-only account claims.
 - Review and patch vulnerable runtime dependencies; verify Vercel Node 24 parity.
@@ -129,6 +136,13 @@ cases pass. Live read-only matching query returns an exact zero, consistent with
 zero approved rows declaring availability. Live policy exposure is a release
 blocker; renewal/migration remain disabled/unapplied despite local test success.
 
+Privacy/activation preparation: **44 unit/security/regression tests pass**, lint,
+typecheck and production build pass (169 pages); **42 desktop/mobile Chromium
+cases pass**. Isolated PostgreSQL tests validate the candidate transaction and
+availability compatibility, including rollback on inherited private grants.
+Hosted Supabase staging and live repair remain blocked/unverified. Photo upload
+normalization/direct delivery safeguards are preserved and regression-tested.
+
 ## Release acceptance checklist
 
 - [ ] Employer can specify service/location, answer relevant scope questions,
@@ -153,9 +167,11 @@ blocker; renewal/migration remain disabled/unapplied despite local test success.
 ## Next smallest vertical slice
 
 Phase 2C production acceptance: obtain authorized read-only SQL catalog/grant
-results; prepare and stage a compatibility-safe privacy repair and legacy-token
-incident plan. Verify configured admin authorization and stage the availability
-migration/owner-link workflow. Request explicit approval before production SQL,
+results using `supabase/preflight_worker_privacy.sql`, reconcile the prepared privacy
+candidate, and validate it in hosted Supabase staging. Resolve legacy outcome
+trigger permissions and exposed-token containment/recovery; verify configured admin
+authorization and the opt-in owner-link workflow. The isolated fixture test is not
+hosted staging acceptance. Request explicit approval before production SQL,
 token rotation or deployment. Do not enable renewal until these checks pass.
 Then resume secure employer ownership/opportunity responses; payments stay gated.
 
