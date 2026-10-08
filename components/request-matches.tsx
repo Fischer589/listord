@@ -58,7 +58,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
       {result && <>
         <h3>Encontramos {result.count} trabajadores compatibles</h3>
         <p>Coinciden en oficio, ciudad y disponibilidad declarada. No han confirmado interés ni el horario, los requisitos o todas las tareas de tu solicitud.</p>
-        <p>Solo incluimos perfiles aprobados creados en los últimos {result.windowDays} días que indican disponibilidad. Los antiguos o con datos faltantes quedan fuera hasta renovar esa información.</p>
+        <p>{result.freshness === "confirmed" ? `Solo incluimos perfiles aprobados que renovaron su disponibilidad en los últimos ${result.windowDays} días. La disponibilidad vencida o pausada queda fuera.` : `Solo incluimos perfiles aprobados creados en los últimos ${result.windowDays} días que indican disponibilidad. Los antiguos o con datos faltantes quedan fuera hasta renovar esa información.`}</p>
         {result.count === 0 && <p className="request-empty">No encontramos perfiles que cumplan estos criterios. Puede haber personas con disponibilidad desconocida o perfiles antiguos. Puedes editar tu solicitud o explorar el directorio; no enviaremos invitaciones ni cobraremos.</p>}
         {result.workers.length > 0 && <ul className="request-match-list">{result.workers.slice(0, visible).map(worker => <li key={worker.id}>
           <h3>{worker.name}</h3><p>{worker.city}</p>

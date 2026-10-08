@@ -416,6 +416,7 @@ export default async function EditWorkerPage({
 
         {worker && (
           <>
+            <Link href="/trabajadores/disponibilidad" className="btn-secondary">Mi disponibilidad (enlace privado)</Link>
             {missingProfileQualityFields.length > 0 && (
               <div className="mt-5 rounded-lg border border-mango/40 bg-mango/15 p-4 font-bold text-ink">
                 Completa tu perfil para recibir más clientes

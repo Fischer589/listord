@@ -1,3 +1,4 @@
+import { isFreshAvailability } from "./availability";
 import { CATEGORIES } from "./categories";
 import { normalizeText } from "./search";
 import { emptyRequest, REQUEST_SCHEMAS, validateRequest, type RequestDraft } from "./request-specification";
@@ -8,10 +9,11 @@ export const MATCH_LIMIT = 1000;
 export type MatchRow = {
   id: string; full_name: string | null; city: string | null; skills: string[] | null;
   is_verified: boolean | null; available_now: boolean | null; created_at: string | null;
+  availability_confirmed_at?: string | null;
   desired_income: number | string | null; income_type: string | null;
 };
 export type RequestMatch = { id: string; name: string; city: string; reasons: string[]; scopeEvidence: string[] };
-export type MatchResult = { count: number; workers: RequestMatch[]; checkedAt: string; windowDays: number };
+export type MatchResult = { count: number; workers: RequestMatch[]; checkedAt: string; windowDays: number; freshness?: "legacy" | "confirmed" };
 
 /** Untrusted JSON boundary: validate types before invoking the shared form validator.
  * Unknown keys are rejected, never forwarded to the DB or to another worker. */
@@ -47,11 +49,14 @@ const TRADE_ALIASES: Record<string, string[]> = {
   carpinteria: ["carpintero", "carpintera", "ebanista"], seguridad: ["vigilante", "guardia de seguridad", "vigilancia"],
 };
 const UNITS: Record<string, string> = { "por hora": "hourly", "por día": "daily", "por semana": "weekly", "por mes": "monthly" };
-export function matchWorker(row: MatchRow, draft: RequestDraft, now: Date): RequestMatch | null {
+export function matchWorker(row: MatchRow, draft: RequestDraft, now: Date, freshness: "legacy" | "confirmed" = "legacy"): RequestMatch | null {
   const created = Date.parse(row.created_at ?? "");
   // Creation is only a conservative upper bound on the age of the availability
   // flag. updated_at cannot refresh eligibility; paid boosts must not revive it.
-  if (row.is_verified !== true || row.available_now !== true || !Number.isFinite(created) || created > now.getTime() || created < now.getTime() - MATCH_WINDOW_DAYS * 86400000) return null;
+  const fresh = freshness === "confirmed"
+    ? isFreshAvailability(row.available_now, row.availability_confirmed_at, now)
+    : Number.isFinite(created) && created <= now.getTime() && created >= now.getTime() - MATCH_WINDOW_DAYS * 86400000;
+  if (row.is_verified !== true || row.available_now !== true || !fresh) return null;
   if (!row.id || !row.full_name?.trim() || !row.city || !Array.isArray(row.skills) || row.skills.some(skill => typeof skill !== "string")) return null;
   if (normalizeText(row.city) !== normalizeText(draft.city)) return null;
   const category = CATEGORIES.find(c => c.searchKey === draft.category)!;
@@ -75,11 +80,11 @@ export function matchWorker(row: MatchRow, draft: RequestDraft, now: Date): Requ
 }
 
 export type MatchPage = { data: MatchRow[] | null; count: number | null; error: unknown };
-export async function findMatches(draft: RequestDraft, load: () => PromiseLike<MatchPage>, now = new Date()): Promise<MatchResult> {
+export async function findMatches(draft: RequestDraft, load: () => PromiseLike<MatchPage>, now = new Date(), freshness: "legacy" | "confirmed" = "legacy"): Promise<MatchResult> {
   const { data, count, error } = await load();
   // Refuse truncated/partial data instead of advertising an inaccurate count.
   if (error || !data || count === null || count > MATCH_LIMIT || data.length !== count || new Set(data.map(row => row.id)).size !== data.length) throw new Error("MATCH_DATA_UNAVAILABLE");
-  const workers = data.map(row => matchWorker(row, draft, now)).filter((row): row is RequestMatch => row !== null);
+  const workers = data.map(row => matchWorker(row, draft, now, freshness)).filter((row): row is RequestMatch => row !== null);
   workers.sort((a, b) => b.scopeEvidence.length - a.scopeEvidence.length || a.id.localeCompare(b.id));
-  return { count: workers.length, workers, checkedAt: now.toISOString(), windowDays: MATCH_WINDOW_DAYS };
+  return { count: workers.length, workers, checkedAt: now.toISOString(), windowDays: MATCH_WINDOW_DAYS, freshness };
 }

@@ -1,3 +1,5 @@
+import { AdminAvailabilityAccess } from "@/components/admin-availability-access";
+import { availabilityRenewalEnabled } from "@/lib/availability";
 import { requireAdmin } from "@/lib/admin-auth";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import Image from "next/image";
@@ -396,6 +398,7 @@ export default async function AdminWorkersPage({
                         </span>
                       )}
 
+                      {worker.is_verified && availabilityRenewalEnabled() && <AdminAvailabilityAccess workerId={worker.id} />}
                       {!worker.is_verified ? (
                         <>
                           <form action={approveWorker} className="inline">

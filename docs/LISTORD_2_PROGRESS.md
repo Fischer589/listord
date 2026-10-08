@@ -173,3 +173,70 @@ Exact next slice: Phase 2C — verify live worker schema/policies read-only, the
 implement authorized worker activity/availability renewal with a dedicated timestamp
 and stale-state handling. Stage-test any additive migration before requesting
 production execution approval; do not replace the conservative gate prematurely.
+
+## Phase 2C — live evidence and gated availability renewal (2026-10-08, active day 2)
+
+Recovered clean checkpoint `246a02a`; initial interrupted work had read metadata
+only. Used authorized Vercel metadata/public Supabase configuration for read-only
+GET/HEAD checks, not service credentials or production mutations. Full evidence
+and exact timestamps: `LIVE_AVAILABILITY_AUDIT.md`.
+
+Verified live findings: 378 approved rows; 4 unapproved rows anonymously visible;
+0 approved rows declaring available_now; exact installed-SDK Phase 2B matching
+query HTTP 200 with count 0 and zero records. Limpieza/Puerto Plata matching on
+that result returned 0. HEAD permits selecting edit-token, phone and owner-ID
+columns, without retrieving any of their values. Treat existing tokens as exposed.
+SQL catalog/RLS/grant definitions remain unavailable; no claim of a full policy
+review or successful production renewal. Temporary public configuration was removed.
+
+Implemented:
+
+- Private availability capability links, separate from untrusted legacy edit
+  tokens. Authorized admin must attest actual owner verification before issuance.
+  New random 256-bit secrets are delivered as URL fragments and stored only hashed;
+  access expires in 180 days, reissue invalidates the predecessor. No messages sent.
+- Worker confirmation/pause with no registration or duplicate profile. The private
+  capability is checked server-side; DB RPC locks/rechecks approval and records its
+  own confirmation time atomically with available_now. Users cannot supply dates.
+- Additive private table/RPC migration, tested in isolated Postgres, UNAPPLIED.
+  No existing profile/photo/token/payment was backfilled, rotated or removed.
+- Default-off WORKER_AVAILABILITY_RENEWAL_ENABLED gates reads/writes/admin UI.
+  Default matching retains the conservative creation-age 30-day safeguard. Once
+  security/migration acceptance permits activation, matching/contact require a
+  fresh explicit confirmation within 30 days plus approval/availability/unexpired
+  private access. Stale, future, missing, paused and revoked state fails closed.
+- Worker referrers suppressed; page-view analytics excludes all query strings so
+  it no longer records edit tokens/phones/payment references from URLs. Historical
+  exposure/logs and live grants remain incident-response/release blockers.
+- RD$299 Express and free contextual contact preserved; checkout stays disabled.
+
+Verification:
+
+- `npm test`: all **7 regression/unit test files pass**.
+- Direct availability suite: all **3 test groups pass**, exercising 30-day boundaries,
+  old-profile renewal, authorization/CSRF/gating, server-time writes, private grants,
+  no backfill, record/photo preservation, pause, expired/reissued capabilities,
+  approved-worker checks, real handlers/SDK with controlled transport and matching.
+- A new query fixture initially returned a timestamp later than the query snapshot;
+  the future-time safeguard correctly excluded it. Corrected the fixture to respect
+  the production query's upper bound, then reran the complete suite successfully.
+- `npm run lint`: passes without warnings/errors.
+- `npm run typecheck`: passes.
+- `npm run build`: passes, 169 generated pages. Availability page ~97.6 kB first-load.
+- `npm run test:e2e:request`: **42 cases pass** in desktop/mobile-emulated Chromium,
+  including all prior category/matching flows and new renew/pause/invalid-link,
+  fragment removal, analytics redaction and no-referrer checks. Test server enables
+  the gate locally with the service-role key explicitly blank; browser state tests
+  use transport fixtures and cannot mutate the production database.
+- `git diff --check`: passes. All image safeguard regressions retained.
+
+Production activation remains BLOCKED: finish authorized SQL policy/grant audit,
+repair effective public sensitive-column/unapproved access, assess historical token
+exposure/rotation, configure verified admin access, and stage/approve the new
+migration and owner-link process. Default gate must remain false until acceptance.
+Runtime dependency/Node parity, anti-abuse and other existing P0/P1 checks remain.
+No deployment, push, charge, outbound worker message or production migration.
+
+Next milestone: Phase 2C production acceptance — read-only SQL catalog/grants,
+compatibility-safe privacy/incident plan and staged migration/authorization tests;
+obtain explicit approval before any production changes. Do not expand feature scope.

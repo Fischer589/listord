@@ -12,7 +12,8 @@ export function AnalyticsTracker() {
   useEffect(() => {
     try {
       trackEvent("page_view", {
-        path: queryString ? `${pathname}?${queryString}` : pathname
+        // Never send capability tokens, phones or payment references from URLs.
+        path: pathname
       });
     } catch (error) {
       console.warn("Page view analytics failed.", {

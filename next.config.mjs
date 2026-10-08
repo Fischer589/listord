@@ -28,6 +28,9 @@ const nextConfig = {
       hostname
     }))
   },
+  async headers() {
+    return [{ source: "/trabajadores/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] }];
+  },
   async redirects() {
     return [
       {

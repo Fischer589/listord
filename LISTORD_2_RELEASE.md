@@ -28,14 +28,19 @@ feature work and prepare the explicitly approved deployment.
   exact complete-result counts, private results, free contextual handoff and disabled
   RD$299 Express card. No production data changes or payment implementation.
 
+- Phase 2C: live anonymous read audit and exact matching-query verification;
+  private availability links, admin issuance, worker confirm/pause, 30-day expiry
+  and confirmed-state matching implemented behind a default-off gate. Additive
+  SQL is local/unapplied. See `docs/LIVE_AVAILABILITY_AUDIT.md`.
+
 ## Remaining release-critical work
 
 **P0 — safe release**
 
-- Inspect live schema, worker column grants/RLS, accounts and storage using the
-  read-only preflight. Public whole-row worker access may expose phone/edit-token
-  columns. Prepare a compatibility-safe privacy migration and assess whether
-  token rotation is necessary; never rotate or delete records without approval.
+- Live HEAD queries confirmed anonymous access to edit-token/phone/owner columns
+  and four unapproved rows. Complete the SQL catalog/RLS/grant preflight, repair
+  public projections safely, and approve an exposed-token/log assessment and
+  rotation plan. No production privacy repair or token rotation has occurred.
 - Verify admin credentials before deploying fail-closed guards; implement secure
   worker/employer ownership and recovery without phone-only account claims.
 - Review and patch vulnerable runtime dependencies; verify Vercel Node 24 parity.
@@ -57,10 +62,10 @@ feature work and prepare the explicitly approved deployment.
   paid ranking/sales safely while preserving financial records/entitlements.
 - Public, moderated opportunities with verified ownership, explicit publication
   consent, complete decision terms, interest/decline and lifecycle handling.
-- Verified worker activity/availability renewal: current matching conservatively
-  excludes profiles older than 30 days because no confirmation timestamp exists.
-  Add supported schedule/qualification evidence; do not treat compatibility as
-  confirmed interest. Safe moderation/reporting and lifecycle remain required.
+- Stage and approve the new private availability migration and owner-verification
+  procedure. Enable renewal only after privacy/admin acceptance; until then the
+  existing conservative 30-day gate stays in place. Supported schedule/qualification
+  evidence, moderation/reporting and lifecycle remain required.
 - Mobile/keyboard verification, focus/error handling, source-image performance,
   SEO and private timing/abandonment/zero-result metrics for the core journey.
 
@@ -83,14 +88,16 @@ feature work and prepare the explicitly approved deployment.
 
 ## Current blockers / verification limits
 
-- No local production Supabase credentials or schema snapshot. No production SQL
-  has run. Isolated Postgres fixtures do not prove live policy compatibility.
+- Authorized public-key live reads verified 378 approved workers, zero declared
+  available and zero Phase 2B candidates. SQL catalog/policy definitions and
+  privileged staging access remain unavailable. No production SQL has run.
 - Existing paid worker entitlements and account-recovery operations require owner
   confirmation before their production migration. No payment changes activated.
-- Matching cannot verify live counts without Supabase configuration. Repository
-  schema lacks activity/availability renewal evidence; new results explicitly
-  exclude old/unknown records rather than inventing availability. Production
-  eligibility, consent/reachability and anti-abuse acceptance remain blocked.
+- Production availability renewal is disabled: migration and security remediation
+  are unapplied, current edit tokens are not trusted for new authority, and Vercel
+  project metadata did not list required admin credentials. New private links
+  require an actually verified owner. Consent/reachability and abuse controls
+  remain release blockers.
 - The team deployment pause was reported during the usage audit. Its resolution
   has not been established; no deployment attempted.
 - Full marketplace browser/mobile acceptance and real storage/payment regressions
@@ -116,6 +123,12 @@ pass. Lint, typecheck and production build pass (166 generated pages). All 36
 desktop/mobile Chromium cases pass. Matching tests use controlled records and SDK
 transport fixtures; no production inventory/count or live policy validation claimed.
 
+Phase 2C: all seven regression files and three new availability test groups pass;
+lint, typecheck and build pass (169 generated pages); 42 desktop/mobile Chromium
+cases pass. Live read-only matching query returns an exact zero, consistent with
+zero approved rows declaring availability. Live policy exposure is a release
+blocker; renewal/migration remain disabled/unapplied despite local test success.
+
 ## Release acceptance checklist
 
 - [ ] Employer can specify service/location, answer relevant scope questions,
@@ -139,12 +152,12 @@ transport fixtures; no production inventory/count or live policy validation clai
 
 ## Next smallest vertical slice
 
-Phase 2C: implement verified worker activity/availability renewal and stale-state
-handling, starting with the read-only live schema/policy preflight. Prepare and
-stage-test any additive timestamp/state migration; production execution needs
-approval. Replace the conservative creation-age gate only after renewal is verified.
-Secure employer request persistence/ownership, opportunity responses and Express
-payment/fulfillment remain subsequent release slices. Do not activate charges.
+Phase 2C production acceptance: obtain authorized read-only SQL catalog/grant
+results; prepare and stage a compatibility-safe privacy repair and legacy-token
+incident plan. Verify configured admin authorization and stage the availability
+migration/owner-link workflow. Request explicit approval before production SQL,
+token rotation or deployment. Do not enable renewal until these checks pass.
+Then resume secure employer ownership/opportunity responses; payments stay gated.
 
 Planned active-day budget: days 1–3 foundation/P0; 4–6 request engine/entry;
 7–9 discovery/contact; 10–12 opportunities/interest/lifecycle; 13–14 acceptance.

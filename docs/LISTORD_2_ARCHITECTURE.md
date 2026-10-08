@@ -302,3 +302,68 @@ this checkpoint; no checkout URL or bank instructions exist. Zero/error states
 never initiate outreach or payment. Actual provider consent/reachability, verified
 payment confirmation, fulfillment terms/remedy, shortlist and response collection
 are still future release work, not fulfilled promises in this checkpoint.
+
+## Phase 2C — verified live reads and private availability renewal
+
+See `LIVE_AVAILABILITY_AUDIT.md` for timestamped evidence. The real Phase 2B query
+is compatible and returns zero candidates; 378 approved rows exist, none declaring
+availability. Effective anonymous reads also expose unapproved rows and sensitive
+worker columns. No private values were retrieved. Full SQL policy/grant definitions
+remain inaccessible through the available public-key REST path.
+
+### Authorization decision
+
+Legacy `edit_token` values are potentially publicly readable, so they MUST NOT
+bootstrap new availability authority. No phone-only claim or automatic token reuse.
+Instead, after actual owner verification, an authenticated admin can issue a new
+256-bit private availability link in the existing worker admin page. The server
+requires both admin authorization and explicit verification attestation. The link
+controls availability only, not profile identity or payment. Issuing a link sends
+no message; secure delivery to the verified owner remains an operator task.
+
+The additive, UNAPPLIED `202610081400_worker_availability.sql` creates a private
+worker-ID-keyed table. It stores only SHA-256 of the random capability, a 180-day
+access expiry, ownership-verification/issuance timestamps, availability and its
+confirmation time. Anonymous/authenticated roles cannot read/write it or execute
+the RPCs; only server service-role access is granted. No legacy worker, photo,
+payment or token is backfilled, deleted or rotated. Reissuing this new link revokes
+its predecessor without modifying legacy profile links; worker confirmation is
+still required. A caller's boolean verification assertion has meaning only after
+the server has authenticated the admin; it is not automated identity verification.
+
+Worker `/trabajadores/disponibilidad#clave=...` consumes the private URL fragment
+and clears it from browser history. Fragments are not sent in page requests. No
+registration, second profile or full profile edit is required. Two actions: confirm
+availability or pause. The JSON POST sends the private capability only to the
+availability endpoint; it is hashed server-side and never echoed. The database
+locks the worker, rechecks approval/current capability/expiry, and atomically
+records server time and updates the existing `available_now` flag. A client cannot
+supply a worker ID or renewal timestamp. Invalid, expired and unapproved access
+produce generic denial. Pausing immediately removes confirmed-mode eligibility.
+Workers must retain their original private link; page refresh without the fragment
+requires reopening it. Lost/expired access goes through existing secure recovery.
+
+### Freshness and rollout gate
+
+`WORKER_AVAILABILITY_RENEWAL_ENABLED` defaults false. Both issuance and renewal
+fail closed and the existing Phase 2B creation-age/30-day matching guard remains
+intact. No production environment was changed. Enabling is expressly blocked on
+live privacy repair, admin configuration, approved migration and staging acceptance.
+The private table alone does NOT repair existing workers' RLS/grant exposure.
+
+With the gate enabled, matching uses a service-role read of the private availability
+record joined to an approved public-safe worker projection. Both available flags
+must be true, capability access unexpired, and the database-stamped confirmation
+strictly newer than now minus 30 days and not in the future. Old worker profiles
+can qualify after an explicit fresh confirmation; creation dates/boosts/profile
+edits cannot renew them. Missing migration/data/configuration produces an error,
+never a fallback to a stale or partial match count. Contact rechecks the same
+private state before returning the free contextual WhatsApp handoff. Schedule and
+interest remain unconfirmed; Express remains RD$299 with checkout disabled.
+
+For capability hygiene, worker routes send no-referrer headers and page-view
+analytics no longer include URL query strings anywhere. This prevents new tracking
+of old edit tokens, phones and payment references; it does not erase historical
+logs, repair column grants or revoke exposed legacy tokens. Those actions require
+an approved incident/compatibility plan. Runtime/dependency and abuse-control P0s
+remain; local verification is not authorization for production activation.
