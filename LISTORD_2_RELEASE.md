@@ -24,6 +24,10 @@ feature work and prepare the explicitly approved deployment.
   Spanish preview and explicit copy; local draft only. Implementation day 2:
   2026-10-08. No payments implemented. See the progress log for verification.
 
+- Phase 2B: bounded server validation and real worker query, conservative eligibility,
+  exact complete-result counts, private results, free contextual handoff and disabled
+  RD$299 Express card. No production data changes or payment implementation.
+
 ## Remaining release-critical work
 
 **P0 — safe release**
@@ -48,12 +52,15 @@ feature work and prepare the explicitly approved deployment.
 
 - Worker-side service/location entry; persist/reuse the completed employer draft
   with verified ownership and server validation for later matching/publication.
-- Suitable worker results and contextual contact, reusing known request details;
-  remove the basic-contact paywall and paid ranking/sales together safely.
+- Extend verified request ownership/reuse beyond the current draft; the new matching
+  path has free contextual contact. Remove legacy directory contact paywalls and
+  paid ranking/sales safely while preserving financial records/entitlements.
 - Public, moderated opportunities with verified ownership, explicit publication
   consent, complete decision terms, interest/decline and lifecycle handling.
-- Freshness-aware availability and explainable matching; comparable compensation
-  units; truthful trust signals; safe moderation/reporting and empty/error states.
+- Verified worker activity/availability renewal: current matching conservatively
+  excludes profiles older than 30 days because no confirmation timestamp exists.
+  Add supported schedule/qualification evidence; do not treat compatibility as
+  confirmed interest. Safe moderation/reporting and lifecycle remain required.
 - Mobile/keyboard verification, focus/error handling, source-image performance,
   SEO and private timing/abandonment/zero-result metrics for the core journey.
 
@@ -80,6 +87,10 @@ feature work and prepare the explicitly approved deployment.
   has run. Isolated Postgres fixtures do not prove live policy compatibility.
 - Existing paid worker entitlements and account-recovery operations require owner
   confirmation before their production migration. No payment changes activated.
+- Matching cannot verify live counts without Supabase configuration. Repository
+  schema lacks activity/availability renewal evidence; new results explicitly
+  exclude old/unknown records rather than inventing availability. Production
+  eligibility, consent/reachability and anti-abuse acceptance remain blocked.
 - The team deployment pause was reported during the usage audit. Its resolution
   has not been established; no deployment attempted.
 - Full marketplace browser/mobile acceptance and real storage/payment regressions
@@ -99,6 +110,11 @@ Phase 2A: all five unit/regression test files pass; 18 new schema tests pass.
 Lint, typecheck and production build pass (164 pages). All 30 request-flow browser
 cases pass in desktop/mobile-emulated Chromium, plus two targeted viewport checks.
 Physical-device/Safari and full marketplace acceptance remain pending.
+
+Phase 2B: all six unit/regression files pass; six new matching/HTTP test groups
+pass. Lint, typecheck and production build pass (166 generated pages). All 36
+desktop/mobile Chromium cases pass. Matching tests use controlled records and SDK
+transport fixtures; no production inventory/count or live policy validation claimed.
 
 ## Release acceptance checklist
 
@@ -123,12 +139,12 @@ Physical-device/Safari and full marketplace acceptance remain pending.
 
 ## Next smallest vertical slice
 
-Phase 3A: carry the structured draft into real eligible worker matching with
-server-side validation, explainable evidence, accurate counts and truthful empty/
-error states. Verify availability/inactivity signals against the existing schema
-before claiming compatibility. Preserve free discovery; do not activate payments.
-Express payment/fulfillment follows only after its prerequisites are verified.
-Do not publish legacy leads or require registration just to explore.
+Phase 2C: implement verified worker activity/availability renewal and stale-state
+handling, starting with the read-only live schema/policy preflight. Prepare and
+stage-test any additive timestamp/state migration; production execution needs
+approval. Replace the conservative creation-age gate only after renewal is verified.
+Secure employer request persistence/ownership, opportunity responses and Express
+payment/fulfillment remain subsequent release slices. Do not activate charges.
 
 Planned active-day budget: days 1–3 foundation/P0; 4–6 request engine/entry;
 7–9 discovery/contact; 10–12 opportunities/interest/lifecycle; 13–14 acceptance.

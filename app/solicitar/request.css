@@ -24,3 +24,13 @@
 @media (max-width: 420px) { .request-pair { grid-template-columns: 1fr; } .request-actions > * { width: 100%; text-align: center; } }
 
 .request-builder h1, .request-error-box { scroll-margin-top: 6rem; }
+.request-matches { margin-top: 2rem; border-top: 1px solid var(--border-mid); padding-top: 1.5rem; }
+.request-matches h2 { font-family: var(--font-display); font-size: 1.8rem; }
+.request-matches h3 { font-size: 1.2rem; font-weight: 700; margin-top: 1rem; }
+.request-matches p { margin: .75rem 0; overflow-wrap: anywhere; }
+.request-match-list { list-style: none; }
+.request-match-list li { border: 1px solid var(--border-mid); padding: 1rem; border-radius: var(--r); margin-top: 1rem; }
+.request-express { background: var(--green-bg); border-radius: var(--r); padding: 1.25rem; margin-top: 1.5rem; }
+.request-express strong, .request-express button { display: block; margin: 1rem 0; }
+.request-matches button:disabled { opacity: .65; cursor: not-allowed; }
+.request-empty { border-left: 3px solid var(--green); padding-left: 1rem; }

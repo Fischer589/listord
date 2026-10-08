@@ -110,3 +110,66 @@ Next: Phase 3A — reuse the structured draft for real eligible worker matching,
 with server validation and explainable actual counts. Verify existing availability/
 inactivity evidence first; do not equate discovery results with confirmed interest.
 Stop this session at the Phase 2A checkpoint.
+
+## Phase 2B — real worker matching (2026-10-08, active day 2)
+
+Continued from `40c3178`; no repeat audit or infrastructure rebuild.
+
+- Anonymous request preview now submits the complete versioned draft to a bounded,
+  runtime-validated server endpoint. Existing Supabase worker data supplies matches;
+  no production fixture or fallback worker is generated.
+- Approval and explicit availability are required. Missing, stale/future or
+  incomplete records are excluded. Because there is no availability confirmation
+  timestamp/activity state in repository schema, eligibility conservatively uses
+  a 30-day creation-age bound. Boosts/edits do not refresh it. This is documented
+  policy, not proof of current availability or an inferred live-schema field.
+- Exact normalized city, explicit trade skills, same-unit known compensation and
+  supported scope phrases drive filtering/explanation. Interest, schedule and
+  requirements are never treated as confirmed. New sorting ignores payment fields.
+- Count covers the complete eligible set. Exact DB count/response consistency and
+  a 1,000-row candidate cap reject partial reads with 503, not misleading totals.
+  Zero, missing configuration, DB failure and old/unknown profiles are distinct.
+- Match responses allowlist public identity/reasons only, with no phone/edit token,
+  owner ID or raw database error. No-store responses and bounded request bodies.
+- New matching results offer free contextual WhatsApp handoff; the server rereads
+  and rechecks eligibility before returning the destination URL. It does not write
+  contact/hire/payment records or consult premium entitlements. Phone is disclosed
+  only in this explicit handoff, never the match list. Legacy directory paywalls
+  and boost sales remain separate release work; their financial history is intact.
+- Real count → disabled Express card: RD$299 one-time, future authorized outreach
+  and organized interest explained, no hire guarantee, no checkout/payment code.
+- Editing clears results and aborts pending work; mobile results support progressive
+  display. Existing worker records/photos and image safeguards remain untouched.
+
+Verification:
+
+- `npm test`: all six regression/unit test files pass.
+- `node --import tsx tests/request-matching.test.ts`: all **6 new test groups** pass,
+  covering eligibility, all category labels, care ambiguity, stale/unknown data,
+  compensation units, scope evidence, counts, privacy, partial/error responses,
+  runtime validation and both production HTTP handlers through the installed
+  Supabase SDK with a controlled fetch transport. No live DB assertion implied.
+- `npm run lint`: passes without warnings/errors.
+- `npm run typecheck`: passes. Initially found that this SDK requires abortSignal
+  before maybeSingle; corrected the chain and verified the handler tests.
+- `npm run build`: passes, 166 generated pages; `/solicitar` ~103 kB first-load JS.
+- `npm run test:e2e:request`: **36 cases pass** on the production build in desktop
+  and mobile-emulated Chromium, including all Phase 2A regression flows and new
+  count, disabled checkout, free contact error, edit/reset, zero/error/retry and
+  malformed real-route tests. Browser success/zero/error payloads are explicitly
+  transport fixtures; production routes are separately exercised in server tests.
+- `git diff --check`: passes.
+
+Limits/blockers: no live Supabase credentials/schema inspection, so production
+counts/RLS/privacy grants are not verified. Repository schema has no independent
+activity status or dated availability renewal; older otherwise-valid profiles may
+all be excluded until that is implemented. Durable anti-abuse controls, ownership,
+legacy paywall/ranking migration, dependency remediation and Node 24 parity remain
+release requirements. Express payments, transfer confirmation, consented provider
+outreach, responses and fulfillment/remedy terms remain unimplemented. No push,
+deploy, production migration, financial write or outbound message occurred.
+
+Exact next slice: Phase 2C — verify live worker schema/policies read-only, then
+implement authorized worker activity/availability renewal with a dedicated timestamp
+and stale-state handling. Stage-test any additive migration before requesting
+production execution approval; do not replace the conservative gate prematurely.

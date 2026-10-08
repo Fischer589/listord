@@ -227,3 +227,78 @@ were added in Phase 2A. Notification provider/consent coverage, secure ownership
 Stripe currency/account/sandbox verification, verified transfer contact and
 fulfillment/no-response terms remain release blockers. Build these in independently
 verified later slices; all production SQL and deployment still require approval.
+
+## Phase 2B — server-validated worker matching
+
+The anonymous preview now calls `POST /api/requests/matches` explicitly. A bounded
+12 KB JSON reader and runtime parser reject malformed, unknown, overlong or
+incomplete fields before any database call. Server code reads existing worker
+records via the anonymous Supabase client and an explicit allowlist; no new table,
+column, SQL execution or data rewrite is required. Responses are private/no-store.
+
+### Supported evidence and conservative eligibility policy
+
+Repository schema has `is_verified`, `available_now`, `created_at`, city, skills
+and requested income/unit. It has **no dedicated active/inactive status, last-seen
+signal, availability confirmation timestamp, structured task qualifications or
+schedule calendar**. Registration/editing do not currently maintain an explicit
+`available_now` renewal flow. `updated_at` changes for boosts/moderation and must
+not be used to revive eligibility. The live schema still needs read-only preflight.
+
+Phase 2B therefore counts only explicitly approved, explicitly available profiles
+**created within the last 30 days**, excluding missing/future timestamps and
+incomplete identity/location/skills. This is a conservative age bound on the
+availability flag, NOT confirmation that the worker is active, reachable or free
+for the requested date. The 30-day window is a local product safety policy, not an
+observed worker behavior or previously collected consent. Older valid workers are
+preserved and remain discoverable; edits/boosts do not reset this window. Many or
+all legacy records may legitimately yield no eligible matches. A verified worker
+availability/activity renewal flow is the next release-critical prerequisite.
+
+Location uses normalized exact city equality (accents/case/spacing), avoiding
+substring conflation of neighboring municipalities. Category matching uses explicit
+trade labels/aliases in skills, not broad words in biographies. Ambiguous child/
+adult care aliases are excluded. Existing category taxonomy is unchanged.
+Same-unit known income above the request's amount excludes a worker; incomparable
+or missing income is not silently converted. Exact skill phrases present in the
+scope are shown as supporting evidence and sort first, with stable ID ties.
+Unknown schedule, qualifications, requirements and remaining scope are explicitly
+unconfirmed; the count is **compatibility on supported signals**, not a promise
+that all requirements are met or any worker is interested. Paid ranking is absent
+from this new matching path; legacy ranking migration remains separate.
+
+The query requests an exact candidate count and at most 1,000 recent approved,
+available rows. If response length/count disagree, IDs duplicate, data is missing,
+or the cap is exceeded, return 503 with no count. Never advertise a partial total.
+This bound prevents unbounded reads; a larger pool will need DB-side normalized
+filtering/pagination or a snapshot RPC, verified against live policy/schema first.
+Counts describe one query snapshot and may change; contact rechecks eligibility.
+No raw DB errors, private worker fields or excluded-worker counts reach the client.
+
+### Free contact and disabled Express
+
+Matching results display actual counts, explain the exclusions, and distinguish
+zero from database/configuration failure. Editing unmounts results and aborts
+pending requests so an old result is not reused for a new draft. Browser rendering
+shows 20 records at a time; count includes the complete eligible result set.
+
+`POST /api/requests/contact` validates the structured draft and worker UUID, then
+rereads that one worker and rechecks the same criteria. The phone is selected only
+for this explicit handoff and never included in match lists. It returns a contextual
+WhatsApp URL without checkout, payment lookup, session writes, invitation or hire
+record. The URL necessarily reveals the destination phone to the contacting user,
+as the existing WhatsApp workflow does. This endpoint is anonymous for approved
+public profiles, not an account-ownership proof. Durable anti-scraping/contact
+rate controls remain P0. Exact addresses are neither required nor fetched.
+
+The existing directory/contact API, paid entitlements and financial history are
+unchanged; legacy one-free-contact/day behavior still exists outside the new
+request-matching path and must be removed safely before release. The new results
+provide free contact independently of Express.
+
+The Express card uses the computed count, explains future outreach/organized
+interest and shows RD$299 one-time. Its native button is permanently disabled in
+this checkpoint; no checkout URL or bank instructions exist. Zero/error states
+never initiate outreach or payment. Actual provider consent/reachability, verified
+payment confirmation, fulfillment terms/remedy, shortlist and response collection
+are still future release work, not fulfilled promises in this checkpoint.

@@ -1,0 +1,25 @@
+import { NextResponse } from "next/server";
+import { matchWorker, MATCH_COLUMNS, parseMatchRequest } from "@/lib/request-matching";
+import { MATCH_HEADERS, readMatchBody } from "@/lib/request-match-server";
+import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { requestSummary } from "@/lib/request-specification";
+
+/** Explicit, free handoff; phone never enters match lists. Recheck eligibility. */
+export async function POST(request: Request) {
+  const body = await readMatchBody(request).catch(() => null) as { draft?: unknown; workerId?: unknown } | null;
+  const draft = parseMatchRequest(body?.draft);
+  const id = body?.workerId;
+  const reply = (error: string, status: number) => NextResponse.json({ error }, { status, headers: MATCH_HEADERS });
+  if (!draft || typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return reply("Revisa tu solicitud y el perfil elegido.", 400);
+  try {
+    const client = getSupabaseAdminClient();
+    if (!client) return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503);
+    const { data, error } = await client.from("workers").select(`${MATCH_COLUMNS},whatsapp_number`).eq("id", id).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
+    if (error) return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503);
+    if (!data || !matchWorker(data, draft, new Date())) return reply("Este perfil ya no cumple los criterios. Actualiza los resultados.", 409);
+    const url = buildWhatsAppUrl(data.whatsapp_number);
+    if (!url) return reply("Este perfil no tiene un contacto disponible.", 404);
+    return NextResponse.json({ url: `${url}?text=${encodeURIComponent(`Hola, vi tu perfil en ListoRD. ¿Te interesa este trabajo?\n\n${requestSummary(draft)}\n\n¿Puedes confirmar el horario, las tareas y el pago?`)}` }, { headers: MATCH_HEADERS });
+  } catch { return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503); }
+}

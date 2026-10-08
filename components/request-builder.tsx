@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { RequestMatches } from "./request-matches";
 import { CATEGORIES } from "@/lib/categories";
 import { CITIES } from "@/lib/cities";
 import { changeCategory, COMPENSATION_UNITS, emptyRequest, REQUEST_SCHEMAS, RequestDraft, RequestErrors, requestSummary, validateRequest } from "@/lib/request-specification";
@@ -77,6 +78,7 @@ export function RequestBuilder() {
       <div className="request-actions" aria-label="Editar solicitud"><button className="btn-secondary" onClick={() => go(0)}>Editar servicio y lugar</button><button className="btn-secondary" onClick={() => go(1)}>Editar alcance</button><button className="btn-secondary" onClick={() => go(2)}>Editar fecha y pago</button></div>
       <div className="request-actions"><button className="btn-primary" onClick={copy}>Copiar resumen</button><Link className="btn-secondary" href={`/?${new URLSearchParams({ skill: draft.category, city: draft.city }).toString()}#descubre`}>Explorar perfiles</Link></div>
       <p role="status">{copyStatus}</p>
+      <RequestMatches draft={draft} />
       <p>Explorar perfiles filtra por servicio y ciudad. No confirma disponibilidad ni interés en esta solicitud.</p>
     </>}
     <p className="request-footnote">El borrador se conserva mientras permanezcas en esta página. Copia el resumen antes de salir.</p>
