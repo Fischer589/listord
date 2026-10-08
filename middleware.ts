@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { isAdminSession } from './lib/admin-session'
 
 const COOKIE_NAME = 'admin_session'
 
@@ -11,13 +12,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Feature flag — set ADMIN_AUTH_ENABLED=true in env to re-enable protection.
-  // Any value other than exactly 'true' means auth is bypassed.
-  const authEnabled = process.env.ADMIN_AUTH_ENABLED === 'true'
-  if (!authEnabled) {
-    return NextResponse.next()
-  }
-
   const secret = process.env.ADMIN_SESSION_SECRET
   if (!secret) {
     console.warn('ADMIN_SESSION_SECRET not set — admin access blocked')
@@ -25,7 +19,7 @@ export function middleware(request: NextRequest) {
   }
 
   const sessionCookie = request.cookies.get(COOKIE_NAME)
-  if (sessionCookie?.value !== secret) {
+  if (!isAdminSession(sessionCookie?.value, secret)) {
     const res = NextResponse.redirect(new URL('/admin/login', request.url))
     res.cookies.delete(COOKIE_NAME)
     return res

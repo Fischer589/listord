@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { AppHeader } from "@/components/app-header";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -15,6 +16,7 @@ export const revalidate = 0;
 
 async function updateEmployerRequestStatus(formData: FormData) {
   "use server";
+  requireAdmin();
   const requestId = String(formData.get("request_id") || "").trim();
   const status = String(formData.get("status") || "").trim();
   const supabase = getSupabaseAdminClient();
@@ -43,6 +45,7 @@ async function getEmployerRequests(): Promise<{
   requests: EmployerRequest[];
   countsByStatus: Record<EmployerRequestStatus, number>;
 }> {
+  requireAdmin();
   noStore();
   const supabase = getSupabaseAdminClient();
   const emptyCounts: Record<EmployerRequestStatus, number> = {

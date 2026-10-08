@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import Link from "next/link";
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -8,6 +9,7 @@ export const revalidate = 0;
 // ─── Data fetching ────────────────────────────────────────────────────────────────────────────────
 
 async function getDashboardStats() {
+  requireAdmin();
   noStore();
   const supabase = getSupabaseAdminClient();
   if (!supabase) return null;

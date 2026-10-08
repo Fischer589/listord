@@ -34,7 +34,6 @@ const HOMEPAGE_WORKER_SELECT = `
   id,
   full_name,
   city,
-  whatsapp_number,
   work_style,
   desired_income,
   short_intro,
@@ -56,7 +55,6 @@ type HomepageWorkerRow = Pick<
   | "id"
   | "full_name"
   | "city"
-  | "whatsapp_number"
   | "work_style"
   | "desired_income"
   | "short_intro"

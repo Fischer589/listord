@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import Image from "next/image";
 import { AppHeader } from "@/components/app-header";
@@ -12,6 +13,7 @@ export const revalidate = 0;
 
 async function approveWorker(formData: FormData) {
   "use server";
+  requireAdmin();
   const workerId = String(formData.get("worker_id") || "").trim();
   const supabase = getSupabaseAdminClient();
   if (!workerId || !supabase) return;
@@ -26,6 +28,7 @@ async function approveWorker(formData: FormData) {
 
 async function rejectWorker(formData: FormData) {
   "use server";
+  requireAdmin();
   // Only deletes unverified (pending) workers — safety guard
   const workerId = String(formData.get("worker_id") || "").trim();
   const supabase = getSupabaseAdminClient();
@@ -42,6 +45,7 @@ async function rejectWorker(formData: FormData) {
 
 async function deactivateWorker(formData: FormData) {
   "use server";
+  requireAdmin();
   const workerId = String(formData.get("worker_id") || "").trim();
   const supabase = getSupabaseAdminClient();
   if (!workerId || !supabase) return;
@@ -56,6 +60,7 @@ async function deactivateWorker(formData: FormData) {
 
 async function approveLocalTestWorker() {
   "use server";
+  requireAdmin();
   if (process.env.NODE_ENV === "production") return;
   const supabase = getSupabaseAdminClient();
   if (!supabase) return;
@@ -98,6 +103,7 @@ type AdminWorkersResult = {
 };
 
 async function getAdminWorkers(): Promise<AdminWorkersResult> {
+  requireAdmin();
   noStore();
   const supabase = getSupabaseAdminClient();
   if (!supabase) return { approvedCount: 0, pendingCount: 0, workers: [] };

@@ -6,18 +6,15 @@ import type { WorkStyle } from "@/lib/types";
 import {
   findWorkerByWhatsAppNumber,
   getList,
-  normalizeWhatsAppNumber,
   uploadWorkerPhoto
 } from "@/lib/worker-profile";
 
 export type WorkerRegistrationActionState = {
   success?: true;
+  photoWarning?: string;
   jobCategoryError?: true;
   supabaseError?: true;
-  existingProfile?: {
-    editToken: string;
-    fullName: string;
-  };
+  existingProfile?: true;
 };
 
 const fallbackWorkStyles: Array<{ value: WorkStyle; label: string }> = [
@@ -139,10 +136,7 @@ async function submitWorkerRegistration(
     // Existing profile detected — never insert a duplicate. Surface the
     // existing-profile options instead (Feature 1).
     return {
-      existingProfile: {
-        editToken: existingWorker.editToken,
-        fullName: existingWorker.fullName
-      }
+      existingProfile: true
     };
   }
 
@@ -224,15 +218,9 @@ async function submitWorkerRegistration(
     };
   }
 
-  const normalizedWhatsAppNumber =
-    normalizeWhatsAppNumber(insertPayload.whatsapp_number) ||
-    insertPayload.whatsapp_number.replace(/\D/g, "") ||
-    data.id;
-  const photoUrl = await uploadWorkerPhoto(
-    supabase,
-    formData.get("profile_photo"),
-    normalizedWhatsAppNumber
-  );
+  const photoResult = await uploadWorkerPhoto(supabase, formData.get("profile_photo"), data.id);
+  const photoUrl = photoResult.url;
+  let photoWarning = photoResult.error;
 
   if (photoUrl) {
     const { error: photoUpdateError } = await supabase
@@ -241,6 +229,7 @@ async function submitWorkerRegistration(
       .eq("id", data.id);
 
     if (photoUpdateError) {
+      photoWarning = "Recibimos tu perfil, pero no pudimos asociar la foto. Puedes añadirla al editarlo.";
       console.warn("Worker registration photo URL update failed.", {
         workerId: data.id,
         code: photoUpdateError.code,
@@ -253,7 +242,8 @@ async function submitWorkerRegistration(
   revalidatePath("/admin/workers");
 
   return {
-    success: true
+    success: true,
+    photoWarning
   };
 }
 

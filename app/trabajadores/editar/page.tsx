@@ -1,3 +1,4 @@
+import { WorkerPhotoInput } from "@/components/worker-photo-input";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -5,7 +6,6 @@ import { AppHeader } from "@/components/app-header";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { WorkStyle } from "@/lib/types";
 import {
-  findWorkerByWhatsAppNumber,
   getList,
   getMissingProfileQualityFields,
   getText,
@@ -220,11 +220,9 @@ async function updateWorkerProfile(formData: FormData) {
     redirect(getEditRedirect(editToken, "duplicado"));
   }
 
-  const photoUrl = await uploadWorkerPhoto(
-    supabase,
-    formData.get("profile_photo"),
-    normalizedWhatsAppNumber
-  );
+  const photoResult = await uploadWorkerPhoto(supabase, formData.get("profile_photo"), currentWorker.id);
+  if (photoResult.error) redirect(getEditRedirect(editToken, "foto"));
+  const photoUrl = photoResult.url;
 
   const majorProfileFieldsChanged =
     currentWorker.full_name !== fullName ||
@@ -289,6 +287,8 @@ async function updateWorkerProfile(formData: FormData) {
   redirect(getEditRedirect(editToken, "actualizado"));
 }
 
+export const metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" as const };
+
 export default async function EditWorkerPage({
   searchParams
 }: {
@@ -299,14 +299,6 @@ export default async function EditWorkerPage({
   const worker = await findWorkerByEditToken(token);
   const whatsappNumber = searchParams.whatsapp?.trim() || "";
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
-  const editLinkRecovery = !worker
-    ? await findWorkerByWhatsAppNumber(whatsappNumber)
-    : null;
-  const recoveredEditLink = editLinkRecovery
-    ? `/trabajadores/editar?token=${encodeURIComponent(
-        editLinkRecovery.editToken
-      )}`
-    : null;
   const missingProfileQualityFields = worker
     ? getMissingProfileQualityFields(worker)
     : [];
@@ -359,6 +351,7 @@ export default async function EditWorkerPage({
             Revisa el texto del perfil. No aceptamos lenguaje ofensivo o spam.
           </div>
         )}
+        {state === "foto" && <p role="alert" className="mt-5 rounded-lg bg-red-50 p-4 text-red-900">No pudimos guardar la foto. Usa JPG, PNG o WebP de hasta 4 MB. Tu foto anterior sigue guardada.</p>}
         {state === "error" && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             {workerProfileSaveError}
@@ -411,21 +404,11 @@ export default async function EditWorkerPage({
             {normalizedWhatsAppNumber && (
               <div className="mt-4 rounded-md border border-hoja/25 bg-hoja/10 p-3">
                 <p className="font-bold text-ink">
-                  Te enviaremos o mostraremos tu enlace de edición.
+                  Confirma que el perfil es tuyo con nuestro equipo.
                 </p>
-                {recoveredEditLink ? (
-                  <Link
-                    href={recoveredEditLink}
-                    className="mt-3 inline-flex tap-target rounded-md bg-hoja px-4 py-2 font-black text-white"
-                  >
-                    Abrir enlace de edicion
-                  </Link>
-                ) : (
-                  <p className="mt-2 text-sm font-semibold text-black/65">
-                    Si existe un perfil con ese WhatsApp, podremos ayudarte a
-                    recuperar el enlace.
-                  </p>
-                )}
+                <Link href="/trabajadores/recuperar" className="mt-3 inline-flex tap-target rounded-md bg-hoja px-4 py-2 font-black text-white">
+                  Solicitar recuperación segura
+                </Link>
               </div>
             )}
           </div>
@@ -471,14 +454,9 @@ export default async function EditWorkerPage({
                 Foto de perfil{" "}
                 <span className="font-semibold text-black/55">(opcional)</span>
               </span>
-              <input
-                className="rounded-md border border-black/15 bg-white px-3 py-2 text-sm font-semibold"
-                name="profile_photo"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-              />
+              <WorkerPhotoInput className="rounded-md border border-black/15 bg-white px-3 py-2 text-sm font-semibold" />
               <span className="text-xs font-semibold text-black/55">
-                PNG, JPG o WEBP. Maximo 5 MB. Si falla la subida, conservamos
+                PNG, JPG o WEBP. Máximo 4 MB. Si falla la subida, conservamos
                 la foto anterior.
               </span>
             </label>

@@ -1,3 +1,4 @@
+import { normalizeWorkerPhoto, workerPhotoPath, MAX_PHOTO_BYTES, PHOTO_ERROR_MESSAGE } from "./worker-photo";
 import { getSupabaseAdminClient } from "./supabase-admin";
 import type { WorkStyle } from "./types";
 import { normalizeWhatsAppNumber as normalizeSharedWhatsAppNumber } from "./whatsapp";
@@ -35,13 +36,6 @@ const blockedTerms = [
 
 export const workerPhotosBucket =
   process.env.WORKER_PHOTOS_BUCKET?.trim() || "worker-photos";
-export const maxPhotoSizeBytes = 5 * 1024 * 1024;
-export const allowedPhotoTypes = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp"
-]);
-
 export function getText(formData: FormData, key: string) {
   return String(formData.get(key) || "").trim();
 }
@@ -72,15 +66,13 @@ export function formatWhatsAppNumber(value: string) {
 }
 
 export type ExistingWorkerLookup = {
-  editToken: string;
   workerId: string;
-  fullName: string;
 };
 
 /**
  * Looks up an existing worker profile by (normalized) WhatsApp number.
- * Shared by the registration duplicate-detection screen and the profile
- * edit-link recovery flow so both surfaces use one ownership mechanism.
+ * Used only for duplicate detection. A phone match is NOT proof of ownership
+ * and must never return a bearer edit token or recover an edit link.
  */
 export async function findWorkerByWhatsAppNumber(
   whatsappNumber?: string
@@ -102,7 +94,7 @@ export async function findWorkerByWhatsAppNumber(
 
   const { data, error } = await supabase
     .from("workers")
-    .select("id, edit_token, full_name, whatsapp_number")
+    .select("id, whatsapp_number")
     .not("whatsapp_number", "is", null);
 
   if (error) {
@@ -119,14 +111,12 @@ export async function findWorkerByWhatsAppNumber(
     return existingNumber === normalizedWhatsAppNumber;
   });
 
-  if (!worker?.edit_token || !isValidEditToken(worker.edit_token)) {
+  if (!worker) {
     return null;
   }
 
   return {
-    editToken: worker.edit_token,
-    workerId: worker.id,
-    fullName: worker.full_name || "tu perfil"
+    workerId: worker.id
   };
 }
 
@@ -158,60 +148,39 @@ export function getMissingProfileQualityFields(worker: {
   return missingFields;
 }
 
-export function getPhotoExtension(file: File) {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-
-  if (extension && /^[a-z0-9]+$/.test(extension)) {
-    return extension;
-  }
-
-  return file.type.split("/").pop() || "jpg";
-}
-
 export async function uploadWorkerPhoto(
   supabase: NonNullable<ReturnType<typeof getSupabaseAdminClient>>,
   photo: FormDataEntryValue | null,
-  normalizedWhatsAppNumber: string
-) {
-  if (!(photo instanceof File) || photo.size === 0) {
-    return null;
+  workerId: string
+): Promise<{ url: string | null; error?: string }> {
+  if (photo === null || (typeof photo !== "string" && photo.size === 0 && !photo.name)) {
+    return { url: null };
   }
-
-  if (!allowedPhotoTypes.has(photo.type) || photo.size > maxPhotoSizeBytes) {
-    return null;
+  if (typeof photo === "string" || photo.size === 0 || photo.size > MAX_PHOTO_BYTES) {
+    return { url: null, error: PHOTO_ERROR_MESSAGE };
   }
-
-  const path = [
-    normalizedWhatsAppNumber,
-    `${Date.now()}-${crypto.randomUUID()}.${getPhotoExtension(photo)}`
-  ].join("/");
-
   try {
-    const { error: uploadError } = await supabase.storage
-      .from(workerPhotosBucket)
-      .upload(path, photo, {
-        contentType: photo.type,
-        upsert: false
-      });
-
-    if (uploadError) {
-      console.warn("Worker profile photo upload failed.", {
-        code: uploadError.name,
-        message: uploadError.message
-      });
-      return null;
-    }
-
-    const { data } = supabase.storage
-      .from(workerPhotosBucket)
-      .getPublicUrl(path);
-
-    return data.publicUrl || null;
-  } catch (error) {
-    console.warn("Worker profile photo upload failed.", {
-      message: error instanceof Error ? error.message : String(error),
-      name: error instanceof Error ? error.name : "UnknownError"
+    const normalized = await normalizeWorkerPhoto(Buffer.from(await photo.arrayBuffer()), photo.type);
+    const path = workerPhotoPath(workerId, normalized.hash);
+    const bucket = supabase.storage.from(workerPhotosBucket);
+    const { error } = await bucket.upload(path, normalized.data, {
+      contentType: "image/webp", cacheControl: "31536000", upsert: false
     });
-    return null;
+    // Content-addressed paths scoped to an opaque worker ID make retries idempotent.
+    // This SDK's upload method returns raw API JSON (statusCode); other storage
+    // methods can return StorageApiError (status). Support both exact shapes.
+    const status = error && "statusCode" in error ? Number(error.statusCode)
+      : error && "status" in error ? Number(error.status) : undefined;
+    const alreadyExists = error && (status === 409 || (
+      status === 400 && error.message === "The resource already exists"
+    ));
+    if (error && !alreadyExists) {
+      return { url: null, error: PHOTO_ERROR_MESSAGE };
+    }
+    const { data } = bucket.getPublicUrl(path);
+    return data.publicUrl ? { url: data.publicUrl } : { url: null, error: PHOTO_ERROR_MESSAGE };
+  } catch {
+    // Do not log file contents, phone numbers, object paths or decoder internals.
+    return { url: null, error: PHOTO_ERROR_MESSAGE };
   }
 }

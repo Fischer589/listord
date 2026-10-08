@@ -1,10 +1,10 @@
 "use client";
 
+import { WorkerPhotoInput } from "@/components/worker-photo-input";
 import Link from "next/link";
 import { useFormState } from "react-dom";
 import type React from "react";
 import type { WorkerRegistrationActionState } from "@/app/trabajadores/registro/page";
-import { BoostProfileButton } from "@/components/boost-profile-button";
 import type { WorkStyle } from "@/lib/types";
 
 type WorkStyleOption = {
@@ -57,12 +57,11 @@ export function WorkerRegistrationForm({
         </p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           <Link
-            href={`/trabajadores/editar?token=${encodeURIComponent(existingProfile.editToken)}`}
+            href="/trabajadores/recuperar"
             className="tap-target inline-flex items-center justify-center rounded-xl border border-ink/15 bg-white px-4 py-3 text-center font-black text-ink"
           >
-            Editar mi perfil
+            Recuperar acceso de forma segura
           </Link>
-          <BoostProfileButton editToken={existingProfile.editToken} />
         </div>
       </div>
     );
@@ -99,6 +98,8 @@ export function WorkerRegistrationForm({
         </div>
       )}
 
+      {state.photoWarning && <p role="status" className="mt-4 rounded-xl bg-amber-50 p-4 text-amber-900">{state.photoWarning}</p>}
+
       {supabaseError && (
         <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
           No pudimos enviar tu registro ahora mismo. Intenta otra vez en unos
@@ -134,18 +135,13 @@ export function WorkerRegistrationForm({
             <span className="flex min-w-0 flex-wrap items-baseline gap-2">
               Foto de perfil
               <span className="rounded-full bg-hoja/15 px-2 py-0.5 text-xs font-black text-hoja">
-                Recomendado — sube 3× más clientes
+                Opcional — muestra tu trabajo
               </span>
             </span>
-            <input
-              className="w-full min-w-0 rounded-xl border border-black/15 bg-white px-3 py-2 text-xs font-semibold sm:text-sm"
-              name="profile_photo"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-            />
+            <WorkerPhotoInput className="w-full min-w-0 rounded-xl border border-black/15 bg-white px-3 py-2 text-xs font-semibold sm:text-sm" />
           </label>
           <p className="mt-1.5 text-xs font-semibold text-ink/55">
-            PNG, JPG o WEBP · Máximo 5 MB · Foto clara de tu cara o de tu
+            PNG, JPG o WEBP · Máximo 4 MB · Foto clara de tu cara o de tu
             trabajo
           </p>
         </div>

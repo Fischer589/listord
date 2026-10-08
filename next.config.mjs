@@ -15,6 +15,10 @@ const imageHosts = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    // 4 MB photo + form fields, below Vercel's 4.5 MB request limit.
+    serverActions: { bodySizeLimit: 4_400_000 }
+  },
   images: {
     // Serve stable source URLs directly to avoid Vercel image transformations
     // and image-cache writes. next/image still preserves layout and lazy loading.

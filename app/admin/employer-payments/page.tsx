@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import { unstable_noStore as noStore } from "next/cache";
 import { AppHeader } from "@/components/app-header";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -16,6 +17,7 @@ async function getEmployerPayments(): Promise<{
   payments: EmployerPayment[];
   totalPaidRD: number;
 }> {
+  requireAdmin();
   noStore();
   const supabase = getSupabaseAdminClient();
   if (!supabase) return { payments: [], totalPaidRD: 0 };
