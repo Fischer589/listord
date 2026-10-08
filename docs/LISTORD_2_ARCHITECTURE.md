@@ -156,3 +156,74 @@ exposure; account/phone ownership verification method and recovery operations;
 which historical paid entitlements remain active; deployed Node/Next security
 compatibility. These require scoped read-only production evidence or owner
 decisions, not invented assumptions.
+
+## Phase 2A implementation and Express release boundary (2026-10-08)
+
+`/solicitar` is an anonymous, client-side request draft. The homepage employer CTA
+opens it. `lib/request-specification.ts` owns version 1 schemas for the exact 14
+existing category search keys, progressive validation and the Spanish summary.
+The four screens collect service/city, category scope, common terms, and preview.
+Existing city suggestions are reused; other Dominican municipalities remain valid.
+Timing/duration may explicitly be flexible or pending an estimate. Compensation
+is fixed, a labeled budget, or explicitly negotiable; all amounts are DOP.
+Editing preserves common terms; changing category clears incompatible answers.
+
+The draft remains in React state while this page is mounted. It is neither
+published nor saved to a database/browser storage, and no worker receives it.
+Copying the summary is explicit. The discovery link reuses service/city filters;
+it does not imply request-level compatibility, fresh availability or interest.
+No exact address field is collected; guidance warns against private data in free
+text. Future publication must validate/moderate free text server-side: this
+local preview is not a privacy sanitizer or authorization boundary.
+
+### Express: required release architecture, not activated in Phase 2A
+
+ListoRD Express is **RD$299 per request, one-time, no subscription**. Workers
+participate free. Basic discovery and direct contact must remain free; migrate
+the existing contact paywall and pay-to-rank sales safely, retaining historical
+financial records and valid entitlements. Do not add tiers or activate charges
+from this checkpoint.
+
+Ordered prerequisites and boundaries:
+
+1. Persist the versioned request under verified employer ownership, privately by
+   default. Add a public-safe specification adapter and repeat validation on the
+   server before persistence. Do not publish legacy employer leads automatically.
+2. Query actual eligible workers using supported category/location, availability,
+   scope and requirement evidence. Exclude inactive/unavailable/ineligible records;
+   unknown compatibility is not confirmation. Show the actual eligible count
+   before Express. Existing discovery results are not an Express outreach count.
+3. Gate Express checkout on real deliverability: consented reachable recipients,
+   functioning outbound provider, fulfillment capacity and disclosed terms. If
+   these are missing or count is zero, do not accept payment. Define the response
+   window and no-response remedy before charging; never guarantee a hire.
+4. Card: extend existing Stripe hosted Checkout infrastructure with a separate
+   Express purpose, RD$299 one-time price and server-owned request reference.
+   Verify DOP presentment and U.S. account settlement configuration in Stripe's
+   current documentation and the actual account/sandbox before implementation.
+   Disclose any conversion before payment; Dominican-issued cards remain subject
+   to issuer/processor acceptance. Account eligibility is NOT verified here.
+   Fulfillment requires signed server-verified paid webhooks, amount/currency/
+   reference checks and durable event/payment idempotency; never trust redirects.
+5. Transfer: issue a unique Express reference and open the verified business
+   WhatsApp with a payment inquiry. No unverified bank instructions. Remain
+   PAYMENT_PENDING until a server-authorized admin confirms actual receipt with
+   an audit trail. Screenshots, messages and receipt uploads are never proof.
+6. Both payment paths enter the same idempotent fulfillment/outbox boundary.
+   Separate request, payment, outreach and response states; unique payment/event,
+   request-worker invitation and response constraints. Retry partial failures
+   without recharging or duplicate outreach. Recheck eligibility before dispatch.
+7. A real supported notification provider must send authorized invitations and
+   record provider IDs/results. Workers submit authenticated or securely scoped
+   ME INTERESA / NO ME INTERESA responses; consent and opt-out must be respected.
+   Employer updates and shortlist contain actual interest, followed by contextual
+   WhatsApp. A WhatsApp handoff is not an acceptance or hire.
+8. Minimal existing admin extension: requests, payments, transfer confirmation,
+   delivery attempts/failures, responses, refunds and revenue; enforce server-side
+   authorization and audited idempotent mutations. No oversized new dashboard.
+
+No payment routes, Express tables, live charges, outreach or banking instructions
+were added in Phase 2A. Notification provider/consent coverage, secure ownership,
+Stripe currency/account/sandbox verification, verified transfer contact and
+fulfillment/no-response terms remain release blockers. Build these in independently
+verified later slices; all production SQL and deployment still require approval.

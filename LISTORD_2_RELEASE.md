@@ -2,7 +2,8 @@
 
 **Scope:** service + location → dynamic scope → structured opportunity → suitable
 match → qualified YES/NO → contextual WhatsApp. Two sides, free worker discovery,
-existing production data preserved. No new subscriptions, prices or dashboards.
+existing production data preserved. Express: RD$299 per request, one-time. No
+additional tiers, subscriptions or unrelated dashboards.
 
 **Timebox:** target 14 active development days; release/no-release decision no
 later than active day 21. Day 1 is 2026-10-07 (audit/foundation). Count dates with
@@ -18,6 +19,10 @@ feature work and prepare the explicitly approved deployment.
 - Foundation checkpoint: upload-time photo normalization, access-boundary repairs,
   additive marketplace SQL tested on isolated Postgres (not applied to production).
   See `docs/LISTORD_2_PROGRESS.md` for verification details.
+
+- Phase 2A: anonymous service/location entry, all 14 category schemas, editable
+  Spanish preview and explicit copy; local draft only. Implementation day 2:
+  2026-10-08. No payments implemented. See the progress log for verification.
 
 ## Remaining release-critical work
 
@@ -41,8 +46,8 @@ feature work and prepare the explicitly approved deployment.
 
 **P1 — approved 2.0 experience**
 
-- Service/location entry for both sides; one shared versioned request engine for
-  the existing 14 categories; reviewed decision card and natural Spanish summary.
+- Worker-side service/location entry; persist/reuse the completed employer draft
+  with verified ownership and server validation for later matching/publication.
 - Suitable worker results and contextual contact, reusing known request details;
   remove the basic-contact paywall and paid ranking/sales together safely.
 - Public, moderated opportunities with verified ownership, explicit publication
@@ -51,6 +56,16 @@ feature work and prepare the explicitly approved deployment.
   units; truthful trust signals; safe moderation/reporting and empty/error states.
 - Mobile/keyboard verification, focus/error handling, source-image performance,
   SEO and private timing/abandonment/zero-result metrics for the core journey.
+
+- Express RD$299 one-time offer after real eligible matching; distinguish compatible
+  profiles from confirmed interest. No charges without deliverable outreach.
+- Stripe hosted card checkout with verified currency/settlement and any conversion
+  disclosed; signed paid webhooks and duplicate-charge/fulfillment protection.
+- Manual WhatsApp transfer inquiry with unique reference, PAYMENT_PENDING state,
+  audited admin receipt confirmation; no unverified banking instructions.
+- Consented automated outreach, worker YES/NO, employer updates/shortlist and
+  contextual WhatsApp; minimal admin payment/failure/refund/revenue controls.
+- Disclosed fulfillment window and no-response remedy; no hire guarantee.
 
 **P2 — defer to 2.1**
 
@@ -67,7 +82,10 @@ feature work and prepare the explicitly approved deployment.
   confirmation before their production migration. No payment changes activated.
 - The team deployment pause was reported during the usage audit. Its resolution
   has not been established; no deployment attempted.
-- Browser/mobile acceptance and real storage/payment regressions are pending.
+- Full marketplace browser/mobile acceptance and real storage/payment regressions
+  are pending. Express provider/consent, verified transfer contact, Stripe account
+  currency/settlement and fulfillment/remedy terms remain unverified. Payments
+  were intentionally not implemented in Phase 2A.
 
 ## Verification status
 
@@ -75,7 +93,12 @@ Baseline: six image tests, typecheck and production build passed. Lint was absen
 Current foundation: 16 photo/admin/database tests, typecheck, lint and production
 build pass. Local HTTP smoke checks pass; details are in the progress log. Next runtime
 test initialization and Supabase raw upload-error handling were corrected and
-regression-tested. Production storage, RLS, payments and mobile E2E remain unverified.
+regression-tested. Production storage, RLS and payments remain unverified.
+
+Phase 2A: all five unit/regression test files pass; 18 new schema tests pass.
+Lint, typecheck and production build pass (164 pages). All 30 request-flow browser
+cases pass in desktop/mobile-emulated Chromium, plus two targeted viewport checks.
+Physical-device/Safari and full marketplace acceptance remain pending.
 
 ## Release acceptance checklist
 
@@ -88,6 +111,10 @@ regression-tested. Production storage, RLS, payments and mobile E2E remain unver
 - [ ] New photos are decoded, oriented, bounded, compressed, metadata-free and
       served directly; failures retain existing photos; production storage verified.
 - [ ] Existing profiles/accounts/payments survive staged and approved migrations.
+- [ ] Express card and manual transfer paths converge on idempotent verified-paid
+      fulfillment; no checkout when outreach cannot be delivered.
+- [ ] Consented invitations, genuine responses, shortlist, employer updates, refund/
+      no-response handling and authorized admin operations pass sandbox E2E.
 - [ ] Paid visibility is absent from matching; no unintended new charges.
 - [ ] Authorization, abuse controls, lifecycle and stale availability pass tests.
 - [ ] Tests, lint, typecheck, production build, mobile/keyboard and core E2E pass.
@@ -96,10 +123,12 @@ regression-tested. Production storage, RLS, payments and mobile E2E remain unver
 
 ## Next smallest vertical slice
 
-After the foundation checkpoint: Phase 2A, service + location → schema-driven
-scope → reviewed request card and Spanish message, using the existing taxonomy.
-Verify all 14 schema variants, missing/invalid answers and mobile keyboard flow.
-Do not publish legacy employer leads or require registration just to explore.
+Phase 3A: carry the structured draft into real eligible worker matching with
+server-side validation, explainable evidence, accurate counts and truthful empty/
+error states. Verify availability/inactivity signals against the existing schema
+before claiming compatibility. Preserve free discovery; do not activate payments.
+Express payment/fulfillment follows only after its prerequisites are verified.
+Do not publish legacy leads or require registration just to explore.
 
 Planned active-day budget: days 1–3 foundation/P0; 4–6 request engine/entry;
 7–9 discovery/contact; 10–12 opportunities/interest/lifecycle; 13–14 acceptance.

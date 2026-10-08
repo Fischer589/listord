@@ -57,3 +57,56 @@ still required. No push, deployment or payment activation performed.
 Next implementation slice: Phase 2A — service + location → category-specific
 scope → reviewed request card/Spanish summary, sharing one engine across the
 existing taxonomy. Keep production rollout gated on the P0 release checklist.
+
+## Phase 2A — employer request specification (2026-10-08, active day 2)
+
+Completed one bounded vertical slice from `1b11a47`:
+
+- Homepage “Necesito personal” opens `/solicitar` without registration.
+- Existing 14-category taxonomy and Dominican city suggestions drive service +
+  location entry. Other municipalities are accepted without changing the taxonomy.
+- One versioned schema engine collects category-specific scope and shared timing,
+  duration, DOP compensation, exclusions and requirements. Progressive validation
+  rejects missing/invalid terms. Unknown timing or price can be explicitly stated.
+- Editable Spanish preview labels budgets and negotiable terms honestly. Copying
+  is explicit; service/location can be reused in existing profile discovery.
+  Common answers survive editing; category changes clear incompatible scope.
+- Drafts stay in page memory only, with an explicit copy-before-leaving notice.
+  No request publication, worker invitation, matching count or confirmed interest
+  is claimed. No addresses are requested; free-text privacy guidance is shown.
+- Responsive layout, focus management, linked field errors and keyboard flow.
+  Screenshot review led to a scroll offset for the existing sticky header.
+- Express RD$299, Stripe card checkout, manual WhatsApp transfer, verified-paid
+  fulfillment and notification prerequisites are documented in the architecture
+  and release checklist. No payment implementation or activation this session.
+
+Verification:
+
+- `npm test`: all five test files pass (photo/image/admin/isolated database and
+  request specification). Direct execution of the new specification test file:
+  **18 tests pass**, including all 14 categories, invalid terms, category changes
+  and honest summaries. Existing photo safeguards remain covered.
+- `npm run lint`: passes without warnings/errors.
+- `npm run typecheck`: passes, including browser test/config types.
+- `npm run build`: passes, **164 static pages**, `/solicitar` ~102 kB first-load JS.
+- `npm run test:e2e:request`: **30 cases pass** against the production build in
+  desktop and mobile-emulated Chromium. Covers all 14 category flows on both,
+  anonymous entry, validation, focus/keyboard, copy, editing, category reset,
+  discovery URL and horizontal overflow. Two targeted reruns also pass after
+  adding an explicit preview-heading viewport assertion. Screenshots reviewed.
+- Initial browser assertions ambiguously selected Next's route announcer and
+  used exact label text around a select; selectors corrected, not waived.
+  Sandbox HTTP startup restriction required local execution permission.
+- `git diff --check`: passes.
+
+Limits: mobile emulation is not physical-device/Safari coverage. Local Supabase
+configuration is absent, so analytics reports skipped events; real DB/storage,
+matching, accounts and payments are not verified by this client-only journey.
+Dependency audit remains 22 issues (1 critical, 17 high, 2 moderate, 2 low), with
+existing runtime remediation still P0. No migration, production data/storage
+change, push, deployment, charge or outbound worker message occurred.
+
+Next: Phase 3A — reuse the structured draft for real eligible worker matching,
+with server validation and explainable actual counts. Verify existing availability/
+inactivity evidence first; do not equate discovery results with confirmed interest.
+Stop this session at the Phase 2A checkpoint.

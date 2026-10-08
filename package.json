@@ -9,7 +9,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e:request": "playwright test"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.43.4",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",
+    "@playwright/test": "^1.64.0",
     "@types/node": "^20.12.12",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",

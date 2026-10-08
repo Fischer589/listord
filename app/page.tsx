@@ -122,9 +122,9 @@ export default async function Home({
               )}
 
               <div className="hero-actions">
-                <a href="#descubre" className="btn-primary tap-target">
-                  Ver trabajadores
-                </a>
+                <Link href="/solicitar" className="btn-primary tap-target">
+                  Necesito personal
+                </Link>
                 <Link href="/trabajadores/registro" className="btn-secondary tap-target">
                   Busco trabajo
                 </Link>
