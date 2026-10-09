@@ -33,10 +33,11 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({
-  params,
+  params: paramsPromise,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  const params = await paramsPromise;
   const cat = getCategoryBySlug(params.slug);
   if (!cat) return { title: "Categoría | ListoRD" };
 
@@ -128,10 +129,11 @@ function CategoryJsonLd({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function CategoryPage({
-  params,
+  params: paramsPromise,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const params = await paramsPromise;
   const cat = getCategoryBySlug(params.slug);
   if (!cat) notFound();
 

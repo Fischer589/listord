@@ -1,5 +1,9 @@
 # Worker privacy repair and consent-based activation
 
+> **2026-10-09 checkpoint:** [current preparation and blockers](RELEASE_PREPARATION_2026-10-09.md).
+> Production authentication is an external blocker; no credentials, production SQL,
+> activation or deployment are requested. Latest local evidence supersedes older counts below.
+
 Status: **candidate SQL, local PostgreSQL fixtures only; production unchanged**.
 Baseline `4650db3`. The prior authorized live audit counted 378 approved workers,
 4 anonymously visible unapproved rows and zero declared available workers. These
@@ -50,9 +54,9 @@ seeds). The privacy candidate deliberately fails on missing required columns.
    expiration/reissue and legacy Stripe webhook reconciliation through actual APIs.
    Review `contact_requests` legacy outcome triggers: the repository's invoker
    `refresh_hiring_stats` updates workers, which client roles cannot do after this
-   repair. The current outcome action uses an unauthenticated client; do not claim
-   authenticated outcome writes work. Resolve verified ownership + scoped server
-   outcome mutation before accepting that flow. Do not elevate a broadly callable
+   repair. The outcome action is now disabled and the candidate denies direct client
+   contact mutations. It never reports success. Resolve verified ownership + scoped
+   server outcome mutation before accepting that flow. Do not elevate a broadly callable
    stats function just to bypass the restriction. This is a rollout blocker.
 5. Confirm admin credentials/session cookies and server action/API authorization in
    staging; missing/wrong admin secret must deny access. Verify no service credential

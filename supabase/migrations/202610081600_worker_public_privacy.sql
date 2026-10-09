@@ -2,6 +2,7 @@
 -- Run as table owner in one transaction. No worker data/token/photo changes.
 begin;
 alter table public.workers enable row level security;
+alter table public.contact_requests enable row level security;
 
 -- Table-level REVOKE alone does not remove pre-existing column grants.
 revoke all on public.workers from public, anon, authenticated;
@@ -49,10 +50,39 @@ grant execute on function public.owns_worker_profile(uuid) to authenticated;
 drop policy if exists "Workers view requests for themselves" on public.contact_requests;
 create policy "Workers view requests for themselves" on public.contact_requests
   for select to authenticated using (public.owns_worker_profile(worker_id));
-drop policy if exists "Workers update their outcome answer" on public.contact_requests;
-create policy "Workers update their outcome answer" on public.contact_requests
-  for update to authenticated using (public.owns_worker_profile(worker_id))
-  with check (public.owns_worker_profile(worker_id));
+-- Outcome links currently provide no authenticated participant identity. Direct
+-- client UPDATE grants would also let one participant forge the other's answer.
+-- Deny client mutations until a separately reviewed participant-scoped RPC exists.
+-- Keep SELECT policies, financial records and service-role grants unchanged.
+revoke insert, update, delete, truncate, references, trigger
+  on public.contact_requests from public, anon, authenticated;
+do $$
+declare c record; r text;
+begin
+  for c in select attname from pg_attribute
+    where attrelid='public.contact_requests'::regclass and attnum>0 and not attisdropped
+  loop
+    execute format('revoke insert (%I), update (%I), references (%I) on public.contact_requests from public, anon, authenticated', c.attname,c.attname,c.attname);
+    foreach r in array array['anon','authenticated'] loop
+      if has_column_privilege(r,'public.contact_requests',c.attname,'INSERT')
+        or has_column_privilege(r,'public.contact_requests',c.attname,'UPDATE') then
+        raise exception 'inherited contact write access remains for %',r;
+      end if;
+    end loop;
+  end loop;
+  foreach r in array array['anon','authenticated'] loop
+    if has_table_privilege(r,'public.contact_requests','DELETE')
+      or has_table_privilege(r,'public.contact_requests','TRUNCATE') then
+      raise exception 'inherited destructive contact access remains for %',r;
+    end if;
+  end loop;
+end $$;
+create policy contact_public_insert_guard on public.contact_requests as restrictive
+  for insert to anon, authenticated with check (false);
+create policy contact_public_update_guard on public.contact_requests as restrictive
+  for update to anon, authenticated using (false) with check (false);
+create policy contact_public_delete_guard on public.contact_requests as restrictive
+  for delete to anon, authenticated using (false);
 
 -- Abort instead of silently leaving inherited role grants or RLS bypass exposed.
 do $$

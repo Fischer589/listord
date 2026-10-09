@@ -1,5 +1,13 @@
 -- Authorized SQL administrator READ-ONLY preflight. No worker values/secrets.
 begin transaction read only;
+set local statement_timeout = '15s';
+set local lock_timeout = '2s';
+select current_user, session_user, current_setting('transaction_read_only') as read_only;
+-- Catalog shape and migration IDs only: never select ledger statements or secrets.
+select table_name,column_name,data_type,is_nullable
+from information_schema.columns where table_schema='public'
+  and table_name in ('workers','contact_requests','worker_availability')
+order by table_name,ordinal_position;
 select c.relname, c.relrowsecurity, c.relforcerowsecurity,
   pg_get_userbyid(c.relowner) as owner, c.relacl
 from pg_class c join pg_namespace n on n.oid=c.relnamespace

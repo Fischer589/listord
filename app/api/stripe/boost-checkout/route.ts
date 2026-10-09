@@ -1,3 +1,4 @@
+import { legacyCheckoutEnabled } from "@/lib/release-gates";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import {
@@ -23,6 +24,7 @@ function getStripeErrorMessage(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  if (!legacyCheckoutEnabled()) return NextResponse.json({ error: "Los nuevos pagos están temporalmente deshabilitados. El contacto con trabajadores es gratis." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   const body = (await request.json().catch(() => null)) as {
     edit_token?: string;
   } | null;

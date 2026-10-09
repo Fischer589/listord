@@ -31,8 +31,8 @@ function createSupabaseAdminClient() {
   }
 }
 
-export const supabaseAdmin = createSupabaseAdminClient();
-
 export function getSupabaseAdminClient() {
-  return supabaseAdmin;
+  // Resolve runtime configuration on use; importing validation must not capture
+  // missing build-time credentials or a previous request's client state.
+  return createSupabaseAdminClient();
 }

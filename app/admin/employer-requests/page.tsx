@@ -16,7 +16,7 @@ export const revalidate = 0;
 
 async function updateEmployerRequestStatus(formData: FormData) {
   "use server";
-  requireAdmin();
+  await requireAdmin();
   const requestId = String(formData.get("request_id") || "").trim();
   const status = String(formData.get("status") || "").trim();
   const supabase = getSupabaseAdminClient();
@@ -45,7 +45,7 @@ async function getEmployerRequests(): Promise<{
   requests: EmployerRequest[];
   countsByStatus: Record<EmployerRequestStatus, number>;
 }> {
-  requireAdmin();
+  await requireAdmin();
   noStore();
   const supabase = getSupabaseAdminClient();
   const emptyCounts: Record<EmployerRequestStatus, number> = {
@@ -112,10 +112,11 @@ function statusBadgeClass(status: EmployerRequestStatus) {
 // ─── Page ─────────────────────────────────────────────────────────
 
 export default async function AdminEmployerRequestsPage({
-  searchParams
+  searchParams: searchParamsPromise
 }: {
-  searchParams: { status?: string };
+  searchParams: Promise<{ status?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
   const statusFilter = searchParams?.status ?? "all";
   const { requests, countsByStatus } = await getEmployerRequests();
   const totalCount = requests.length;

@@ -1,11 +1,12 @@
 import { AppHeader } from "@/components/app-header";
 import { OutcomeAnswer } from "@/components/outcome-answer";
 
-export default function EmployerOutcomePage({
-  params
+export default async function EmployerOutcomePage({
+  params: paramsPromise
 }: {
-  params: { requestId: string };
+  params: Promise<{ requestId: string }>;
 }) {
+  const params = await paramsPromise;
   return (
     <>
       <AppHeader />

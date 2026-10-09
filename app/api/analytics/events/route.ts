@@ -1,68 +1,20 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
-
-const allowedEvents = new Set([
-  "page_view",
-  "worker_view",
-  "contact_click",
-  "paywall_open",
-  "checkout_start",
-  "checkout_success",
-  // Worker profile boost — admin-only analytics, never shown publicly
-  "boost_purchase_started",
-  "boost_payment_success",
-  "boost_activated",
-  "boost_expired",
-  "boosted_profile_view",
-  "boost_contact_initiated"
-]);
-
-function safeAnalyticsResponse() {
-  return new NextResponse(null, { status: 204 });
-}
+import { sanitizeAnalytics } from "@/lib/analytics-policy";
+import { readJsonBody } from "@/lib/http-json";
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabaseAdminClient();
-
-    if (!supabase) {
-      console.warn("Analytics event skipped: Supabase is not configured.");
-      return safeAnalyticsResponse();
+    const payload = sanitizeAnalytics(await readJsonBody(request, 4096));
+    if (payload) {
+      const supabase = getSupabaseAdminClient();
+      if (supabase) {
+        const { error } = await supabase.from("analytics_events").insert(payload);
+        if (error) console.warn("Analytics event insert failed.");
+      }
     }
-
-    const body = (await request.json().catch(() => null)) as {
-      event_name?: string;
-      metadata?: Record<string, unknown>;
-    } | null;
-    const eventName = body?.event_name?.trim();
-
-    if (!eventName || !allowedEvents.has(eventName)) {
-      console.warn("Analytics event skipped: invalid event name.", eventName);
-      return safeAnalyticsResponse();
-    }
-
-    const metadata =
-      body?.metadata && typeof body.metadata === "object" ? body.metadata : {};
-
-    const { error } = await supabase
-      .from("analytics_events")
-      .insert({
-        event_name: eventName,
-        metadata
-      });
-
-    if (error) {
-      console.warn("Analytics event insert failed.", {
-        code: error.code
-      });
-      return safeAnalyticsResponse();
-    }
-
-    return safeAnalyticsResponse();
-  } catch (error) {
-    console.warn("Analytics event logging failed.", {
-      name: error instanceof Error ? error.name : "UnknownError"
-    });
-    return safeAnalyticsResponse();
+  } catch {
+    // Telemetry cannot block the user journey or echo attacker-controlled data.
   }
+  return new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }

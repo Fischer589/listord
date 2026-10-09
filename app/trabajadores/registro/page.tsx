@@ -1,16 +1,17 @@
 import Link from "next/link";
+import { parseWorkerRegistration } from "@/lib/registration-validation";
 import { revalidatePath } from "next/cache";
 import { AppHeader } from "@/components/app-header";
 import { WorkerRegistrationForm } from "@/components/worker-registration-form";
 import type { WorkStyle } from "@/lib/types";
 import {
   findWorkerByWhatsAppNumber,
-  getList,
   uploadWorkerPhoto
 } from "@/lib/worker-profile";
 
 export type WorkerRegistrationActionState = {
   success?: true;
+  validationError?: true;
   photoWarning?: string;
   jobCategoryError?: true;
   supabaseError?: true;
@@ -28,69 +29,17 @@ const fallbackWorkStyles: Array<{ value: WorkStyle; label: string }> = [
   { label: "Flexible", value: "flexible" }
 ];
 
-function getServerErrorDetails(error: unknown) {
-  if (error instanceof Error) {
-    return {
-      message: error.message,
-      name: error.name,
-      stack: error.stack
-    };
-  }
-
-  return {
-    message: String(error),
-    name: "UnknownError"
-  };
-}
-
-function logWorkerRegistrationServerConfig() {
-  console.info("Worker registration server config:", {
-    hasNextPublicSupabaseUrl: Boolean(
-      process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
-    ),
-    hasSupabaseServiceRoleKey: Boolean(
-      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
-    )
-  });
-}
-
-function getDesiredIncome(formData: FormData) {
-  const desiredIncome = Number(formData.get("desired_income"));
-
-  return Number.isFinite(desiredIncome) ? desiredIncome : 0;
-}
-
-function getShortIntro(formData: FormData) {
-  const shortIntro = String(formData.get("short_intro") || "").trim();
-
-  return shortIntro || "Disponible para trabajar.";
-}
-
-function getWorkerSkillsWithPrimaryJob(formData: FormData) {
-  const primaryJob = String(formData.get("job_category") || "").trim();
-
-  if (!primaryJob) {
-    return null;
-  }
-
-  const extraSkills = getList(formData, "skills").filter(
-    (skill) => skill.toLowerCase() !== primaryJob.toLowerCase()
-  );
-
-  return [primaryJob, ...extraSkills];
-}
-
 async function loadWorkerRegistrationDependencies() {
   try {
     const supabaseAdmin = await import("@/lib/supabase-admin");
 
     return {
-      supabaseAdmin: supabaseAdmin.supabaseAdmin
+      supabaseAdmin: supabaseAdmin.getSupabaseAdminClient()
     };
   } catch (error) {
     console.error(
       "Worker registration dependencies failed to load.",
-      getServerErrorDetails(error)
+      { name: error instanceof Error ? error.name : "UnknownError" }
     );
     return null;
   }
@@ -102,7 +51,8 @@ async function submitWorkerRegistration(
 ): Promise<WorkerRegistrationActionState> {
   "use server";
 
-  logWorkerRegistrationServerConfig();
+  const validated = parseWorkerRegistration(formData);
+  if (!validated) return { validationError: true };
 
   const dependencies = await loadWorkerRegistrationDependencies();
 
@@ -121,16 +71,7 @@ async function submitWorkerRegistration(
     };
   }
 
-  const skills = getWorkerSkillsWithPrimaryJob(formData);
-
-  if (!skills) {
-    return {
-      jobCategoryError: true
-    };
-  }
-
-  const whatsappNumberInput = String(formData.get("whatsapp_number") || "").trim();
-  const existingWorker = await findWorkerByWhatsAppNumber(whatsappNumberInput);
+  const existingWorker = await findWorkerByWhatsAppNumber(validated.whatsapp_number);
 
   if (existingWorker) {
     // Existing profile detected — never insert a duplicate. Surface the
@@ -140,29 +81,7 @@ async function submitWorkerRegistration(
     };
   }
 
-  const insertPayload: {
-    city: string;
-    desired_income: number;
-    edit_token: string;
-    full_name: string;
-    short_intro: string;
-    skills: string[];
-    whatsapp_number: string;
-    work_style: WorkStyle;
-  } = {
-    full_name: String(formData.get("full_name") || "").trim(),
-    city: String(formData.get("city") || "").trim(),
-    whatsapp_number: String(formData.get("whatsapp_number") || "").trim(),
-    work_style: String(formData.get("work_style") || "flexible") as WorkStyle,
-    short_intro: getShortIntro(formData),
-    skills,
-    desired_income: getDesiredIncome(formData),
-    edit_token: crypto.randomUUID()
-  };
-
-  const insertPayloadKeys = Object.keys(insertPayload).sort();
-
-  console.info("Worker registration insert payload keys:", insertPayloadKeys);
+  const insertPayload = { ...validated, edit_token: crypto.randomUUID() };
 
   let data: { id: string } | null = null;
   let error:
@@ -187,8 +106,7 @@ async function submitWorkerRegistration(
     console.error(
       "Worker registration insert threw before Supabase returned a response.",
       {
-        ...getServerErrorDetails(insertError),
-        payloadKeys: insertPayloadKeys
+        name: insertError instanceof Error ? insertError.name : "UnknownError"
       }
     );
 
@@ -198,12 +116,9 @@ async function submitWorkerRegistration(
   }
 
   if (error) {
+    if (error.code === "23505") return { existingProfile: true };
     console.error("Worker registration Supabase insert error:", {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-      payloadKeys: insertPayloadKeys
+      code: error.code
     });
 
     return {
@@ -231,9 +146,7 @@ async function submitWorkerRegistration(
     if (photoUpdateError) {
       photoWarning = "Recibimos tu perfil, pero no pudimos asociar la foto. Puedes añadirla al editarlo.";
       console.warn("Worker registration photo URL update failed.", {
-        workerId: data.id,
-        code: photoUpdateError.code,
-        message: photoUpdateError.message
+        code: photoUpdateError.code
       });
     }
   }
@@ -247,11 +160,12 @@ async function submitWorkerRegistration(
   };
 }
 
-export default function WorkerRegistrationPage({
-  searchParams
+export default async function WorkerRegistrationPage({
+  searchParams: searchParamsPromise
 }: {
-  searchParams: { estado?: string };
+  searchParams: Promise<{ estado?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
   const state = searchParams.estado;
 
   return (

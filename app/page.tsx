@@ -52,15 +52,16 @@ function extractCities(workers: Array<{ city?: string | null }>): string[] {
 }
 
 export default async function Home({
-  searchParams,
+  searchParams: searchParamsPromise,
 }: {
-  searchParams: {
+  searchParams: Promise<{
     city?: string;
     skill?: string;
     income?: string;
     workStyle?: string;
-  };
+  }>;
 }) {
+  const searchParams = await searchParamsPromise;
   const workersResult = await getWorkersResult(searchParams);
   const workers = workersResult.workers;
   const hasWorkers = workers.length > 0;

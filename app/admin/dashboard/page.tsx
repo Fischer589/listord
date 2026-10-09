@@ -9,7 +9,7 @@ export const revalidate = 0;
 // ─── Data fetching ────────────────────────────────────────────────────────────────────────────────
 
 async function getDashboardStats() {
-  requireAdmin();
+  await requireAdmin();
   noStore();
   const supabase = getSupabaseAdminClient();
   if (!supabase) return null;

@@ -3,35 +3,44 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node --import tsx --test tests/*.test.mjs tests/*.test.ts",
-    "lint": "next lint",
+    "test": "node scripts/patch-braces.mjs --check && node --import tsx --test tests/*.test.mjs tests/*.test.ts",
+    "lint": "node scripts/patch-braces.mjs --check && eslint app components lib middleware.ts --max-warnings=0",
     "smoke:foundation": "node scripts/smoke-foundation.mjs",
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/patch-braces.mjs --check && next dev",
+    "build": "node scripts/patch-braces.mjs --check && next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
-    "test:e2e:request": "playwright test"
+    "typecheck": "node scripts/patch-braces.mjs --check && next typegen && tsc --noEmit",
+    "test:e2e:request": "playwright test",
+    "security:check": "node scripts/patch-braces.mjs --check && node scripts/security-check.mjs",
+    "postinstall": "node scripts/patch-braces.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.43.4",
-    "next": "14.2.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@supabase/supabase-js": "2.117.3",
+    "next": "15.5.27",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "sharp": "0.35.5",
     "stripe": "^22.1.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",
     "@playwright/test": "^1.64.0",
-    "@types/node": "^20.12.12",
-    "@types/react": "^18.3.2",
-    "@types/react-dom": "^18.3.0",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "autoprefixer": "^10.4.19",
     "eslint": "8.57.1",
-    "eslint-config-next": "14.2.3",
-    "postcss": "^8.4.38",
+    "eslint-config-next": "15.5.27",
+    "postcss": "8.5.29",
     "tailwindcss": "^3.4.3",
     "tsx": "4.20.6",
     "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "overrides": {
+    "postcss-selector-parser": "7.1.6",
+    "postcss": "$postcss"
   }
 }

@@ -1,3 +1,4 @@
+import { legacyWorkerEditingEnabled } from "./release-gates";
 import { getSupabaseAdminClient } from "./supabase-admin";
 import { isValidEditToken } from "./worker-profile";
 import { getBoostEligibility, type BoostState } from "./boost";
@@ -23,6 +24,7 @@ export type BoostableWorker = {
 export async function findBoostableWorkerByEditToken(
   editToken: string
 ): Promise<BoostableWorker | null> {
+  if (!legacyWorkerEditingEnabled()) return null;
   const trimmedToken = editToken?.trim() || "";
 
   if (!trimmedToken || !isValidEditToken(trimmedToken)) {

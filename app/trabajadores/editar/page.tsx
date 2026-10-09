@@ -1,3 +1,4 @@
+import { legacyWorkerEditingEnabled } from "@/lib/release-gates";
 import { WorkerPhotoInput } from "@/components/worker-photo-input";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
@@ -59,6 +60,7 @@ function getEditRedirect(token: string, state: string) {
 }
 
 async function findWorkerByEditToken(token?: string) {
+  if (!legacyWorkerEditingEnabled()) return null;
   const editToken = token?.trim() || "";
 
   if (!editToken) {
@@ -130,6 +132,7 @@ function buildSkillsWithPrimaryJob(primaryJob: string, extraSkills: string[]) {
 
 async function updateWorkerProfile(formData: FormData) {
   "use server";
+  if (!legacyWorkerEditingEnabled()) redirect("/trabajadores/recuperar");
 
   const supabase = getSupabaseAdminClient();
 
@@ -290,10 +293,11 @@ async function updateWorkerProfile(formData: FormData) {
 export const metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" as const };
 
 export default async function EditWorkerPage({
-  searchParams
+  searchParams: searchParamsPromise
 }: {
-  searchParams: { token?: string; estado?: string; whatsapp?: string };
+  searchParams: Promise<{ token?: string; estado?: string; whatsapp?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
   const token = searchParams.token?.trim() || "";
   const state = searchParams.estado;
   const worker = await findWorkerByEditToken(token);
@@ -316,8 +320,8 @@ export default async function EditWorkerPage({
         </Link>
         <h1 className="mt-3 text-3xl font-black">Editar mi perfil</h1>
         <p className="mt-2 leading-7 text-black/70">
-          Usa el enlace de edicion que recibiste al registrarte. Si haces
-          cambios importantes, el perfil vuelve a revision antes de publicarse.
+          La edición mediante enlaces anteriores está suspendida hasta verificar
+          el acceso del titular. Solicita recuperación segura para conservar tu perfil.
         </p>
 
         {state === "actualizado" && (

@@ -5,7 +5,7 @@ export function normalizeWhatsAppNumber(value?: string | null) {
   const trimmedValue = rawValue.trim();
   const digits = rawValue.replace(/\D/g, "");
 
-  if (digits.length < 10) {
+  if (digits.length < 10 || digits.length > 15) {
     return null;
   }
 
@@ -23,7 +23,7 @@ export function normalizeWhatsAppNumber(value?: string | null) {
 export function normalizeWhatsAppUrlPhoneNumber(value?: string | null) {
   const digits = String(value || "").replace(/[+\s-]/g, "").replace(/\D/g, "");
 
-  if (digits.length < 10) {
+  if (digits.length < 10 || digits.length > 15) {
     return null;
   }
 

@@ -38,6 +38,9 @@ test("privacy candidate on isolated PostgreSQL: leaky policies/column grants con
     await assert.rejects(db.exec(privacySql), /inherited private-column access/);
     await db.exec("rollback; revoke select(edit_token) on workers from legacy_reader");
     assert.deepEqual((await db.query("select * from workers order by id")).rows, before, "failed migration rolls back without data change");
+    await db.exec("grant update(worker_id) on contact_requests to legacy_reader");
+    await assert.rejects(db.exec(privacySql), /inherited contact write access/);
+    await db.exec("rollback; revoke update(worker_id) on contact_requests from legacy_reader");
     await db.exec(privacySql);
     await db.exec(await readFile(new URL("../supabase/migrations/202610081400_worker_availability.sql", import.meta.url), "utf8"));
     assert.deepEqual((await db.query("select * from workers order by id")).rows, before);
@@ -51,6 +54,9 @@ test("privacy candidate on isolated PostgreSQL: leaky policies/column grants con
       for (const sql of ["select * from workers", "select edit_token from workers", "select whatsapp_number from workers", "select user_id from workers", "select id from workers where edit_token='guess'", "select id from workers order by whatsapp_number", "update workers set available_now=true", "delete from workers", "insert into workers(id) values(gen_random_uuid())", "select token_hash from worker_availability"]) {
         await assert.rejects(db.query(sql), /permission denied/, sql);
       }
+      for (const sql of ["update contact_requests set worker_id=worker_id", "delete from contact_requests", "insert into contact_requests values(2,null)"]) {
+        await assert.rejects(db.query(sql), /permission denied/, sql);
+      }
       await db.exec("reset role");
     }
     await db.exec("set role anon");
@@ -59,6 +65,7 @@ test("privacy candidate on isolated PostgreSQL: leaky policies/column grants con
     await db.exec("reset role; set role authenticated");
     await db.query("select set_config('request.jwt.claim.sub',$1,false)",[owner]);
     assert.equal((await db.query("select * from contact_requests")).rows.length,1,"owner can read own contacts without exposing user_id");
+    await assert.rejects(db.query("update contact_requests set worker_id=worker_id"), /permission denied/, "ownership does not authorize forging both participant answers");
     await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);
     assert.equal((await db.query("select * from contact_requests")).rows.length,0);
     await db.exec("reset role; set role service_role");

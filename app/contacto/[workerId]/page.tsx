@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
 
-export default function ContactRequestPage({
-  params
+export default async function ContactRequestPage({
+  params: paramsPromise
 }: {
-  params: { workerId: string };
+  params: Promise<{ workerId: string }>;
 }) {
+  const params = await paramsPromise;
   return (
     <>
       <AppHeader />

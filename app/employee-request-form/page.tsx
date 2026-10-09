@@ -26,7 +26,7 @@ function getServerErrorDetails(error: unknown) {
 async function loadEmployerRequestDependencies() {
   try {
     const supabaseAdmin = await import("@/lib/supabase-admin");
-    return { supabaseAdmin: supabaseAdmin.supabaseAdmin };
+    return { supabaseAdmin: supabaseAdmin.getSupabaseAdminClient() };
   } catch (error) {
     console.error(
       "Employer request dependencies failed to load.",

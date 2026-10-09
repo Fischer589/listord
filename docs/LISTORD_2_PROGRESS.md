@@ -298,3 +298,36 @@ remain in the release checklist. This checkpoint prepares the privacy repair; it
 Exact next milestone: reconcile the candidate with authorized catalog findings,
 resolve compatibility/incident gates and validate in hosted Supabase staging; obtain
 explicit approval before production remediation or the consent-based activation pilot.
+
+## 2026-10-09 — Release preparation with external DB authentication blocker
+
+Continued clean `975196b`, preserving prior implementation. Full changes, remaining
+acceptance blockers and constraints are in [the release report](RELEASE_PREPARATION_2026-10-09.md).
+
+Verified after clean `npm ci` on Node 24.21.0: **56 unit/security tests**, **42 desktop/mobile Chromium
+cases**, lint (zero warnings), typecheck, build (**163 prerendered pages**), local
+HTTP authorization/containment/image smoke tests and built browser credential scans
+all pass. Async request-prop migration changes which routes are prerendered; the
+lower static-page count is not removal of routes. Runtime npm audit is **zero**;
+full audit still has **7 high build-tool entries** from one upstream-unpatched braces
+advisory. A hash-pinned local recursion guard is reapplied on installation and checked
+before tooling runs. Six new exploit, compatibility and tamper regression groups pass;
+audit metadata is neither suppressed nor falsified. See
+[the mitigation record](BRACES_SECURITY_MITIGATION.md).
+
+Prepared supported dependency updates, async framework compatibility, runtime admin
+client creation, bounded registration/telemetry/contact handling, free directory
+contact, default-off legacy sales/edit gates and honest disabled outcome submission.
+Extended the unapplied privacy candidate to deny client contact writes and reject
+inherited write grants while preserving owner reads/service access. Tests verify
+candidate rollback and preservation using synthetic PostgreSQL records only.
+
+Preserved auditor configuration, CA, `verify-full`, read-only settings and credentials.
+Production authentication remains an external blocker; no further credentials requested.
+Current Vercel connector has no accessible matching project/team; local optimizer
+bypass passes but fresh hosted metrics and image/storage acceptance remain unavailable.
+
+No production SQL, data/storage changes, password reset, role change, worker activation,
+messages, payment, push or deployment occurred. One local checkpoint commit records
+preparation. This is **not** full 2.0 production acceptance; see the report's remaining
+ownership/incident, hosted safety, contract/payment and security gates.

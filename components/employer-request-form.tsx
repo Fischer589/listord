@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import type { EmployerRequestActionState } from "@/app/employee-request-form/page";
 
 type EmployerRequestFormProps = {
@@ -38,7 +39,7 @@ export function EmployerRequestForm({
   otroValue,
   employmentTypes
 }: EmployerRequestFormProps) {
-  const [state, formAction] = useFormState(action, initialState);
+  const [state, formAction] = useActionState(action, initialState);
   const [selectedCategory, setSelectedCategory] = useState("");
 
   if (state.success) {

@@ -13,7 +13,7 @@ export default defineConfig({
   webServer: {
     command: "npm run start -- --hostname 127.0.0.1 --port 3188",
     // Enable the UI only in this isolated test server; never allow live writes.
-    env: { WORKER_AVAILABILITY_RENEWAL_ENABLED: "true", SUPABASE_SERVICE_ROLE_KEY: "" },
+    env: { WORKER_AVAILABILITY_RENEWAL_ENABLED: "true", SUPABASE_SERVICE_ROLE_KEY: "", STRIPE_SECRET_KEY: "", STRIPE_WEBHOOK_SECRET: "", LEGACY_WORKER_EDIT_ENABLED: "false", LEGACY_CHECKOUT_ENABLED: "false" },
     url: "http://127.0.0.1:3188/solicitar",
     reuseExistingServer: false,
     timeout: 60000,

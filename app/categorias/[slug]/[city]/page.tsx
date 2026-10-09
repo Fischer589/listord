@@ -23,10 +23,11 @@ export function generateStaticParams() {
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
-  params,
+  params: paramsPromise,
 }: {
-  params: { slug: string; city: string };
+  params: Promise<{ slug: string; city: string }>;
 }): Promise<Metadata> {
+  const params = await paramsPromise;
   const cat = getCategoryBySlug(params.slug);
   const city = getCityBySlug(params.city);
   if (!cat || !city) return { title: "ListoRD" };
@@ -134,10 +135,11 @@ function CityJsonLd({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function CityCategoryPage({
-  params,
+  params: paramsPromise,
 }: {
-  params: { slug: string; city: string };
+  params: Promise<{ slug: string; city: string }>;
 }) {
+  const params = await paramsPromise;
   const cat = getCategoryBySlug(params.slug);
   const city = getCityBySlug(params.city);
   if (!cat || !city) notFound();

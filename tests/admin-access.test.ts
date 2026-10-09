@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 import { middleware } from "../middleware";
 import { isAdminSession } from "../lib/admin-session";
 import { requireAdmin } from "../lib/admin-auth";
-import { requestAsyncStorage } from "next/dist/client/components/request-async-storage.external";
+import { withAdminCookie } from "./request-context";
 
 test("admin sessions fail closed for missing/wrong credentials", () => {
   assert.equal(isAdminSession(undefined, undefined), false);
@@ -33,15 +33,14 @@ test("middleware denies admin even when the legacy bypass flag is false", () => 
   }
 });
 
-test("server guard rejects requests independently of middleware", () => {
+test("server guard rejects requests independently of middleware", async () => {
   const old = process.env.ADMIN_SESSION_SECRET;
   process.env.ADMIN_SESSION_SECRET = "guard-test-secret";
   try {
     for (const value of [undefined, "wrong", "guard-test-secret"]) {
-      const store = { cookies: { get: () => value ? { value } : undefined } } as unknown as Parameters<typeof requestAsyncStorage.run>[0];
-      requestAsyncStorage.run(store, () => {
-        if (value === "guard-test-secret") assert.doesNotThrow(requireAdmin);
-        else assert.throws(requireAdmin, /NEXT_REDIRECT/);
+      await withAdminCookie(value, async () => {
+        if (value === "guard-test-secret") await assert.doesNotReject(requireAdmin);
+        else await assert.rejects(requireAdmin, /NEXT_REDIRECT/);
       });
     }
   } finally {

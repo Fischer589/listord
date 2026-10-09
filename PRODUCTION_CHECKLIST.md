@@ -1,47 +1,50 @@
-# ListoRD Production Checklist
+# ListoRD production acceptance checklist
 
-## Environment
+Current decision and evidence: [release preparation](docs/RELEASE_PREPARATION_2026-10-09.md).
+Local verification does not authorize a migration, worker activation, push or deployment.
 
-- Set `NEXT_PUBLIC_SUPABASE_URL` in Vercel.
-- Set `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel.
-- Set `SUPABASE_SERVICE_ROLE_KEY` in Vercel as a private server-side variable.
-- Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_WEEKLY_PRICE_ID`, and `STRIPE_MONTHLY_PRICE_ID`.
-- Do not expose `SUPABASE_SERVICE_ROLE_KEY` in any `NEXT_PUBLIC_*` variable.
-- Keep service role keys only in private server-side environments when needed.
-- Confirm `NEXT_PUBLIC_SUPABASE_URL` uses `https://`.
+## Required before production acceptance
 
-## Supabase
+- Preserve the existing auditor role/configuration, TLS `verify-full`, CA and read-only
+  privileges. Database authentication is an external blocker; do not reset credentials.
+- Complete authorized read-only catalog/grant/migration reconciliation with
+  `supabase/preflight_worker_privacy.sql`; review private function bodies privately.
+- Never run `supabase/schema.sql`, seeds or all historical migrations against production.
+  Review only explicitly selected candidates against actual deployed state.
+- Validate candidate migrations against a production-equivalent hosted Supabase staging
+  environment using synthetic records; verify rollback and untouched legacy records.
+- Resolve exposed-token containment/recovery, verified ownership/outcomes, durable abuse
+  controls, admin access, real storage permissions and normalized-phone uniqueness.
+- Preserve payment history and existing entitlements; verify historical webhook replay
+  and idempotency in Stripe sandbox before any new payment behavior is accepted.
+- Keep `WORKER_AVAILABILITY_RENEWAL_ENABLED`, `LEGACY_WORKER_EDIT_ENABLED` and
+  `LEGACY_CHECKOUT_ENABLED` false. Express checkout stays disabled.
+- Complete the full 2.0 acceptance contract in `LISTORD_2_RELEASE.md`; disabled incomplete
+  features are not successful acceptance.
+- Retain and verify the hash-pinned braces mitigation on every clean installation;
+  review `docs/BRACES_SECURITY_MITIGATION.md`. Upstream npm still reports seven high
+  entries; runtime audit is clean. Never bypass guards or describe raw audit as clean.
+- Confirm actual Vercel Node 24 configuration, hosting pause state, image behavior and
+  source-image caching. Do not infer production mitigation from a local build.
+- Record backup, forward-repair plan and explicit production migration/deployment approval.
 
-- Run `supabase/schema.sql` or all migrations in `supabase/migrations`.
-- Enable Row Level Security on all public tables.
-- Confirm policies allow public worker browsing but restrict profile/contact updates.
-- Create the Storage bucket for worker photos.
-- Configure Storage policies before accepting public uploads.
-- Seed or publish real worker records before launch.
+## Reproducible local verification (Node 24)
 
-## App Safety
+Use the version in `.nvmrc`. Install with `npm ci`. No production credentials are needed.
+Run build and standalone typecheck sequentially; both use generated `.next/types`.
 
-- `npm run typecheck` passes.
-- `npm run build` passes.
-- No service role key is present in `.env.local`, Vercel public env, browser bundles, or logs.
-- Missing Supabase config shows an empty state, not demo workers.
-- Error, loading, and 404 pages render correctly.
-- Server actions validate required inputs before writing to Supabase.
+```sh
+npm test
+npm run lint
+npm run build
+npm run typecheck
+npm run test:e2e:request
+npm run security:check
+npm audit --omit=dev
+npm audit
+```
 
-## SEO And UX
-
-- Metadata title and description are set.
-- Open Graph metadata is set.
-- The homepage is mobile-first and readable on small screens.
-- Worker cards have bounded image sizes and do not cause layout shift.
-- Contact buttons are large enough for touch.
-
-## Deployment
-
-- Deploy to Vercel from the production branch.
-- Add production environment variables before first deploy.
-- Verify the deployed homepage loads CSS and `_next/static` assets.
-- Verify Supabase queries return workers in production.
-- Verify contact request and hiring outcome flows with test accounts.
-- Verify Stripe sends `checkout.session.completed` to `/api/stripe/webhook`.
-- Review npm audit output and upgrade vulnerable packages before public launch.
+For `npm run smoke:foundation`, start the production server on `127.0.0.1:3187`
+with Supabase service and Stripe credentials blank and all gates false. The script
+only targets localhost. Browser fixtures explicitly blank service/Stripe keys.
+Do not treat fixture pass counts as hosted RLS, payment, physical-device or Safari evidence.

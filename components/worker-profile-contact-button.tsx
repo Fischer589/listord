@@ -164,7 +164,7 @@ export function WorkerProfileContactButton({
         Contactar
       </p>
       <p className="mt-2 text-sm font-bold text-ink/65">
-        Tu primer contacto del día es gratis. Habla directo por WhatsApp.
+        El contacto es gratis. Habla directo por WhatsApp.
       </p>
 
       <button

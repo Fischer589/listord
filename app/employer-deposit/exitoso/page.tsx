@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 type DepositStatus = "checking" | "paid" | "pending" | "failed" | "unknown";
 
 export default function EmployerDepositSuccessPage({
-  searchParams
+  searchParams: searchParamsPromise
 }: {
-  searchParams: { session_id?: string };
+  searchParams: Promise<{ session_id?: string }>;
 }) {
+  const searchParams = use(searchParamsPromise);
   const sessionId = searchParams?.session_id;
   const [status, setStatus] = useState<DepositStatus>("checking");
 

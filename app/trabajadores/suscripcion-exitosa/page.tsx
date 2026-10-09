@@ -6,11 +6,12 @@ export const metadata: Metadata = {
   description: "Tu plan de trabajador ha sido activado en ListoRD.",
 };
 
-export default function WorkerSubscriptionSuccess({
-  searchParams,
+export default async function WorkerSubscriptionSuccess({
+  searchParams: searchParamsPromise,
 }: {
-  searchParams: { plan?: string };
+  searchParams: Promise<{ plan?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
   const plan = searchParams?.plan;
   const isFeatured = plan === "featured";
   const isPro      = plan === "pro";

@@ -2,11 +2,12 @@ import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
 import { normalizeWhatsAppNumber } from "@/lib/worker-profile";
 
-export default function RecoverWorkerEditLinkPage({
-  searchParams
+export default async function RecoverWorkerEditLinkPage({
+  searchParams: searchParamsPromise
 }: {
-  searchParams: { whatsapp?: string };
+  searchParams: Promise<{ whatsapp?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
   const whatsappNumber = searchParams.whatsapp?.trim() || "";
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
   const hasSearch = Boolean(whatsappNumber);

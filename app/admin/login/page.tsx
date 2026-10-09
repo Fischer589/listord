@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -31,7 +32,7 @@ async function handleLogin(formData: FormData) {
     redirect('/admin/login?error=1')
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   cookieStore.set(COOKIE_NAME, secret, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -43,23 +44,24 @@ async function handleLogin(formData: FormData) {
   redirect('/admin/workers')
 }
 
-export default function AdminLoginPage({
-  searchParams
+export default async function AdminLoginPage({
+  searchParams: searchParamsPromise
 }: {
-  searchParams: { error?: string }
+  searchParams: Promise<{ error?: string }>
 }) {
+  const searchParams = await searchParamsPromise;
   const hasError = Boolean(searchParams?.error)
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-crema p-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <a
+          <Link
             href="/"
             className="inline-block text-sm font-bold text-black/40 hover:text-black/60"
           >
             ← Volver al inicio
-          </a>
+          </Link>
           <div className="mt-4">
             <p className="font-display text-2xl tracking-tight text-ink">ListoRD</p>
             <p className="mt-1 text-sm font-bold text-black/45">Panel de administración</p>

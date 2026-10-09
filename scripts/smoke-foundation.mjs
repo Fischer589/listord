@@ -38,8 +38,27 @@ assert.ok(html.includes("Solicitar recuperación segura"));
 assert.ok(!html.includes("Abrir enlace de edicion"));
 console.log("Phone-only recovery: support flow, no edit link");
 
+const exposedLink = await fetch(base + "/trabajadores/editar?token=22222222-2222-4222-8222-222222222222");
+const exposedHtml = await exposedLink.text();
+assert.match(exposedHtml, /suspendida/);
+assert.doesNotMatch(exposedHtml, /name="edit_token"/);
+for (const route of ["checkout", "worker-checkout", "boost-checkout", "employer-deposit-checkout"]) {
+  const response = await fetch(`${base}/api/stripe/${route}`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+  assert.equal(response.status, 503, route);
+}
+const renewal = await fetch(`${base}/api/workers/availability`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+assert.equal(renewal.status, 503);
+const outcome = await fetch(`${base}/resultados/empleador/22222222-2222-4222-8222-222222222222`);
+assert.match(await outcome.text(), /No se ha registrado ninguna respuesta/);
+console.log("Containment: legacy edit links, new checkout and availability disabled; outcomes report no saved response");
+
 const image = await fetch(base + "/_next/image?url=%2Flogo.png&w=640&q=75");
 assert.equal(image.status, 404);
 const manifest = JSON.parse(await readFile(new URL("../.next/images-manifest.json", import.meta.url), "utf8"));
 assert.equal(manifest.images.unoptimized, true);
 console.log("Image safeguard: enabled in manifest; optimizer endpoint returns 404");
+for (const width of [640, 3840]) {
+  const response = await fetch(`${base}/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-fixture&w=${width}&q=75`);
+  assert.equal(response.status, 404);
+}
+console.log("Direct remote optimizer probes: 404 at both widths");

@@ -17,7 +17,7 @@ async function getEmployerPayments(): Promise<{
   payments: EmployerPayment[];
   totalPaidRD: number;
 }> {
-  requireAdmin();
+  await requireAdmin();
   noStore();
   const supabase = getSupabaseAdminClient();
   if (!supabase) return { payments: [], totalPaidRD: 0 };

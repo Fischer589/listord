@@ -102,3 +102,33 @@ optimized images; verify production HTML/network requests and platform handling
 of `/_next/image` after deployment. Monitor new transformation/write usage and
 source bandwidth, and inspect retained edge-request dimensions (URL, width,
 quality, cache result and user agent) if unexplained usage continues.
+
+## 2026-10-09 release-preparation verification
+
+The October 7 mechanism/usage findings above are historical. The spike attribution
+remains unproven; no new traffic attribution or billing reduction is claimed.
+
+The application now builds with Next **15.5.27**, React **19.2.8**, Node **24.21.0**
+and Sharp **0.35.5**. Rechecked all six actual renderer cases: source URLs remain
+stable, no `/_next/image` or generated variant srcsets, fill layout and lazy/priority
+loading preserved. The built image manifest still has `unoptimized: true`.
+Local production HTTP probes return **404** for the optimizer on local and allowed
+remote URLs, including widths 640 and 3840. New worker photos remain content-validated,
+oriented, bounded to 800×800, metadata-free WebP, content-addressed within worker
+storage paths with immutable cache control. Existing object references are untouched.
+
+The 56-test suite includes image processing/storage-transport regressions; 42 browser
+cases pass on desktop/mobile-emulated Chromium. These do not verify actual Supabase
+storage headers, existing-photo dimensions or physical-device download performance.
+The direct-source bandwidth tradeoff remains and requires hosted measurements.
+
+Current Vercel read-only connector evidence: project lookup by `listord` returned
+404; project search and team listing returned no accessible entries. This establishes
+that current hosted metadata/usage cannot be verified through this connection, not
+that the project was deleted. No environment values were fetched. The older deployment
+and usage evidence above is not relabeled current. No project setting, deployment,
+cache, storage object or firewall rule changed. Hosted optimizer behavior, hosting pause
+resolution and subsequent transformation/write usage remain acceptance checks.
+
+Current guidance still supports `unoptimized` to avoid optimizer transformations and
+cache operations: [Vercel image usage controls](https://vercel.com/docs/image-optimization/managing-image-optimization-costs).

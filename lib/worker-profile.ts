@@ -169,8 +169,9 @@ export async function uploadWorkerPhoto(
     // Content-addressed paths scoped to an opaque worker ID make retries idempotent.
     // This SDK's upload method returns raw API JSON (statusCode); other storage
     // methods can return StorageApiError (status). Support both exact shapes.
-    const status = error && "statusCode" in error ? Number(error.statusCode)
-      : error && "status" in error ? Number(error.status) : undefined;
+    const storageError = error as { statusCode?: string | number; status?: number } | null;
+    const status = storageError?.statusCode !== undefined ? Number(storageError.statusCode)
+      : storageError?.status;
     const alreadyExists = error && (status === 409 || (
       status === 400 && error.message === "The resource already exists"
     ));

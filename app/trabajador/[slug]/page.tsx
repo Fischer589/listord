@@ -96,10 +96,11 @@ function isNewProfile(createdAt: string | undefined, days = 30): boolean {
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
-  params,
+  params: paramsPromise,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  const params = await paramsPromise;
   const worker = await getWorkerProfile(params.slug);
   if (!worker) return { title: "Perfil no encontrado | ListoRD" };
 
@@ -198,10 +199,11 @@ const HOW_IT_WORKS = [
 ];
 
 export default async function WorkerProfilePage({
-  params,
+  params: paramsPromise,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const params = await paramsPromise;
   const worker = await getWorkerProfile(params.slug);
   if (!worker) notFound();
 

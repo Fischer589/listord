@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { PGlite } from "@electric-sql/pglite";
-import { requestAsyncStorage } from "next/dist/client/components/request-async-storage.external";
+import { withAdminCookie } from "./request-context";
 import { isFreshAvailability, validAvailabilityKey } from "../lib/availability";
 import { matchWorker } from "../lib/request-matching";
 import { emptyRequest } from "../lib/request-specification";
@@ -120,8 +120,7 @@ test("HTTP renewal requires private key, server gate, CSRF checks and admin auth
     assert.doesNotMatch(JSON.stringify(matched), /token_hash|confirmed_at|access_expires_at/);
     mode = "error"; await assert.rejects(getRequestMatches({ ...emptyRequest(), category: "limpieza", city: "Puerto Plata" })); mode = "ok";
     for (const cookie of [undefined, "wrong", "test-admin"]) {
-      const store = { cookies: { get: () => cookie ? { value: cookie } : undefined } } as unknown as Parameters<typeof requestAsyncStorage.run>[0];
-      await requestAsyncStorage.run(store, async () => {
+      await withAdminCookie(cookie, async () => {
         if (cookie !== "test-admin") await assert.rejects(issue(req({ workerId: id, ownershipConfirmed: true })), /NEXT_REDIRECT/);
         else {
           assert.equal((await issue(req({ workerId: id, ownershipConfirmed: false }))).status, 400);

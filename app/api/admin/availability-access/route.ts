@@ -6,7 +6,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { MATCH_HEADERS, readMatchBody } from "@/lib/request-match-server";
 
 export async function POST(request: Request) {
-  requireAdmin();
+  await requireAdmin();
   if (!availabilityRenewalEnabled()) return NextResponse.json({ error: "Renovación deshabilitada hasta verificar migración y seguridad." }, { status: 503, headers: MATCH_HEADERS });
   const body = await readMatchBody(request).catch(() => null) as { workerId?: unknown; ownershipConfirmed?: unknown; consentConfirmed?: unknown } | null;
   if (body?.ownershipConfirmed !== true || body.consentConfirmed !== true || typeof body.workerId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.workerId)) return NextResponse.json({ error: "Confirma la identidad del titular y su solicitud de recibir el enlace privado." }, { status: 400, headers: MATCH_HEADERS });

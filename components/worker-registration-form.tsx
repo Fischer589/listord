@@ -2,7 +2,7 @@
 
 import { WorkerPhotoInput } from "@/components/worker-photo-input";
 import Link from "next/link";
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import type React from "react";
 import type { WorkerRegistrationActionState } from "@/app/trabajadores/registro/page";
 import type { WorkStyle } from "@/lib/types";
@@ -40,7 +40,7 @@ export function WorkerRegistrationForm({
   action,
   workStyles
 }: WorkerRegistrationFormProps) {
-  const [state, formAction] = useFormState(action, initialState);
+  const [state, formAction] = useActionState(action, initialState);
   const success = state.success;
   const hasJobCategoryError = state.jobCategoryError;
   const supabaseError = state.supabaseError;
@@ -99,6 +99,8 @@ export function WorkerRegistrationForm({
       )}
 
       {state.photoWarning && <p role="status" className="mt-4 rounded-xl bg-amber-50 p-4 text-amber-900">{state.photoWarning}</p>}
+
+      {state.validationError && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-red-900">Revisa el nombre, la ciudad, el trabajo y el teléfono. Usa datos válidos y textos breves.</p>}
 
       {supabaseError && (
         <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">

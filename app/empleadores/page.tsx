@@ -35,9 +35,9 @@ export default function EmployersPage() {
               Consigue trabajadores más rápido
             </h1>
             <p className="mt-4 max-w-xl leading-7 text-ink/70">
-              Navega gratis y usa 1 contacto diario sin pagar. El acceso
-              premium desbloquea WhatsApp instantáneo, perfiles en prioridad y
-              señales de confianza — sin bloquear el empleo.
+              Describe el servicio que necesitas, revisa perfiles compatibles y
+              contacta gratis por WhatsApp. Confirma directamente la disponibilidad
+              y los requisitos con cada persona.
             </p>
 
             {/* How it works */}
@@ -49,41 +49,15 @@ export default function EmployersPage() {
               <HowStep number={2} text="Revisa perfiles verificados reales" />
               <HowStep
                 number={3}
-                text="Contacta directo por WhatsApp — gratis el primero"
+                text="Contacta directo por WhatsApp — gratis"
               />
             </div>
           </div>
 
-          {/* Pricing card */}
           <div className="rounded-2xl border border-hoja/20 bg-white p-5 shadow-soft">
-            <p className="text-sm font-black uppercase tracking-wide text-hoja">
-              Acceso premium
-            </p>
-            <p className="mt-2 text-lg font-black text-ink">
-              Desde RD$99 puedes contactar trabajadores listos para trabajar hoy.
-            </p>
-            <div className="mt-4 grid gap-3">
-              <PlanCard
-                title="Mensual"
-                price="RD$199 / mes"
-                detail="El mejor valor — contratación constante sin límites"
-                recommended
-              />
-              <PlanCard
-                title="Semanal"
-                price="RD$99 / semana"
-                detail="Acceso rápido por 7 días"
-              />
-            </div>
-            <Link
-              href="/"
-              className="tap-target mt-5 flex items-center justify-center rounded-xl bg-gradient-to-br from-ink to-[#2d4a1e] px-4 py-4 font-black text-white shadow-[0_16px_40px_rgba(29,29,27,0.22)]"
-            >
-              Buscar trabajadores ahora
-            </Link>
-            <p className="mt-3 text-center text-xs font-semibold text-ink/50">
-              Sin compromiso · Cancela cuando quieras
-            </p>
+            <h2 className="text-lg font-black text-ink">Describe lo que necesitas</h2>
+            <p className="mt-3 leading-7 text-ink/70">Elige servicio y ciudad, concreta las condiciones y revisa las coincidencias reales. Un perfil compatible no es una respuesta de interés.</p>
+            <Link href="/solicitar" className="tap-target mt-5 flex items-center justify-center rounded-xl bg-hoja px-4 py-4 font-black text-white">Preparar mi solicitud</Link>
           </div>
         </section>
 
@@ -92,17 +66,17 @@ export default function EmployersPage() {
           <TrustCard
             icon="🚫"
             title="No bloqueamos el empleo"
-            text="El pago compra velocidad y prioridad, no permiso para trabajar. Los trabajadores son siempre libres."
+            text="Puedes descubrir perfiles y abrir el contacto sin pagar."
           />
           <TrustCard
             icon="🎁"
-            title="Gratis para empezar"
-            text="1 contacto gratis al día te permite validar el servicio antes de pagar."
+            title="Contacto gratuito"
+            text="Habla directamente y acuerda las condiciones con cada trabajador."
           />
           <TrustCard
             icon="✅"
             title="Perfiles verificados"
-            text="Cada perfil es revisado manualmente. Tú hablas con personas reales."
+            text="La aprobación del perfil no confirma disponibilidad, cualificaciones ni interés en tu solicitud."
           />
         </section>
 
@@ -137,37 +111,6 @@ function HowStep({ number, text }: { number: number; text: string }) {
         {number}
       </span>
       <p className="font-black text-ink/80">{text}</p>
-    </div>
-  );
-}
-
-function PlanCard({
-  title,
-  price,
-  detail,
-  recommended
-}: {
-  title: string;
-  price: string;
-  detail: string;
-  recommended?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-xl border p-4${recommended ? " border-hoja/40 bg-cielo/60" : " border-black/10"}`}
-    >
-      <div className="flex min-w-0 items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <h2 className="font-black text-ink">{title}</h2>
-          {recommended && (
-            <span className="rounded-full bg-hoja px-2 py-0.5 text-xs font-black text-white">
-              Más popular
-            </span>
-          )}
-        </div>
-        <p className="shrink-0 text-xl font-black text-hoja">{price}</p>
-      </div>
-      <p className="mt-1 text-sm text-ink/60">{detail}</p>
     </div>
   );
 }

@@ -1,5 +1,9 @@
 # ListoRD 2.0 release contract
 
+> **2026-10-09 checkpoint:** [current preparation and blockers](docs/RELEASE_PREPARATION_2026-10-09.md).
+> Production authentication is an external blocker; no credentials, production SQL,
+> activation or deployment are requested. Latest local evidence supersedes older counts below.
+
 **Scope:** service + location → dynamic scope → structured opportunity → suitable
 match → qualified YES/NO → contextual WhatsApp. Two sides, free worker discovery,
 existing production data preserved. Express: RD$299 per request, one-time. No
