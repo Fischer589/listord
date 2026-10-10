@@ -9,7 +9,8 @@ request handler. Runtime-only npm audit is zero.
 
 ## Investigation and decision
 
-The advisory lists no patched release. npm still reports 3.0.3 as latest. The
+As checked on 2026-10-10, the advisory lists no patched release and npm still
+reports 3.0.3 as latest. The
 [upstream report](https://github.com/micromatch/braces/issues/70) describes recursive
 AST walkers and recommends bounding nesting before those walkers. The maintainer
 disputes the threat model, but the advisory remains published; we do not waive it.
@@ -25,8 +26,9 @@ A small **local mitigation**, not an upstream release, applies to the exact inst
 - Parser stack depth is capped before nesting curly braces **or parentheses**.
 - Compile, expand and stringify (including direct `braces/lib/*` imports) perform
   iterative AST validation before recursive work. Maximum depth is 128, maximum
-  traversed nodes 20,000. Repeated/cyclic `nodes` references fail closed; legitimate
-  parser `parent`/`prev` backlinks are not traversed.
+  traversed nodes 20,000. Repeated/cyclic `nodes` references and cyclic or
+  excessively deep `parent` chains fail closed. Legitimate parser backlinks remain
+  valid; `prev` is not traversed.
 - Inputs beyond these limits produce a bounded `SyntaxError` with a stable code,
   not a native call-stack overflow. Callers cannot raise the limit via options.
 - SHA-256 digests pin all four upstream files. Version or byte changes stop installation
@@ -42,11 +44,17 @@ proof against all possible expensive regex/glob expressions, expansion combinati
 malicious AST getters or attacker-controlled JavaScript objects. Tooling patterns
 remain repository-owned; application inputs must never become build/glob patterns.
 
+The 2026-10-10 continuation also rejected cyclic and excessively deep direct-AST
+`parent` chains, which `expand` follows. A clean `npm ci` reapplied the updated guard.
+The full audit still reports seven high entries because no published patched package
+exists; `npm audit --omit=dev` reports zero. This is a mitigated installed copy with
+an unresolved registry advisory, not a clean full audit or a release acceptance.
+
 ## Verification
 
 Six regression groups cover ordinary glob/range/escaping behavior, deep balanced and
 unbalanced patterns under the original character limit, nested parentheses, direct
-AST/library entry points, cycles, affected consumer resolution, constrained-stack
+AST/library entry points, child and parent cycles, affected consumer resolution, constrained-stack
 subprocess behavior, patch idempotence, source tampering and unknown versions.
 
 The clean-install and complete application verification results are recorded in

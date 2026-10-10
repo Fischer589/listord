@@ -37,8 +37,12 @@ test("direct AST/library entry points cannot bypass guards with excessive depth 
   let parent = root;
   for (let i = 0; i < 4000; i++) { const child = { type: "brace", nodes: [] }; parent.nodes.push(child); parent = child; }
   const cyclic = { type: "root", nodes: [] }; cyclic.nodes.push(cyclic);
+  const parentCycle = { type: "root", nodes: [] };
+  const middle = { type: "text", nodes: [{ type: "text", nodes: [{ type: "text", value: "x" }] }] };
+  middle.parent = middle;
+  parentCycle.nodes.push(middle);
   for (const method of ["compile", "expand", "stringify"]) {
-    for (const ast of [root, cyclic]) {
+    for (const ast of [root, cyclic, parentCycle]) {
       assert.throws(() => braces[method](ast), guarded);
       assert.throws(() => require(`braces/lib/${method}`)(ast), guarded);
     }

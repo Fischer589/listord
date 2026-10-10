@@ -1,5 +1,22 @@
 # Hosted acceptance matrix — prepared, not executed
 
+## Access check — 2026-10-10 continuation
+
+**Hosted status: BLOCKED for every row below.** No authorized synthetic Supabase
+staging project, connection, or credentials are available in this workspace or
+connected accounts. The existing production auditor service was retried read-only;
+authentication stopped it before any SQL executed (`fe_sendauth: no password
+supplied`). Its TLS, role and configuration were not changed. The available Vercel
+account returned no ListoRD project or team. No Stripe test account or WhatsApp
+provider account/template was connected. No hosted migration, Auth request,
+storage upload, checkout, webhook delivery, provider message, refund or deployment
+was attempted.
+
+Local synthetic fixtures remain evidence only for repository behavior. Record a
+real staging project reference, approved operator, selected migration ledger and
+redacted results against each row before changing any release gate. Do not turn
+the local passes into hosted PASS statuses.
+
 Use an authorized **synthetic staging** Supabase project and Stripe test account.
 No production export, outreach, charge, SQL, activation or deployment is authorized
 by this document. Keep a record of environment, schema ledger, test timestamp,

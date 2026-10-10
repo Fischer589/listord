@@ -5,6 +5,21 @@ and completed the pending marketplace/Express implementation in the working tree
 This report supersedes older statements that these features were not implemented.
 Local evidence does not establish production acceptance or authorize activation.
 
+## Continuation after `945122f` — 2026-10-10
+
+- No hosted staging project or Stripe/WhatsApp test account was accessible. The
+  existing read-only production auditor connection failed authentication before SQL;
+  no live or staging data was changed. [Hosted matrix](HOSTED_ACCEPTANCE_2026-10-10.md)
+  remains BLOCKED in every row.
+- The `braces` advisory still has no published fix. The exact-byte local guard now
+  rejects cyclic/deep direct-AST parent chains as well as child nesting. A clean
+  `npm ci` reapplied it; **69 tests**, lint, typecheck, the **167-page production
+  build** and security scan passed. Production dependency audit: **0**; full audit:
+  **7 high** metadata entries remain. No advisory was suppressed or renamed.
+- No gates, provider credentials, migration, outbound messages, charge, push or
+  deployment were activated. The single next owner action is to connect an
+  existing authorized synthetic Supabase staging project for this matrix.
+
 ## Repository work completed
 
 - Anonymous category-specific intake for all 14 existing services, complete Spanish
