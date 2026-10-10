@@ -24,6 +24,21 @@ Node 24 local gates passed again: 69 unit/integration tests, 52 desktop/mobile
 Chromium cases, lint, typecheck, 167-page fixture-free build and security scan.
 These results do not replace the hosted checks or owner decisions below.
 
+**Recheck from `0ff1b99` (2026-10-10):** the owner reported connecting Supabase,
+but the integration catalog in this session still returned `installed: false` and
+exposed no Supabase tools or staging project handle. No staging environment variables
+were present. The only previously identified PostgreSQL service is the production
+auditor connection, which was not used for this acceptance attempt. Therefore no
+project identity could be verified and **every hosted row remains BLOCKED**; no
+hosted data or infrastructure was changed. Node 24 local verification passed:
+69 unit/integration tests, 52 desktop/mobile Chromium cases, lint, typecheck,
+fixture-free production build (167 static pages), and security scan. The full npm
+audit still reports seven high development-tool entries from the unpatched `braces`
+advisory; the production-only audit reports zero. See
+[the mitigation record](BRACES_SECURITY_MITIGATION.md). The next owner action is to
+attach the existing authorized synthetic Supabase staging project to this session
+so its project handle and tools become available for identity verification.
+
 Use an authorized **synthetic staging** Supabase project and Stripe test account.
 No production export, outreach, charge, SQL, activation or deployment is authorized
 by this document. Keep a record of environment, schema ledger, test timestamp,

@@ -68,6 +68,12 @@ Rechecked from `756d775`: `npm view braces version` still returns `3.0.3`;
 while `npm audit --omit=dev` reports zero. No forced major upgrade or advisory
 suppression was applied.
 
+Rechecked from `0ff1b99` on 2026-10-10: the full registry audit still reports
+seven high development-tool entries and the production-only audit reports zero.
+The [published advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
+still lists no patched version. The installed local guard and its exploit
+regressions passed; the unresolved registry finding remains visible.
+
 ## Maintenance
 
 When a supported upstream fix ships, review its changes, update the dependency tree,
