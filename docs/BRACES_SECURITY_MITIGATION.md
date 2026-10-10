@@ -63,6 +63,11 @@ continues reporting **7 high entries** because published braces 3.0.3 has no ups
 fix and audit does not inspect patched installed bytes. Report the mitigation and
 this residual registry finding together; never label the full npm audit clean.
 
+Rechecked from `756d775`: `npm view braces version` still returns `3.0.3`;
+`npm audit` still reports seven high entries through build/lint dependencies,
+while `npm audit --omit=dev` reports zero. No forced major upgrade or advisory
+suppression was applied.
+
 ## Maintenance
 
 When a supported upstream fix ships, review its changes, update the dependency tree,

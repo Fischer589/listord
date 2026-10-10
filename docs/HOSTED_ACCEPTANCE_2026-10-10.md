@@ -17,6 +17,13 @@ real staging project reference, approved operator, selected migration ledger and
 redacted results against each row before changing any release gate. Do not turn
 the local passes into hosted PASS statuses.
 
+**Recheck from `756d775`:** the Supabase integration is available but still
+unconnected, the accessible Vercel account lists no ListoRD project, and the
+workspace has no staging service configuration. No matrix row was executed.
+Node 24 local gates passed again: 69 unit/integration tests, 52 desktop/mobile
+Chromium cases, lint, typecheck, 167-page fixture-free build and security scan.
+These results do not replace the hosted checks or owner decisions below.
+
 Use an authorized **synthetic staging** Supabase project and Stripe test account.
 No production export, outreach, charge, SQL, activation or deployment is authorized
 by this document. Keep a record of environment, schema ledger, test timestamp,
