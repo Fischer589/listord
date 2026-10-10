@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { parseWorkerRegistration } from "@/lib/registration-validation";
+import { consumeIngestionBudget } from "@/lib/ingestion-budget";
 import { revalidatePath } from "next/cache";
 import { AppHeader } from "@/components/app-header";
 import { WorkerRegistrationForm } from "@/components/worker-registration-form";
@@ -53,6 +54,7 @@ async function submitWorkerRegistration(
 
   const validated = parseWorkerRegistration(formData);
   if (!validated) return { validationError: true };
+  if (!await consumeIngestionBudget("registration", validated.whatsapp_number)) return { supabaseError: true };
 
   const dependencies = await loadWorkerRegistrationDependencies();
 

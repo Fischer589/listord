@@ -1,6 +1,6 @@
 # ListoRD production acceptance checklist
 
-Current decision and evidence: [release preparation](docs/RELEASE_PREPARATION_2026-10-09.md).
+Current decision and evidence: [release preparation](docs/RELEASE_PREPARATION_2026-10-10.md).
 Local verification does not authorize a migration, worker activation, push or deployment.
 
 ## Required before production acceptance
@@ -17,7 +17,7 @@ Local verification does not authorize a migration, worker activation, push or de
   controls, admin access, real storage permissions and normalized-phone uniqueness.
 - Preserve payment history and existing entitlements; verify historical webhook replay
   and idempotency in Stripe sandbox before any new payment behavior is accepted.
-- Keep `WORKER_AVAILABILITY_RENEWAL_ENABLED`, `LEGACY_WORKER_EDIT_ENABLED` and
+- Keep `MARKETPLACE_ENABLED`, `EXPRESS_ENABLED`, `WORKER_AVAILABILITY_RENEWAL_ENABLED`, `LEGACY_WORKER_EDIT_ENABLED` and
   `LEGACY_CHECKOUT_ENABLED` false. Express checkout stays disabled.
 - Complete the full 2.0 acceptance contract in `LISTORD_2_RELEASE.md`; disabled incomplete
   features are not successful acceptance.

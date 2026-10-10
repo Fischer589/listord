@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { recordExpressPayment } from "@/lib/express-server";
+import { readBoundedText } from "@/lib/http-json";
 import {
   getPaidAccessUntil,
   upsertPremiumAccess,
@@ -54,16 +56,21 @@ export async function POST(request: Request) {
   }
 
   const stripe = new Stripe(stripeSecretKey);
-  const rawBody = await request.text();
   let event: Stripe.Event;
 
   try {
+    const rawBody = await readBoundedText(request, 65536);
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch {
     return NextResponse.json(
       { error: "Firma de Stripe invalida." },
       { status: 400 }
     );
+  }
+
+  if ((event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") && (event.data.object as Stripe.Checkout.Session).metadata?.purpose === "listord_express") {
+    try { await recordExpressPayment(event); return NextResponse.json({ received: true }); }
+    catch { return NextResponse.json({ error: "Express requiere reconciliación; el evento puede reintentarse." }, { status: 503 }); }
   }
 
   if (event.type !== "checkout.session.completed") {
@@ -85,6 +92,9 @@ export async function POST(request: Request) {
     return handleEmployerDepositWebhook(session);
   }
 
+  // Preserve historical reconciliation without granting unpaid or replay-extended access.
+  if (session.payment_status !== "paid") return NextResponse.json({ received: true });
+
   const plan = session.metadata?.plan;
 
   if (plan !== "weekly" && plan !== "monthly") {
@@ -103,7 +113,7 @@ export async function POST(request: Request) {
       stripe_subscription_id: getStripeSubscriptionId(session.subscription),
       plan: plan as PremiumPlan,
       status: "active",
-      paid_access_until: getPaidAccessUntil(plan).toISOString()
+      paid_access_until: getPaidAccessUntil(plan, new Date(event.created * 1000)).toISOString()
     });
 
     return NextResponse.json({ received: true });

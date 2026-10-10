@@ -57,7 +57,7 @@ export default function RegistroExitosoPage() {
             marginBottom: "0.75rem",
           }}
         >
-          ¡Tu perfil está listo!
+          ¡Recibimos tu perfil!
         </h1>
 
         <p
@@ -68,8 +68,8 @@ export default function RegistroExitosoPage() {
             marginBottom: "2rem",
           }}
         >
-          Tu perfil ya está visible en ListoRD. Los empleadores pueden
-          encontrarte y contactarte directamente por WhatsApp.
+          Revisaremos tu registro antes de hacerlo visible. Cuando lo aprobemos,
+          los empleadores podrán encontrarte y contactarte por WhatsApp.
         </p>
 
         {/* Steps */}
@@ -96,8 +96,7 @@ export default function RegistroExitosoPage() {
           </p>
           {[
             { emoji: "📱", text: "Cuando alguien te contacte, recibirás un mensaje de WhatsApp." },
-            { emoji: "⭐", text: "Destaca tu perfil con el plan Destacado (RD$199/mes) para aparecer primero." },
-            { emoji: "🔗", text: "Comparte tu perfil en tus redes sociales para más visibilidad." },
+            { emoji: "🔗", text: "Cuando tu perfil esté aprobado, podrás compartirlo para más visibilidad." },
           ].map(({ emoji, text }) => (
             <div
               key={emoji}
@@ -132,26 +131,9 @@ export default function RegistroExitosoPage() {
               textAlign: "center",
             }}
           >
-            Ver mi perfil en ListoRD
+            Explorar ListoRD
           </Link>
 
-          <Link
-            href="/trabajadores/planes"
-            style={{
-              display: "block",
-              padding: "0.875rem 1.5rem",
-              background: "transparent",
-              color: "var(--green)",
-              border: "2px solid var(--green)",
-              borderRadius: "0.75rem",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              textDecoration: "none",
-              textAlign: "center",
-            }}
-          >
-            ⭐ Ver planes de visibilidad
-          </Link>
         </div>
       </div>
     </main>

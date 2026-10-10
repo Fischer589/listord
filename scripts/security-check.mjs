@@ -35,6 +35,6 @@ for (const file of [...tracked.filter(p => /\.(?:[cm]?[jt]sx?|sql|json|md|ya?ml|
 assert.deepEqual([...new Set(violations)], [], "Potential embedded credentials; inspect privately");
 for (const file of browser) {
   const text = readFileSync(file, "utf8");
-  assert.ok(!/SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|ADMIN_SESSION_SECRET/.test(text), `Server credential reference in browser bundle: ${file}`);
+  assert.ok(!/SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|ADMIN_SESSION_SECRET|WHATSAPP_ACCESS_TOKEN/.test(text), `Server credential reference in browser bundle: ${file}`);
 }
 console.log(`Security checks passed: Node 24, built optimizer bypass, ${tracked.length} repository files and ${browser.length} browser chunks scanned; no detected embedded credentials or server-secret references.`);

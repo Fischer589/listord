@@ -17,7 +17,6 @@ import {
   uploadWorkerPhoto,
   workStyles
 } from "@/lib/worker-profile";
-import { BoostProfileButton } from "@/components/boost-profile-button";
 
 type EditableWorker = {
   id: string;
@@ -426,17 +425,6 @@ export default async function EditWorkerPage({
                 Completa tu perfil para recibir más clientes
               </div>
             )}
-
-            <div className="mt-5 rounded-lg border border-hoja/20 bg-hoja/5 p-4">
-              <p className="font-black text-ink">🚀 Impulsa tu perfil</p>
-              <p className="mt-1 text-sm font-semibold leading-6 text-black/65">
-                Por RD$100 tu perfil aparece primero en los resultados relevantes
-                (tu categoría y ciudad) durante 24 horas.
-              </p>
-              <div className="mt-3">
-                <BoostProfileButton editToken={worker.edit_token} />
-              </div>
-            </div>
 
             <form
               action={updateWorkerProfile}

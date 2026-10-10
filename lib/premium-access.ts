@@ -39,7 +39,7 @@ export async function upsertPremiumAccess(record: PremiumAccessRecord) {
 
   const { error } = await supabase
     .from("premium_access")
-    .upsert(normalizedRecord, { onConflict: "stripe_checkout_session_id" });
+    .upsert(normalizedRecord, { onConflict: "stripe_checkout_session_id", ignoreDuplicates: true });
 
   if (error) {
     throw new Error(error.message);

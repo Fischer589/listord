@@ -21,9 +21,6 @@ type WorkerRegistrationFormProps = {
 };
 
 const initialState: WorkerRegistrationActionState = {};
-const shareText = encodeURIComponent(
-  "Mira mi perfil en ListoRD 👇\nhttps://listordapp.com\nEstoy registrado en ListoRD para recibir oportunidades de trabajo."
-);
 const jobCategoryError = "Escribe claramente qué trabajo haces.";
 
 function setRequiredJobCategoryMessage(
@@ -78,23 +75,6 @@ export function WorkerRegistrationForm({
             Lo revisamos y te avisaremos por WhatsApp cuando estés visible en
             ListoRD.
           </p>
-          <div className="mt-5 rounded-xl border border-green-200 bg-white p-4">
-            <p className="font-black text-green-900">
-              Comparte tu perfil para que más personas te vean.
-            </p>
-            <p className="mt-1 text-sm font-semibold text-green-700">
-              Cuantas más personas vean tu perfil, más rápido consigues clientes.
-            </p>
-            <a
-              href={`https://wa.me/?text=${shareText}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="tap-target mt-4 inline-flex w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-[#1f7a4c] px-4 py-3 text-center font-black text-white sm:w-fit"
-            >
-              <WhatsAppShareIcon />
-              Compartir mi perfil por WhatsApp
-            </a>
-          </div>
         </div>
       )}
 
@@ -270,18 +250,5 @@ export function WorkerRegistrationForm({
         </p>
       </form>
     </>
-  );
-}
-
-function WhatsAppShareIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 32 32"
-      className="h-5 w-5 shrink-0"
-      fill="currentColor"
-    >
-      <path d="M16.03 3.5A12.38 12.38 0 0 0 5.44 22.3L4 28.5l6.36-1.38A12.36 12.36 0 1 0 16.03 3.5Zm0 22.5a10.05 10.05 0 0 1-5.12-1.4l-.36-.22-3.75.82.85-3.58-.24-.38A10.06 10.06 0 1 1 16.03 26Zm5.76-7.53c-.31-.16-1.85-.91-2.13-1.02-.29-.1-.49-.16-.7.16-.2.31-.8 1.02-.98 1.23-.18.2-.36.23-.67.08-.31-.16-1.32-.49-2.51-1.55a9.44 9.44 0 0 1-1.73-2.15c-.18-.31-.02-.48.14-.64.14-.14.31-.36.47-.54.16-.18.2-.31.31-.52.1-.2.05-.39-.03-.54-.08-.16-.7-1.68-.96-2.3-.25-.6-.51-.52-.7-.53h-.6c-.2 0-.54.08-.83.39-.29.31-1.09 1.06-1.09 2.59s1.12 3.01 1.27 3.22c.16.2 2.2 3.36 5.34 4.72.75.32 1.33.51 1.78.65.75.24 1.43.2 1.97.12.6-.09 1.85-.76 2.11-1.49.26-.73.26-1.35.18-1.49-.08-.13-.29-.2-.6-.36Z" />
-    </svg>
   );
 }

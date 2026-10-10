@@ -11,11 +11,11 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["iPhone 13"], defaultBrowserType: "chromium" } },
   ],
   webServer: {
-    command: "npm run start -- --hostname 127.0.0.1 --port 3188",
+    command: "npm run build && npm run start -- --hostname 127.0.0.1 --port 3188",
     // Enable the UI only in this isolated test server; never allow live writes.
-    env: { WORKER_AVAILABILITY_RENEWAL_ENABLED: "true", SUPABASE_SERVICE_ROLE_KEY: "", STRIPE_SECRET_KEY: "", STRIPE_WEBHOOK_SECRET: "", LEGACY_WORKER_EDIT_ENABLED: "false", LEGACY_CHECKOUT_ENABLED: "false" },
+    env: { NEXT_PUBLIC_SUPABASE_URL: "https://fixture.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture-anon-key", WORKER_AVAILABILITY_RENEWAL_ENABLED: "true", MARKETPLACE_ENABLED: "true", EXPRESS_ENABLED: "false", SUPABASE_SERVICE_ROLE_KEY: "", STRIPE_SECRET_KEY: "", STRIPE_WEBHOOK_SECRET: "", WHATSAPP_ACCESS_TOKEN: "", LEGACY_WORKER_EDIT_ENABLED: "false", LEGACY_CHECKOUT_ENABLED: "false" },
     url: "http://127.0.0.1:3188/solicitar",
     reuseExistingServer: false,
-    timeout: 60000,
+    timeout: 180000,
   },
 });

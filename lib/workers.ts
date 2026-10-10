@@ -1,7 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseClient } from "./supabase";
 import { workerMatchesCity, workerMatchesSkill } from "./search";
-import { isBoostActive } from "./boost";
 import type { Worker } from "./types";
 
 type WorkerFilters = {
@@ -88,25 +87,8 @@ export async function getWorkers(filters: WorkerFilters): Promise<Worker[]> {
  * All filtering is done post-fetch so no Supabase schema changes are needed.
  */
 function applyFilters(workers: Worker[], filters: WorkerFilters): Worker[] {
-  const now = new Date();
-
-  // Sort: active boosts first (most recently boosted wins), then featured,
-  // then original order (created_at DESC from DB). Boost priority never
-  // reorders across category/city — this sort runs on the already-scoped
-  // list, and the .filter() below still applies every existing filter.
-  const boosted = workers
-    .filter(w => isBoostActive({ boostExpiresAt: w.boost_expires_at ?? null }, now))
-    .sort((a, b) => {
-      const aTime = a.last_boosted_at ? new Date(a.last_boosted_at).getTime() : 0;
-      const bTime = b.last_boosted_at ? new Date(b.last_boosted_at).getTime() : 0;
-      return bTime - aTime;
-    });
-  const boostedIds = new Set(boosted.map(w => w.id));
-  const featured = workers.filter(w => !boostedIds.has(w.id) && w.is_featured === true);
-  const regular  = workers.filter(w => !boostedIds.has(w.id) && w.is_featured !== true);
-  const sorted   = [...boosted, ...featured, ...regular];
-
-  return sorted.filter(worker => {
+  // Preserve stable database order. Historical payments never affect discovery.
+  return workers.filter(worker => {
     // City — normalized partial match
     if (filters.city?.trim()) {
       if (!workerMatchesCity(worker, filters.city)) return false;
@@ -140,7 +122,7 @@ export async function getWorkersResult(
 ): Promise<WorkersResult> {
   noStore();
 
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseClient(8000);
 
   if (!supabase) {
     return {
@@ -156,14 +138,15 @@ export async function getWorkersResult(
       .from("workers")
       .select(HOMEPAGE_WORKER_SELECT)
       .eq("is_verified", true)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .abortSignal(AbortSignal.timeout(8000));
 
     if (error) {
       logHomepageWorkerQueryError(error);
       return {
         ok: false,
         workers: [],
-        message: error.message || WORKERS_LOAD_ERROR,
+        message: WORKERS_LOAD_ERROR,
         verifiedWorkerCount: 0
       };
     }
@@ -171,8 +154,7 @@ export async function getWorkersResult(
     const rows = (data ?? []) as HomepageWorkerRow[];
     const allWorkers = rows.map((worker) => ({
       ...worker,
-      // Safe defaults — is_featured/is_pro require the Phase 6 DB migration.
-      // Once migration is confirmed, restore these columns to HOMEPAGE_WORKER_SELECT.
+      // Legacy paid badges are absent from discovery; financial rows are retained.
       is_featured: false as const,
       is_pro: false as const,
       is_verified: true
@@ -192,7 +174,7 @@ export async function getWorkersResult(
     return {
       ok: false,
       workers: [],
-      message: normalizedError.message || WORKERS_LOAD_ERROR,
+      message: WORKERS_LOAD_ERROR,
       verifiedWorkerCount: 0
     };
   }
@@ -200,10 +182,7 @@ export async function getWorkersResult(
 
 function logHomepageWorkerQueryError(error: SupabaseErrorDetails) {
   console.error("Homepage worker listing query failed.", {
-    message: error.message,
-    code: error.code,
-    details: error.details,
-    hint: error.hint
+    code: error.code
   });
 }
 

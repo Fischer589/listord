@@ -1,6 +1,11 @@
 "use client";
 
 export type AnalyticsEventName =
+  | "request_started"
+  | "request_preview"
+  | "request_abandoned"
+  | "request_matches"
+  | "request_contact"
   | "page_view"
   | "worker_view"
   | "contact_click"

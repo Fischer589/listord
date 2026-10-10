@@ -3,25 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { getBrowserSessionId, trackEvent } from "@/lib/analytics";
-import { isBoostActive } from "@/lib/boost";
+import { trackEvent } from "@/lib/analytics";
+import { openFreeWorkerContact } from "@/lib/free-contact";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import type { Worker } from "@/lib/types";
-import {
-  buildWhatsAppUrl,
-  isValidWhatsAppUrl,
-  normalizeWhatsAppNumber
-} from "@/lib/whatsapp";
-
-const ADMIN_WHATSAPP_PHONE =
-  process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE?.replace(/\D/g, "") ||
-  "18090000000";
-const CONTACT_ERROR_MESSAGE =
-  "No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo.";
-const PAYMENT_ERROR_MESSAGE =
-  "No pudimos iniciar el pago. Intenta de nuevo o escríbenos por WhatsApp.";
-const INVALID_WHATSAPP_MESSAGE =
-  "Escribe un WhatsApp válido para activar tu acceso.";
 const FALLBACK_PRIMARY_SKILL = "Trabajador disponible";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -46,17 +31,6 @@ function getInitials(name: string) {
   return initials || "LR";
 }
 
-/** Appends a pre-filled message to a wa.me URL */
-function buildWhatsAppUrlWithMessage(url: string, message: string) {
-  try {
-    const parsed = new URL(url);
-    parsed.searchParams.set("text", message);
-    return parsed.toString();
-  } catch {
-    return url;
-  }
-}
-
 /**
  * Returns the profile age bucket:
  * - "today"  : registered within the last 24 hours
@@ -68,6 +42,7 @@ function getProfileAge(createdAt: string | undefined): "today" | "week" | null {
   try {
     const diffMs = Date.now() - new Date(createdAt).getTime();
     const ONE_DAY = 24 * 60 * 60 * 1000;
+    if (!Number.isFinite(diffMs) || diffMs < 0) return null;
     if (diffMs < ONE_DAY) return "today";
     if (diffMs < 7 * ONE_DAY) return "week";
     return null;
@@ -104,14 +79,8 @@ export function WorkerCard({ worker }: { worker: Worker }) {
 
   const profileAge = getProfileAge(worker.created_at);
   const isComplete = hasCompleteProfile(worker);
-  const isBoosted = isBoostActive({ boostExpiresAt: worker.boost_expires_at ?? null });
-
-  // ── State ──
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [checkoutPlan, setCheckoutPlan] = useState<"weekly" | "monthly" | null>(null);
-  const [employerWhatsAppNumber, setEmployerWhatsAppNumber] = useState("");
-  const [paymentError, setPaymentError] = useState("");
   const [contactError, setContactError] = useState("");
+  const [contacting, setContacting] = useState(false);
   const cardRef = useRef<HTMLElement | null>(null);
 
   // ── Analytics ──
@@ -123,9 +92,6 @@ export function WorkerCard({ worker }: { worker: Worker }) {
         if (!entry?.isIntersecting) return;
         try {
           trackEvent("worker_view", { worker_id: worker.id });
-          if (isBoosted) {
-            trackEvent("boosted_profile_view", { worker_id: worker.id });
-          }
         } catch (error) {
           console.warn("Worker view analytics failed.", {
             name: error instanceof Error ? error.name : "UnknownError"
@@ -137,164 +103,13 @@ export function WorkerCard({ worker }: { worker: Worker }) {
     );
     observer.observe(card);
     return () => observer.disconnect();
-  }, [worker.id, isBoosted]);
+  }, [worker.id]);
 
-  // ── Handlers (ALL UNTOUCHED) ──
-
-  const handleContactClick = async (selectedWorker: Worker) => {
-    let browserSessionId = "";
-    try {
-      browserSessionId = getBrowserSessionId();
-    } catch (error) {
-      console.warn("Browser session analytics lookup failed.", {
-        name: error instanceof Error ? error.name : "UnknownError"
-      });
-    }
-    setContactError("");
-    try {
-      trackEvent("contact_click", { worker_id: selectedWorker.id });
-      if (isBoosted) {
-        trackEvent("boost_contact_initiated", { worker_id: selectedWorker.id });
-      }
-    } catch (error) {
-      console.warn("Contact click analytics failed.", {
-        name: error instanceof Error ? error.name : "UnknownError"
-      });
-    }
-    await redirectToWhatsApp(selectedWorker, browserSessionId);
-  };
-
-  async function handleStripeCheckout(plan: "weekly" | "monthly") {
-    setPaymentError("");
-    const normalizedEmployerWhatsApp = normalizeWhatsAppNumber(employerWhatsAppNumber);
-    if (!normalizedEmployerWhatsApp) {
-      setPaymentError(INVALID_WHATSAPP_MESSAGE);
-      return;
-    }
-    setCheckoutPlan(plan);
-    let browserSessionId = "";
-    try {
-      browserSessionId = getBrowserSessionId();
-    } catch (error) {
-      console.warn("Browser session analytics lookup failed.", {
-        name: error instanceof Error ? error.name : "UnknownError"
-      });
-    }
-    try {
-      trackEvent("checkout_start", { plan });
-    } catch (error) {
-      console.warn("Checkout start analytics failed.", {
-        name: error instanceof Error ? error.name : "UnknownError"
-      });
-    }
-    try {
-      const statusResponse = await fetch(
-        `/api/premium/status?browser_session_id=${encodeURIComponent(
-          browserSessionId
-        )}&whatsapp_number=${encodeURIComponent(normalizedEmployerWhatsApp)}`
-      );
-      const statusData = (await statusResponse.json().catch(() => null)) as {
-        premium?: boolean;
-      } | null;
-      if (statusResponse.ok && statusData?.premium) {
-        setEmployerWhatsAppNumber(normalizedEmployerWhatsApp);
-        setCheckoutPlan(null);
-        setShowPaywall(false);
-        await redirectToWhatsApp(worker, browserSessionId, normalizedEmployerWhatsApp);
-        return;
-      }
-      const response = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan,
-          browser_session_id: browserSessionId,
-          client_reference_id: browserSessionId,
-          whatsapp_number: normalizedEmployerWhatsApp
-        })
-      });
-      const data = (await response.json()) as { url?: string; error?: string };
-      if (!response.ok || !data.url) {
-        setPaymentError(PAYMENT_ERROR_MESSAGE);
-        setCheckoutPlan(null);
-        return;
-      }
-      window.location.href = data.url;
-    } catch {
-      setPaymentError(PAYMENT_ERROR_MESSAGE);
-      setCheckoutPlan(null);
-    }
-  }
-
-  function handleWhatsAppPayment() {
-    const url = buildWhatsAppUrl(ADMIN_WHATSAPP_PHONE);
-    if (!url || !isValidWhatsAppUrl(url)) {
-      setPaymentError(PAYMENT_ERROR_MESSAGE);
-      return;
-    }
-    window.open(url, "_blank");
-  }
-
-  async function redirectToWhatsApp(
-    selectedWorker: Worker,
-    browserSessionId: string,
-    whatsappNumber = employerWhatsAppNumber
-  ) {
-    try {
-      const response = await fetch("/api/workers/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workerId: selectedWorker.id,
-          browser_session_id: browserSessionId,
-          whatsapp_number: whatsappNumber
-        })
-      });
-      let data: {
-        url?: string;
-        error?: string;
-        reason?: string;
-        free_contacts_remaining?: number;
-      };
-      try {
-        data = (await response.json()) as typeof data;
-      } catch {
-        data = { error: CONTACT_ERROR_MESSAGE };
-      }
-      if (
-        response.status === 402 ||
-        data.reason === "paywall_required" ||
-        data.reason === "payment_required"
-      ) {
-        try {
-          trackEvent("paywall_open", {
-            worker_id: selectedWorker.id,
-            reason: data.reason ?? "paywall_required"
-          });
-        } catch (error) {
-          console.warn("Paywall analytics failed.", {
-            name: error instanceof Error ? error.name : "UnknownError"
-          });
-        }
-        setShowPaywall(true);
-        return;
-      }
-      const contactUrl = data.url;
-      if (!response.ok || !contactUrl || !isValidWhatsAppUrl(contactUrl)) {
-        setContactError(data.error || CONTACT_ERROR_MESSAGE);
-        return;
-      }
-      const workerName = selectedWorker.full_name?.split(" ")[0] || "hola";
-      const workerSkills = getWorkerSkills(selectedWorker);
-      const skill = getPrimarySkill(workerSkills);
-      const prefilledMessage = `Hola ${workerName}, te encontré en ListoRD. Necesito un(a) ${skill}. ¿Estás disponible?`;
-      const finalUrl = buildWhatsAppUrlWithMessage(contactUrl, prefilledMessage);
-      window.open(finalUrl, "_blank");
-    } catch (error) {
-      setContactError(
-        error instanceof Error ? error.message : CONTACT_ERROR_MESSAGE
-      );
-    }
+  async function handleContactClick(selectedWorker: Worker) {
+    setContactError(""); setContacting(true);
+    try { await openFreeWorkerContact(selectedWorker.id, fullName, primarySkill); }
+    catch { setContactError("No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo."); }
+    finally { setContacting(false); }
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -317,18 +132,8 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           <div className="wc-photo-initials">{getInitials(fullName)}</div>
         )}
 
-        {/* Featured badge */}
-        {worker.is_featured && (
-          <span
-            className="wc-badge-new"
-            style={{ background: "var(--green)", color: "#fff", top: "0.5rem", left: "0.5rem", right: "auto" }}
-          >
-            ⭐ Destacado
-          </span>
-        )}
-
         {/* New profile badge */}
-        {!worker.is_featured && profileAge && (
+        {profileAge && (
           <span className="wc-badge-new">
             {profileAge === "today" ? "✦ Nuevo hoy" : "✦ Nuevo"}
           </span>
@@ -338,14 +143,10 @@ export function WorkerCard({ worker }: { worker: Worker }) {
       {/* ── Card body ── */}
       <div className="wc-body">
 
-        {/* Availability — only shows "Disponible ahora" when explicitly true.
-            available_now defaults to false in DB for all existing workers — never
-            show "No disponible" as that is a false negative for workers who never
-            set their availability. Neutral "Disponible" is the safe fallback. */}
         <div className="wc-avail">
           <span className="wc-avail-dot" />
           <span>
-            {worker.available_now === true ? "Disponible ahora" : "Disponible"}
+            {worker.available_now === true ? "Disponibilidad declarada; confirma horario" : "Disponibilidad por confirmar"}
           </span>
         </div>
 
@@ -379,6 +180,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           <button
             type="button"
             onClick={() => handleContactClick(worker)}
+            disabled={contacting}
             className="tap-target wc-whatsapp-btn"
           >
             <WhatsAppIcon />
@@ -393,102 +195,6 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           <p className="wc-error">{contactError}</p>
         )}
 
-        {/* ── Paywall Modal ── */}
-        {showPaywall && (
-          <div
-            className="fixed inset-0 z-50 grid place-items-end bg-black/45 p-3 sm:place-items-center"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={`paywall-title-${worker.id}`}
-          >
-            <div className="w-full max-w-md rounded-3xl border border-[rgba(31,31,28,0.06)] bg-[var(--surface-pure)] p-5 shadow-[var(--shadow-lg)]">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 text-center">
-                  <h3
-                    id={`paywall-title-${worker.id}`}
-                    className="text-2xl font-black text-[var(--ink)]"
-                    style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
-                  >
-                    Habla con trabajadores ahora
-                  </h3>
-                  <p className="mt-2 text-sm font-bold text-[var(--ink)]/65">
-                    Ya usaste tu contacto gratis de hoy
-                  </p>
-                  <p className="mt-1 text-sm font-black text-[var(--green)]">
-                    Solo RD$7 al día
-                  </p>
-                  <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-[var(--green-bg)] p-3 text-sm font-bold leading-6 text-[var(--ink)]/75">
-                    Contacto directo por WhatsApp con perfiles verificados que responden en minutos.
-                  </p>
-                  <p className="mt-3 rounded-2xl border border-[rgba(31,31,28,0.06)] bg-[var(--surface)] p-3 text-sm font-black text-[var(--ink)]">
-                    Acceso sin compromisos — cancela cuando quieras
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPaywall(false)}
-                  className="tap-target rounded-lg px-3 text-2xl font-black text-[var(--ink)]/55 hover:bg-[var(--surface)]"
-                  aria-label="Cerrar"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="mt-5 grid gap-3">
-                <label className="grid gap-1 text-left text-sm font-bold text-[var(--ink)]">
-                  Tu WhatsApp
-                  <input
-                    className="premium-input tap-target"
-                    value={employerWhatsAppNumber}
-                    onChange={(event) =>
-                      setEmployerWhatsAppNumber(event.target.value)
-                    }
-                    inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="8091234567 o +12675160983"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => handleStripeCheckout("weekly")}
-                  disabled={checkoutPlan !== null}
-                  className="btn-primary tap-target p-4 text-center disabled:opacity-70"
-                >
-                  {checkoutPlan
-                    ? "Procesando pago..."
-                    : "Pagar con tarjeta — RD$99 / semana"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleStripeCheckout("monthly")}
-                  disabled={checkoutPlan !== null}
-                  className="btn-primary tap-target p-4 text-center disabled:opacity-70"
-                >
-                  {checkoutPlan
-                    ? "Procesando pago..."
-                    : "Pagar con tarjeta — RD$199 / mes"}
-                </button>
-              </div>
-              {paymentError && (
-                <p className="mt-3 rounded-md bg-red-50 p-3 text-center text-sm font-black text-red-700">
-                  {paymentError}
-                </p>
-              )}
-              <p className="mt-5 text-center text-xs font-bold text-[var(--ink)]/55">
-                ¿Problemas con la tarjeta? Escríbenos para ayuda con el pago por transferencia.
-              </p>
-              <button
-                type="button"
-                onClick={handleWhatsAppPayment}
-                className="btn-secondary tap-target mt-3 flex w-full items-center justify-center px-4 py-3"
-              >
-                Pagar por WhatsApp
-              </button>
-              <p className="mt-3 text-center text-xs font-bold text-[var(--ink)]/55">
-                Sin compromiso. Cancela cuando quieras.
-              </p>
-            </div>
-          </div>
-        )}
 
       </div>
     </article>

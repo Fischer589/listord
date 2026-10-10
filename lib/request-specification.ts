@@ -43,6 +43,7 @@ export function validateRequest(draft: RequestDraft, step: 0 | 1 | 2 = 2): Reque
   const category = CATEGORIES.find(c => c.searchKey === draft.category);
   if (!category || !Object.hasOwn(REQUEST_SCHEMAS, draft.category)) errors.category = "Elige un servicio.";
   bounded("city", draft.city, 100);
+  if (draft.city.trim().length < 2) errors.city = "Indica una ciudad o municipio (mínimo 2 caracteres).";
   if (step >= 1 && category) {
     for (const q of REQUEST_SCHEMAS[draft.category]) {
       const value = draft.answers[q.id] ?? "";

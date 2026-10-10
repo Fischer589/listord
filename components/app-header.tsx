@@ -75,7 +75,7 @@ export function AppHeader() {
         {/* ── Desktop nav (640px+) — unchanged ── */}
         <nav className="hidden items-center gap-1.5 sm:flex sm:gap-2">
           <Link
-            href="/trabajadores/registro"
+            href="/oportunidades"
             className="tap-target btn-ghost text-xs sm:text-sm px-3 py-2 sm:px-4"
           >
             Busco trabajo
@@ -88,7 +88,7 @@ export function AppHeader() {
             <span className="hidden md:inline">Soluciones Empresariales</span>
           </Link>
           <Link
-            href="/empleadores"
+            href="/solicitar"
             className="tap-target btn-primary text-xs sm:text-sm px-3 py-2 sm:px-4 text-white"
           >
             Necesito gente
@@ -98,7 +98,7 @@ export function AppHeader() {
         {/* ── Mobile nav (< 640px) — primary CTA + hamburger ── */}
         <div className="flex items-center gap-2 sm:hidden" ref={menuRef}>
           <Link
-            href="/empleadores"
+            href="/solicitar"
             className="tap-target btn-primary text-xs px-3 py-2 text-white"
           >
             Necesito gente
@@ -131,7 +131,7 @@ export function AppHeader() {
             >
               <nav className="flex flex-col gap-1.5">
                 <Link
-                  href="/trabajadores/registro"
+                  href="/oportunidades"
                   role="menuitem"
                   onClick={() => setMenuOpen(false)}
                   className="tap-target rounded-xl px-3 py-3 text-sm font-bold text-[var(--ink)] hover:bg-[var(--surface)]"

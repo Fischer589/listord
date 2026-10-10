@@ -2,14 +2,17 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics";
 import { RequestMatches } from "./request-matches";
+import { MarketplacePublication } from "./marketplace-publication";
+import { parseMatchRequest } from "@/lib/request-matching";
 import { CATEGORIES } from "@/lib/categories";
 import { CITIES } from "@/lib/cities";
 import { changeCategory, COMPENSATION_UNITS, emptyRequest, REQUEST_SCHEMAS, RequestDraft, RequestErrors, requestSummary, validateRequest } from "@/lib/request-specification";
 
 const STEPS = ["Servicio y lugar", "Alcance", "Fecha y pago", "Tu solicitud"];
 
-export function RequestBuilder() {
+export function RequestBuilder({ publicationEnabled = false }: { publicationEnabled?: boolean }) {
   const [draft, setDraft] = useState(emptyRequest);
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [errors, setErrors] = useState<RequestErrors>({});
@@ -17,7 +20,24 @@ export function RequestBuilder() {
   const heading = useRef<HTMLHeadingElement>(null);
   const errorBox = useRef<HTMLDivElement>(null);
   const mounted = useRef(false);
+  const enteredAt = useRef(Date.now());
+  const previewed = useRef(false);
   useEffect(() => {
+    const startedAt = enteredAt.current;
+    trackEvent("request_started");
+    return () => { if (!previewed.current) trackEvent("request_abandoned", { elapsed_ms: Date.now() - startedAt }); };
+  }, []);
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("listord-reuse-request-v1");
+      if (!saved) return;
+      const reusable = parseMatchRequest(JSON.parse(saved));
+      sessionStorage.removeItem("listord-reuse-request-v1");
+      if (reusable) { setDraft(reusable); setStep(3); }
+    } catch { /* A blocked store never prevents anonymous intake. */ }
+  }, []);
+  useEffect(() => {
+    if (step === 3) { previewed.current = true; trackEvent("request_preview", { elapsed_ms: Date.now() - enteredAt.current }); }
     if (mounted.current) {
       heading.current?.focus({ preventScroll: true });
       heading.current?.scrollIntoView({ block: "start", behavior: "instant" });
@@ -79,6 +99,7 @@ export function RequestBuilder() {
       <div className="request-actions"><button className="btn-primary" onClick={copy}>Copiar resumen</button><Link className="btn-secondary" href={`/?${new URLSearchParams({ skill: draft.category, city: draft.city }).toString()}#descubre`}>Explorar perfiles</Link></div>
       <p role="status">{copyStatus}</p>
       <RequestMatches draft={draft} />
+      {publicationEnabled && <MarketplacePublication draft={draft} />}
       <p>Explorar perfiles filtra por servicio y ciudad. No confirma disponibilidad ni interés en esta solicitud.</p>
     </>}
     <p className="request-footnote">El borrador se conserva mientras permanezcas en esta página. Copia el resumen antes de salir.</p>

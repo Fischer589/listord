@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics";
 import type { MatchResult } from "@/lib/request-matching";
 import type { RequestDraft } from "@/lib/request-specification";
 
@@ -12,6 +13,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
   const [contacting, setContacting] = useState<string | null>(null);
   const [contactError, setContactError] = useState("");
   const [visible, setVisible] = useState(20);
+  const enteredAt = useRef(Date.now());
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
 
@@ -27,7 +29,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
       });
       const body = await response.json();
       if (!response.ok) throw new Error("matching unavailable");
-      if (!abort.signal.aborted) setResult(body as MatchResult);
+      if (!abort.signal.aborted) { setResult(body as MatchResult); trackEvent("request_matches", { elapsed_ms: Date.now() - enteredAt.current, match_count: body.count }); }
     } catch {
       if (!abort.signal.aborted) setError("No pudimos verificar los perfiles. Intenta de nuevo; no significa que no haya trabajadores.");
     } finally { if (!abort.signal.aborted) setLoading(false); }
@@ -45,7 +47,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
       if (!response.ok) { setContactError(body.error || "No pudimos preparar el contacto."); return; }
       const url = new URL(body.url);
       if (url.protocol !== "https:" || url.hostname !== "wa.me") throw new Error("Invalid handoff");
-      if (!abort.signal.aborted) window.location.assign(url.toString());
+      if (!abort.signal.aborted) { trackEvent("request_contact", { elapsed_ms: Date.now() - enteredAt.current }); window.location.assign(url.toString()); }
     } catch { if (!abort.signal.aborted) setContactError("No pudimos preparar el contacto. Intenta de nuevo."); }
     finally { setContacting(null); }
   }

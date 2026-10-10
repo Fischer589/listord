@@ -10,7 +10,21 @@ for (const path of ["/", "/categorias/limpiadora", "/trabajadores/registro", "/e
   console.log(`${path}: 200`);
 }
 
-for (const path of ["/admin/workers", "/admin/dashboard", "/admin/employer-requests", "/admin/employer-payments"]) {
+const legacyContact = await fetch(base + "/contacto/22222222-2222-4222-8222-222222222222", { redirect: "manual" });
+if (legacyContact.status === 307) {
+  assert.equal(legacyContact.headers.get("location"), "/trabajador/22222222-2222-4222-8222-222222222222");
+} else {
+  assert.equal(legacyContact.status, 200);
+  assert.match(await legacyContact.text(), /http-equiv="refresh"[^>]+url=\/trabajador\/22222222-2222-4222-8222-222222222222/);
+}
+const registrationSuccess = await fetch(base + "/trabajadores/registro-exitoso");
+assert.equal(registrationSuccess.status, 200);
+const registrationSuccessHtml = await registrationSuccess.text();
+assert.match(registrationSuccessHtml, /Revisaremos tu registro antes de hacerlo visible/);
+assert.doesNotMatch(registrationSuccessHtml, /planes de visibilidad|RD\$199\/mes|ya está visible/i);
+console.log("Legacy contact route opens the free profile; registration waits for approval without paid promotion");
+
+for (const path of ["/admin/workers", "/admin/dashboard", "/admin/employer-requests", "/admin/employer-payments", "/admin/marketplace", "/api/admin/marketplace", "/api/admin/express"]) {
   const response = await fetch(base + path, { redirect: "manual" });
   assert.equal(response.status, 307, path);
   assert.ok(response.headers.get("location")?.includes("/admin/login"));

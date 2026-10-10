@@ -331,3 +331,18 @@ No production SQL, data/storage changes, password reset, role change, worker act
 messages, payment, push or deployment occurred. One local checkpoint commit records
 preparation. This is **not** full 2.0 production acceptance; see the report's remaining
 ownership/incident, hosted safety, contract/payment and security gates.
+
+## 2026-10-10 — marketplace and Express release candidate
+
+Resumed `37cd930` and preserved the pending working-tree implementation. Completed
+moderated opportunities, verified-account YES/NO/withdrawal and owner lifecycle,
+request reuse, private contact, consented Express quotes/ledger/dispatch/remedy,
+legacy entitlement replay protections and default-off release gates. Removed paid
+directory ordering/paywalls without altering financial history or photo infrastructure.
+Added durable ingestion budgets, normalized-phone uniqueness candidate and private
+funnel timings. All new SQL remains unapplied; no production mutations or activation.
+
+Current evidence, exact external blockers and the prepared hosted acceptance matrix
+are in [the 2026-10-10 report](RELEASE_PREPARATION_2026-10-10.md). It supersedes earlier
+statements that marketplace/Express were unimplemented, while preserving the earlier
+production privacy and access findings. Local fixtures are never hosted acceptance.

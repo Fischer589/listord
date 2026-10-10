@@ -118,3 +118,30 @@ test("directory contact is a bounded read-only approved-worker handoff, independ
     if (oldKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = oldKey;
   }
 });
+
+
+test("funnel timings and zero-match counts are bounded and contain no request/contact text", () => {
+  const result = sanitizeAnalytics({ event_name: "request_matches", metadata: { elapsed_ms: 1200, match_count: 0, phone: "18090000111", draft: "private text" } });
+  assert.deepEqual(result, { event_name: "request_matches", metadata: { elapsed_ms: 1200, match_count: 0 } });
+  assert.deepEqual(sanitizeAnalytics({ event_name: "request_contact", metadata: { elapsed_ms: Infinity, match_count: -1 } })?.metadata, {});
+});
+
+test("Supabase deadline covers retries and preserves caller cancellation", async () => {
+  const { getSupabaseClient } = await import("../lib/supabase");
+  const names = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"];
+  const old = names.map(n => process.env[n]); const original = globalThis.fetch;
+  Object.assign(process.env, { NEXT_PUBLIC_SUPABASE_URL: "https://deadline-fixture.example.test", NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_public" });
+  const signals: AbortSignal[] = [];
+  globalThis.fetch = async (_input, init) => { signals.push(init!.signal!); return Response.json([]); };
+  try {
+    const client = getSupabaseClient(20)!;
+    await client.from("workers").select("id");
+    await new Promise(resolve => setTimeout(resolve, 30));
+    await client.from("workers").select("id");
+    assert.equal(signals[0].aborted, true);
+    assert.equal(signals[1].aborted, true, "retry cannot receive a fresh deadline");
+    const caller = new AbortController(); caller.abort();
+    await getSupabaseClient(8000)!.from("workers").select("id").abortSignal(caller.signal);
+    assert.equal(signals[2].aborted, true, "caller cancellation is never overwritten");
+  } finally { globalThis.fetch = original; names.forEach((n, i) => { if (old[i] === undefined) delete process.env[n]; else process.env[n] = old[i]; }); }
+});

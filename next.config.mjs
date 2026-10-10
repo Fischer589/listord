@@ -29,7 +29,7 @@ const nextConfig = {
     }))
   },
   async headers() {
-    return [{ source: "/trabajadores/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] }];
+    return ["/trabajadores/:path*", "/oportunidades/:path*", "/solicitar", "/api/marketplace/:path*", "/api/express/:path*"].map(source => ({ source, headers: [{ key: "Referrer-Policy", value: "no-referrer" }] }));
   },
   async redirects() {
     return [
