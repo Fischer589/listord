@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import Stripe from "stripe";
-import { checkoutParameters, dispatchOne, expressEnabled, verifiedExpressPayment, type ExpressOrder, type Invitation } from "../lib/express";
+import { checkoutParameters, dispatchOne, expressCheckoutUrl, expressEnabled, verifiedExpressPayment, type ExpressOrder, type Invitation } from "../lib/express";
 import { sendExpressInvitation } from "../lib/express-provider";
 import { GET, POST } from "../app/api/marketplace/route";
 import { POST as checkout } from "../app/api/express/route";
@@ -18,6 +18,18 @@ test("Express hosted checkout uses stable one-time DOP parameters, bounded retri
   for (const origin of ["http://example.test", "https://user:pass@example.test", "https://example.test/?q=x"]) assert.throws(() => checkoutParameters(order, origin, Date.parse(order.created_at)));
   assert.throws(() => checkoutParameters(order, "https://example.test", Date.parse(order.created_at) + 1800001));
   assert.throws(() => checkoutParameters({ ...order, status: "paid" }, "https://example.test", Date.parse(order.created_at)));
+});
+
+test("Checkout URL is returned only for the exact open RD$299 Express session", () => {
+  const session = { id: "cs_test_fixture", mode: "payment", status: "open", client_reference_id: id,
+    metadata: { purpose: "listord_express", order_id: id }, amount_total: 29900,
+    currency: "dop", url: "https://checkout.stripe.com/c/pay/cs_test_fixture" } as unknown as Stripe.Checkout.Session;
+  assert.equal(expressCheckoutUrl(session, id), session.url);
+  for (const change of [{ client_reference_id: "other" }, { metadata: { purpose: "other", order_id: id } },
+    { amount_total: 100 }, { currency: "usd" }, { status: "complete" },
+    { url: "https://evil.example/c/pay/cs_test_fixture" }]) {
+    assert.equal(expressCheckoutUrl({ ...session, ...change } as Stripe.Checkout.Session, id), null);
+  }
 });
 
 test("signed Express events require paid status, exact amount/currency and bound order identity", () => {
@@ -48,7 +60,7 @@ test("dispatch commits a one-shot claim before transport; uncertain provider res
   assert.deepEqual(await dispatchOne(store, async () => "wamid.fixture2"), { sent: true }); assert.equal(recorded, 1);
 });
 
-test("Meta adapter sends a template with public opportunity URL only; acceptance is not a response", async () => {
+test("Meta adapter preserves opportunity and selected worker in one public URL; acceptance is not a response", async () => {
   const names = ["WHATSAPP_GRAPH_VERSION", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_EXPRESS_TEMPLATE", "WHATSAPP_ACCESS_TOKEN", "APP_ORIGIN"];
   const previous = names.map(n => process.env[n]);
   Object.assign(process.env, { WHATSAPP_GRAPH_VERSION: "v99.0", WHATSAPP_PHONE_NUMBER_ID: "123456789", WHATSAPP_EXPRESS_TEMPLATE: "fixture_template", WHATSAPP_ACCESS_TOKEN: "fixture_not_live", APP_ORIGIN: "https://example.test" });
@@ -57,7 +69,7 @@ test("Meta adapter sends a template with public opportunity URL only; acceptance
       assert.equal(String(url), "https://graph.facebook.com/v99.0/123456789/messages");
       assert.equal(options?.redirect, "error");
       const body = JSON.parse(String(options?.body)); assert.equal(body.type, "template");
-      assert.equal(body.template.components[0].parameters[0].text, `https://example.test/oportunidades?id=${id}`);
+      assert.equal(body.template.components[0].parameters[0].text, `https://example.test/oportunidades?id=${id}&worker=${id}`);
       assert.ok(!String(options?.body).includes("token="));
       return new Response(JSON.stringify({ messages: [{ id: "wamid.fixture" }] }));
     });
@@ -85,10 +97,10 @@ test("real webhook handler verifies signatures and session binding before Expres
   const names = ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
   const old = names.map(n => process.env[n]); const original = globalThis.fetch;
   Object.assign(process.env, { STRIPE_SECRET_KEY: "sk_test_fixture", STRIPE_WEBHOOK_SECRET: "fixture_webhook", NEXT_PUBLIC_SUPABASE_URL: "https://express-fixture.example.test", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
-  const stripe = new Stripe("sk_test_fixture"); let mismatch = false; const writes: string[] = [];
+  const stripe = new Stripe("sk_test_fixture"); let mismatch = false; let missing = false; const writes: string[] = [];
   globalThis.fetch = async (input, init) => {
     const path = new URL(String(input)).pathname;
-    if (init?.method === "GET") return Response.json({ checkout_session_id: mismatch ? "cs_other" : "cs_fixture" });
+    if (init?.method === "GET") return Response.json({ checkout_session_id: missing ? null : mismatch ? "cs_other" : "cs_fixture" });
     const body = JSON.parse(String(init?.body)); assert.equal(body.p_order, id);
     writes.push(path);
     if (path.endsWith("marketplace_express_paid")) { assert.equal(body.p_reference, "pi_fixture"); assert.equal(body.p_amount, 29900); assert.equal(body.p_currency, "dop"); return new Response(null, { status: 204 }); }
@@ -99,6 +111,8 @@ test("real webhook handler verifies signatures and session binding before Expres
   const deliver = (body = payload, signature = stripe.webhooks.generateTestHeaderString({ payload, secret: "fixture_webhook" })) => webhook(new Request("https://example.test/api/stripe/webhook", { method: "POST", headers: { "stripe-signature": signature }, body }));
   try {
     assert.equal((await deliver(payload.replace("29900", "29901"))).status, 400); assert.equal(writes.length, 0);
+    missing = true; assert.equal((await deliver()).status, 503); assert.equal(writes.length, 0);
+    missing = false;
     mismatch = true; assert.equal((await deliver()).status, 503); assert.equal(writes.length, 0);
     mismatch = false; assert.equal((await deliver()).status, 200); assert.equal(writes.length, 2);
     assert.equal((await deliver()).status, 200); assert.deepEqual(writes.slice(0,2), writes.slice(2));

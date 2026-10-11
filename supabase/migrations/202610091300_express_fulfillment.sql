@@ -1,5 +1,7 @@
--- UNAPPLIED. New one-time Express ledger; never repurposes legacy financial rows.
+-- New one-time Express ledger; never repurposes legacy financial rows.
 begin;
+set local lock_timeout = '2s';
+set local statement_timeout = '30s';
 create table public.marketplace_express_orders (
   id uuid primary key default gen_random_uuid(),
   opportunity_id uuid not null unique references public.marketplace_opportunities(id),

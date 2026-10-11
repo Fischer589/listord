@@ -14,6 +14,18 @@ export function expressEnabled() {
     && process.env.EXPRESS_OUTREACH_ACCEPTED === "true";
 }
 export type ExpressOrder = { id: string; opportunity_id: string; channel: "stripe" | "transfer"; status: string; created_at: string; checkout_session_id: string | null; reference: string };
+/** Revalidate a retrieved or newly-created session before showing its URL. */
+export function expressCheckoutUrl(session: Stripe.Checkout.Session, orderId: string) {
+  if (!uuid(orderId) || !/^cs_(?:test_|live_)?[A-Za-z0-9_]{5,200}$/.test(session.id)
+    || session.mode !== "payment" || session.status !== "open"
+    || session.client_reference_id !== orderId || session.metadata?.purpose !== "listord_express"
+    || session.metadata.order_id !== orderId || session.amount_total !== EXPRESS_AMOUNT
+    || session.currency !== EXPRESS_CURRENCY || !session.url) return null;
+  try {
+    const url = new URL(session.url);
+    return url.protocol === "https:" && url.hostname === "checkout.stripe.com" && !url.username && !url.password ? url.href : null;
+  } catch { return null; }
+}
 export function checkoutParameters(order: ExpressOrder, origin: string, now = Date.now()): Stripe.Checkout.SessionCreateParams {
   const base = new URL(origin);
   const created = Date.parse(order.created_at);
@@ -33,7 +45,7 @@ export function verifiedExpressPayment(event: Stripe.Event) {
   if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) return null;
   const s = event.data.object as Stripe.Checkout.Session;
   if (s.metadata?.purpose !== "listord_express") return null;
-  if (!uuid(s.metadata.order_id) || s.client_reference_id !== s.metadata.order_id || s.mode !== "payment" || s.payment_status !== "paid" || s.amount_total !== EXPRESS_AMOUNT || s.currency !== EXPRESS_CURRENCY || typeof s.payment_intent !== "string" || !s.payment_intent.startsWith("pi_")) throw new Error("INVALID_EXPRESS_PAYMENT");
+  if (!uuid(s.metadata.order_id) || s.client_reference_id !== s.metadata.order_id || !/^cs_(?:test_|live_)?[A-Za-z0-9_]{5,200}$/.test(s.id) || s.mode !== "payment" || s.payment_status !== "paid" || s.amount_total !== EXPRESS_AMOUNT || s.currency !== EXPRESS_CURRENCY || typeof s.payment_intent !== "string" || !s.payment_intent.startsWith("pi_")) throw new Error("INVALID_EXPRESS_PAYMENT");
   return { order: s.metadata.order_id, session: s.id, reference: s.payment_intent, event: event.id };
 }
 

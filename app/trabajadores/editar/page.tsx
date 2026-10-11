@@ -41,13 +41,6 @@ const workerProfileSaveError =
   "No pudimos guardar tu perfil ahora. Intenta de nuevo o escríbenos por WhatsApp.";
 const workerJobCategoryError = "Escribe claramente qué trabajo haces.";
 
-function isDuplicateWhatsAppError(error: { code?: string; message?: string }) {
-  return (
-    error.code === "23505" ||
-    error.message?.toLowerCase().includes("workers_whatsapp_digits_unique_idx")
-  );
-}
-
 function getEditRedirect(token: string, state: string) {
   if (!isValidEditToken(token)) {
     return `/trabajadores/editar?estado=${state}`;
@@ -195,33 +188,6 @@ async function updateWorkerProfile(formData: FormData) {
     redirect(getEditRedirect(editToken, "rechazado"));
   }
 
-  const { data: existingWorkers, error: duplicateCheckError } = await supabase
-    .from("workers")
-    .select("id, whatsapp_number")
-    .not("whatsapp_number", "is", null);
-
-  if (duplicateCheckError) {
-    console.warn("Worker profile update duplicate check skipped.", {
-      code: duplicateCheckError.code
-    });
-  }
-
-  const hasDuplicate = (existingWorkers ?? []).some((worker) => {
-    const existingNumber =
-      typeof worker.whatsapp_number === "string"
-        ? normalizeWhatsAppNumber(worker.whatsapp_number)
-        : null;
-
-    return (
-      worker.id !== currentWorker.id &&
-      existingNumber === normalizedWhatsAppNumber
-    );
-  });
-
-  if (hasDuplicate) {
-    redirect(getEditRedirect(editToken, "duplicado"));
-  }
-
   const photoResult = await uploadWorkerPhoto(supabase, formData.get("profile_photo"), currentWorker.id);
   if (photoResult.error) redirect(getEditRedirect(editToken, "foto"));
   const photoUrl = photoResult.url;
@@ -268,10 +234,6 @@ async function updateWorkerProfile(formData: FormData) {
     console.warn("Worker profile update failed.", {
       code: error.code
     });
-    if (isDuplicateWhatsAppError(error)) {
-      redirect(getEditRedirect(editToken, "duplicado"));
-    }
-
     redirect(getEditRedirect(editToken, "error"));
   }
 
@@ -342,11 +304,6 @@ export default async function EditWorkerPage({
         {state === "telefono" && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             Usa un numero de WhatsApp valido con al menos 10 digitos.
-          </div>
-        )}
-        {state === "duplicado" && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            Ese WhatsApp esta usado por otro perfil.
           </div>
         )}
         {state === "rechazado" && (

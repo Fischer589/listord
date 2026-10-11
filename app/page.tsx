@@ -98,7 +98,7 @@ export default async function Home({
               </h1>
 
               <p className="hero-body">
-                Perfiles verificados. Contacto directo por WhatsApp.<br />
+                Perfiles revisados. Confirma la disponibilidad directamente.<br />
                 Sin agencias, sin comisiones.
               </p>
 
@@ -109,7 +109,7 @@ export default async function Home({
                   </span>
                   <span className="hero-stat-sep">trabajadores</span>
                   <span className="hero-stat-sep">·</span>
-                  <span>1 contacto gratis</span>
+                  <span>Contacto gratis</span>
                   {activeCities.length > 0 && (
                     <>
                       <span className="hero-stat-sep">·</span>
@@ -179,7 +179,7 @@ export default async function Home({
 
           <div className="section-header">
             <p className="section-eyebrow">
-              {showingFiltered ? "Resultados" : "Disponibles ahora"}
+              {showingFiltered ? "Resultados" : "Perfiles de trabajadores"}
             </p>
             {filterActive && hasWorkers && (
               <p className="section-title">
@@ -229,7 +229,7 @@ export default async function Home({
             <div className="empty-state">
               <p style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🇩🇴</p>
               <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", fontWeight: 400, color: "var(--ink)", marginBottom: "0.75rem" }}>
-                Estamos agregando trabajadores verificados en RD.
+                Estamos agregando perfiles de trabajadores revisados en RD.
               </h3>
               <p style={{ color: "rgba(26,61,43,0.65)", marginBottom: "1.5rem" }}>
                 ¿Ofreces un servicio? Crea tu perfil gratis hoy.
@@ -255,23 +255,23 @@ export default async function Home({
           <div className="trust-section-grid">
             <div className="trust-item">
               <span className="trust-item-icon">✓</span>
-              <h3 className="trust-item-title">Verificados manualmente</h3>
+              <h3 className="trust-item-title">Perfiles revisados</h3>
               <p className="trust-item-body">
-                Cada perfil es revisado por nuestro equipo antes de publicarse. Nada automático, nada falso.
+                Cada perfil se revisa antes de publicarse. Confirma identidad, experiencia y disponibilidad directamente.
               </p>
             </div>
             <div className="trust-item">
               <span className="trust-item-icon">💬</span>
               <h3 className="trust-item-title">Directo a WhatsApp</h3>
               <p className="trust-item-body">
-                Sin formularios, sin esperas. Hablas con la persona — no con un sistema. Un contacto gratis cada día.
+                Hablas directamente con la persona por WhatsApp, sin pagar por el contacto.
               </p>
             </div>
             <div className="trust-item">
               <span className="trust-item-icon">🇩🇴</span>
               <h3 className="trust-item-title">Hecho para RD</h3>
               <p className="trust-item-body">
-                Diseñado para el mercado dominicano. Trabajadores reales, en tu ciudad, disponibles hoy.
+                Diseñado para el mercado dominicano. Revisa perfiles en tu ciudad y confirma su disponibilidad.
               </p>
             </div>
           </div>

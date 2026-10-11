@@ -7,7 +7,7 @@ import { trackEvent } from "@/lib/analytics";
 import { openFreeWorkerContact } from "@/lib/free-contact";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import type { Worker } from "@/lib/types";
-const FALLBACK_PRIMARY_SKILL = "Trabajador disponible";
+const FALLBACK_PRIMARY_SKILL = "Perfil de trabajador";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -146,7 +146,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
         <div className="wc-avail">
           <span className="wc-avail-dot" />
           <span>
-            {worker.available_now === true ? "Disponibilidad declarada; confirma horario" : "Disponibilidad por confirmar"}
+            {worker.available_now === true ? "Disponibilidad histórica; confirma con la persona" : "Disponibilidad por confirmar"}
           </span>
         </div>
 

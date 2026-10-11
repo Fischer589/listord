@@ -1,8 +1,18 @@
 # ListoRD 2.0 release contract
 
-> **2026-10-10 checkpoint:** [current preparation and blockers](docs/RELEASE_PREPARATION_2026-10-10.md).
-> Production authentication is an external blocker; no credentials, production SQL,
-> activation or deployment are requested. Latest local evidence supersedes older counts below.
+> **2026-10-11 production status:** the narrow security hotfix is live, and
+> the reviewed additive 2.0 schema migrations are applied. The incompatible
+> normalized-phone unique index was retired; shared phones are preserved. The full 2.0 application and
+> feature gates are not released. See the [current production handoff](docs/PRODUCTION_RELEASE_HANDOFF_2026-10-11.md).
+
+> **2026-10-10 checkpoint:** [earlier preparation and blockers](docs/RELEASE_PREPARATION_2026-10-10.md).
+> Historical counts and pending-action statements below are superseded by the
+> 2026-10-11 handoff.
+
+> **Owner scope update:** Meta WhatsApp Business API setup is deferred. Free
+> click-to-WhatsApp contact remains in scope. Automated Express outreach and
+> paid Express activation remain closed until an operational fulfillment method
+> and the commercial terms are approved and verified.
 
 **Scope:** service + location → dynamic scope → structured opportunity → suitable
 match → qualified YES/NO → contextual WhatsApp. Two sides, free worker discovery,

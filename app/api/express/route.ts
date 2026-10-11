@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { readJsonBody } from "@/lib/http-json";
 import { MARKETPLACE_HEADERS as headers, marketplaceEnabled, object, uuid } from "@/lib/marketplace";
 import { MarketplaceError, marketplaceAdmin, rpcFailure, verifiedMarketplaceUser } from "@/lib/marketplace-server";
-import { checkoutParameters, expressEnabled, EXPRESS_TERMS, type ExpressOrder } from "@/lib/express";
+import { checkoutParameters, expressCheckoutUrl, expressEnabled, EXPRESS_TERMS, type ExpressOrder } from "@/lib/express";
 import { outreachConfigured } from "@/lib/express-provider";
 import { availabilityRenewalEnabled } from "@/lib/availability";
 import { parseMatchRequest } from "@/lib/request-matching";
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     if (b.channel === "transfer") {
       const url = buildWhatsAppUrl(process.env.EXPRESS_TRANSFER_CONTACT);
       if (!url) return json({ error: "El contacto de transferencias no está verificado. No envíes dinero." }, 503);
-      return json({ order: order.id, status: "payment_pending", reference: order.reference, url: `${url}?text=${encodeURIComponent(`Consulta sobre ListoRD Express RD$299. Referencia ${order.reference}. Solicito instrucciones verificadas; todavía no se ha confirmado ningún pago.`)}` });
+      return json({ order: order.id, status: "payment_pending", reference: order.reference, url: `${url}?text=${encodeURIComponent(`Consulta sobre ListoRD Express RD$299 para la oportunidad ${order.opportunity_id}. Referencia ${order.reference}. Solicito instrucciones verificadas; todavía no se ha confirmado ningún pago.`)}` });
     }
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) throw new Error();
@@ -63,11 +63,20 @@ export async function POST(request: Request) {
     if (order.checkout_session_id) session = await stripe.checkout.sessions.retrieve(order.checkout_session_id);
     else {
       session = await stripe.checkout.sessions.create(checkoutParameters(order as ExpressOrder, process.env.APP_ORIGIN ?? ""), { idempotencyKey: `express:${order.id}` });
-      const { error: saveError } = await admin.from("marketplace_express_orders").update({ checkout_session_id: session.id }).eq("id", order.id).is("checkout_session_id", null).abortSignal(AbortSignal.timeout(8000));
-      if (saveError) throw saveError;
+      if (!expressCheckoutUrl(session, order.id)) throw new Error("INVALID_CHECKOUT_SESSION");
+      const saved = await admin.from("marketplace_express_orders").update({ checkout_session_id: session.id })
+        .eq("id", order.id).eq("status", "payment_pending").is("checkout_session_id", null)
+        .select("checkout_session_id").abortSignal(AbortSignal.timeout(8000)).maybeSingle();
+      if (saved.error) throw saved.error;
+      if (!saved.data) {
+        const current = await admin.from("marketplace_express_orders").select("checkout_session_id,status")
+          .eq("id", order.id).abortSignal(AbortSignal.timeout(8000)).single();
+        if (current.error || current.data?.checkout_session_id !== session.id || current.data.status !== "payment_pending") throw new Error("CHECKOUT_BINDING_FAILED");
+      }
     }
-    if (session.status !== "open" || !session.url || new URL(session.url).hostname !== "checkout.stripe.com") return json({ error: "La sesión ya no acepta pagos. Revisa el estado; no se creó otro cobro." }, 409);
-    return json({ url: session.url, order: order.id, status: "payment_pending" });
+    const checkoutUrl = expressCheckoutUrl(session, order.id);
+    if (!checkoutUrl) return json({ error: "La sesión ya no acepta pagos. Revisa el estado; no se creó otro cobro." }, 409);
+    return json({ url: checkoutUrl, order: order.id, status: "payment_pending" });
   } catch (e) { return json({ error: e instanceof MarketplaceError ? e.message : "No se confirmó la operación. Revisa el estado antes de reintentar." }, e instanceof MarketplaceError ? e.status : 503); }
 }
 

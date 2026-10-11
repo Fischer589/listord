@@ -154,14 +154,6 @@ export function AppHeader() {
                 >
                   Formulario de solicitud de personal
                 </Link>
-                <Link
-                  href="/employer-deposit"
-                  role="menuitem"
-                  onClick={() => setMenuOpen(false)}
-                  className="tap-target rounded-xl px-3 py-3 text-sm font-bold text-[var(--ink)] hover:bg-[var(--surface)]"
-                >
-                  Depósito de empleador
-                </Link>
               </nav>
             </div>
           )}

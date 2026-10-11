@@ -152,7 +152,7 @@ create index workers_skills_idx on public.workers using gin (skills);
 create index workers_work_style_idx on public.workers (work_style);
 create index workers_is_verified_idx on public.workers (is_verified);
 create unique index workers_edit_token_unique_idx on public.workers (edit_token);
-create unique index workers_whatsapp_digits_unique_idx
+create index workers_whatsapp_digits_idx
 on public.workers ((regexp_replace(whatsapp_number, '\D', '', 'g')))
 where whatsapp_number is not null
   and regexp_replace(whatsapp_number, '\D', '', 'g') <> '';

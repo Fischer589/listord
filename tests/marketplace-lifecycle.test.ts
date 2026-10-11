@@ -35,10 +35,11 @@ test("transactional opportunity and Express lifecycle: ownership, moderation, YE
       create table worker_availability(worker_id uuid primary key references workers(id),available boolean,confirmed_at timestamptz,access_expires_at timestamptz);
       insert into worker_availability values('${worker}',true,now(),now()+interval '30 days');
       create table legacy_entitlements(id integer primary key,amount integer); insert into legacy_entitlements values(1,10000);`);
-    for (const filename of ["202610071200_marketplace_foundation.sql", "202610091200_marketplace_lifecycle.sql", "202610091300_express_fulfillment.sql", "202610101200_ingestion_budget.sql"]) {
+    for (const filename of ["202610071200_marketplace_foundation.sql", "202610091200_marketplace_lifecycle.sql", "202610091300_express_fulfillment.sql", "202610101200_ingestion_budget.sql", "202610111500_marketplace_contact_context.sql"]) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${filename}`, import.meta.url), "utf8"));
     }
-    await assert.rejects(db.query("insert into workers(id,owner_user_id,is_verified,available_now,full_name,whatsapp_number) values($1,$2,false,false,'Duplicate fixture','8090000111')", ["66666666-6666-4666-8666-666666666666", workerOwner]), /unique constraint/);
+    await db.query("insert into workers(id,owner_user_id,is_verified,available_now,full_name,whatsapp_number) values($1,$2,false,false,'Historical duplicate fixture','8090000111')", ["66666666-6666-4666-8666-666666666666", workerOwner]);
+    assert.equal((await db.query<{n: number}>("select count(*)::integer n from workers")).rows[0].n, 2, "budget migration preserves conflicting profiles");
     const p = publication({ draft: fixtureDraft, key: owner, name: "Private employer", phone: "+18090000999", consent: true })!;
     const create = async (key: string) => (await rpc("marketplace_create", [owner, key, p.draft, p.name, p.phone, true]))[0].marketplace_create as string;
     const id = await create(owner);
@@ -60,6 +61,9 @@ test("transactional opportunity and Express lifecycle: ownership, moderation, YE
     await rpc("marketplace_decide", [workerOwner, id, worker, "interested"]);
     assert.deepEqual(await rpc("marketplace_contacts", [owner, id]), [{ name: "Worker fixture", phone: "18090000111" }]);
     assert.deepEqual(await rpc("marketplace_contacts", [workerOwner, id]), [{ name: "Private employer", phone: "18090000999" }]);
+    assert.deepEqual(await rpc("marketplace_contacts_v2", [owner, id, null]), [{ name: "Worker fixture", phone: "18090000111", worker_id: worker, worker_name: "Worker fixture" }]);
+    assert.deepEqual(await rpc("marketplace_contacts_v2", [workerOwner, id, worker]), [{ name: "Private employer", phone: "18090000999", worker_id: worker, worker_name: "Worker fixture" }]);
+    await assert.rejects(rpc("marketplace_contacts_v2", [workerOwner, id, null]), /OWNERSHIP_REQUIRED/);
     await db.query("update workers set owner_user_id=$1 where id=$2", [stranger, worker]);
     assert.equal((await rpc("marketplace_contacts", [owner, id])).length, 0, "ownership transfer invalidates old response authority");
     await assert.rejects(rpc("marketplace_contacts", [stranger, id]), /OWNERSHIP/);

@@ -6,7 +6,6 @@ import { AppHeader } from "@/components/app-header";
 import { WorkerRegistrationForm } from "@/components/worker-registration-form";
 import type { WorkStyle } from "@/lib/types";
 import {
-  findWorkerByWhatsAppNumber,
   uploadWorkerPhoto
 } from "@/lib/worker-profile";
 
@@ -16,7 +15,6 @@ export type WorkerRegistrationActionState = {
   photoWarning?: string;
   jobCategoryError?: true;
   supabaseError?: true;
-  existingProfile?: true;
 };
 
 const fallbackWorkStyles: Array<{ value: WorkStyle; label: string }> = [
@@ -73,16 +71,6 @@ async function submitWorkerRegistration(
     };
   }
 
-  const existingWorker = await findWorkerByWhatsAppNumber(validated.whatsapp_number);
-
-  if (existingWorker) {
-    // Existing profile detected — never insert a duplicate. Surface the
-    // existing-profile options instead (Feature 1).
-    return {
-      existingProfile: true
-    };
-  }
-
   const insertPayload = { ...validated, edit_token: crypto.randomUUID() };
 
   let data: { id: string } | null = null;
@@ -118,7 +106,6 @@ async function submitWorkerRegistration(
   }
 
   if (error) {
-    if (error.code === "23505") return { existingProfile: true };
     console.error("Worker registration Supabase insert error:", {
       code: error.code
     });
@@ -200,12 +187,6 @@ export default async function WorkerRegistrationPage({
         {state === "telefono" && (
           <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
             Usa un número de WhatsApp válido con al menos 10 dígitos.
-          </div>
-        )}
-        {state === "duplicado" && (
-          <div className="mt-5 min-w-0 break-words rounded-lg border border-red-200 bg-red-50 p-4 font-bold text-red-900">
-            Ese WhatsApp ya fue registrado. No se puede enviar el mismo perfil
-            dos veces.
           </div>
         )}
         {state === "rechazado" && (

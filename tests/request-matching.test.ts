@@ -99,6 +99,11 @@ test("HTTP handlers validate, use real Supabase query adapter, protect privacy a
     assert.equal(handoff.status, 200);
     const url = new URL((await handoff.json()).url);
     assert.equal(url.hostname, "wa.me"); assert.match(url.searchParams.get("text")!, /Pisos y baños/);
+    assert.ok(url.searchParams.get("text")!.includes(row.id));
+    assert.ok(url.searchParams.get("text")!.includes(row.full_name!));
+    process.env.WORKER_AVAILABILITY_RENEWAL_ENABLED = "true";
+    assert.equal((await contact(request({ draft, workerId: row.id }))).status, 409, "an unowned legacy profile cannot be a confirmed match");
+    process.env.WORKER_AVAILABILITY_RENEWAL_ENABLED = "false";
     mode = "inactive"; assert.equal((await contact(request({ draft, workerId: row.id }))).status, 409);
     mode = "empty"; assert.equal((await (await matches(request(draft))).json()).count, 0);
     for (mode of ["partial", "error"]) {
@@ -109,7 +114,7 @@ test("HTTP handlers validate, use real Supabase query adapter, protect privacy a
     assert.equal((await matches(request(draft))).status, 503);
   } finally {
     globalThis.fetch = originalFetch;
-    for (const key of ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"]) {
+    for (const key of ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "WORKER_AVAILABILITY_RENEWAL_ENABLED"]) {
       if (before[key] === undefined) delete process.env[key]; else process.env[key] = before[key];
     }
   }

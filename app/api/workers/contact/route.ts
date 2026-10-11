@@ -14,13 +14,14 @@ export async function POST(request: Request) {
   try {
     const supabase = getSupabaseAdminClient();
     if (!supabase) throw new Error("unavailable");
-    const { data, error } = await supabase.from("workers").select("whatsapp_number")
+    const { data, error } = await supabase.from("workers").select("full_name,whatsapp_number")
       .eq("id", body.workerId).eq("is_verified", true)
       .abortSignal(AbortSignal.timeout(8000)).maybeSingle();
     if (error) throw new Error("unavailable");
     const url = data && buildWhatsAppUrl(data.whatsapp_number);
     if (!url) return NextResponse.json({ error: "Este contacto no está disponible." }, { status: 404, headers });
-    return NextResponse.json({ url, reason: "free_contact", free_contacts_remaining: null }, { headers });
+    const text = `Hola ${data.full_name?.trim() || ""}, vi tu perfil en ListoRD (${body.workerId}). ¿Podemos hablar de tu trabajo?`;
+    return NextResponse.json({ url: `${url}?text=${encodeURIComponent(text)}`, reason: "free_contact", free_contacts_remaining: null }, { headers });
   } catch {
     return NextResponse.json({ error: "No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo." }, { status: 503, headers });
   }

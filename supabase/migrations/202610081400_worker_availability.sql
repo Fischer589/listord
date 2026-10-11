@@ -1,5 +1,8 @@
--- LOCAL / UNAPPLIED. Deploy only after policy remediation and explicit approval.
+-- Private availability ledger. Deploy only after policy remediation.
 -- Existing worker IDs, photos, tokens, payments and availability are not backfilled.
+begin;
+set local lock_timeout = '2s';
+set local statement_timeout = '30s';
 create table public.worker_availability (
   worker_id uuid primary key references public.workers(id) on delete restrict,
   token_hash text not null unique check (token_hash ~ '^[0-9a-f]{64}$'),
@@ -52,3 +55,4 @@ revoke all on function public.issue_worker_availability(uuid,text) from public, 
 revoke all on function public.renew_worker_availability(text,boolean) from public, anon, authenticated;
 grant execute on function public.issue_worker_availability(uuid,text) to service_role;
 grant execute on function public.renew_worker_availability(text,boolean) to service_role;
+commit;

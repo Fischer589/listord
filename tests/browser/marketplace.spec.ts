@@ -57,11 +57,22 @@ test("verified YES, NO and withdrawal persist honestly; contact denial has no su
   expect(await page.evaluate(() => Object.keys(localStorage).some(k => k.includes("auth-token")))).toBe(false);
 });
 
-test("owner shortlist and closing preserve terms; gated Express never claims payment", async ({ page }) => {
+test("Express invitation selects only the authenticated worker profile in its link", async ({ page }) => {
+  await page.route("**/api/marketplace**", route => route.fulfill({ json: route.request().url().includes("mine=true")
+    ? { owned: [], workers: [{ id: workerId, full_name: "Perfil fixture" }], decisions: [] }
+    : { opportunities: [opportunity] } }));
+  await page.goto(`/oportunidades?id=${id}&worker=${workerId}`);
+  await login(page);
+  await expect(page.getByLabel("Mi perfil verificado")).toHaveValue(workerId);
+  await page.goto(`/oportunidades?id=${id}&worker=33333333-3333-4333-8333-333333333333`);
+  await expect(page.getByLabel("Mi perfil verificado")).toHaveValue("");
+});
+
+test("owner shortlist and closing preserve terms; gated Express is not advertised", async ({ page }) => {
   let status = "open";
   await page.route("**/api/marketplace**", async route => {
     const req = route.request();
-    if (req.url().includes("/contacts")) return route.fulfill({ json: { contacts: [{ name: "Perfil fixture", url: "https://wa.me/18090000111?text=fixture" }] } });
+    if (req.url().includes("/contacts")) return route.fulfill({ json: { contacts: [{ name: "Perfil fixture", workerId: "11111111-1111-4111-8111-111111111111", url: "https://wa.me/18090000111?text=fixture" }] } });
     if (req.method() === "POST") { status = req.postDataJSON().status; return route.fulfill({ json: { saved: true } }); }
     if (req.url().includes("mine=true")) return route.fulfill({ json: { owned: [{ marketplace_opportunities: { ...opportunity, status } }], workers: [], decisions: [] } });
     return route.fulfill({ json: { opportunities: [] } });
@@ -69,10 +80,8 @@ test("owner shortlist and closing preserve terms; gated Express never claims pay
   await page.goto("/oportunidades"); await login(page);
   await page.getByRole("button", { name: "Ver respuestas SÍ" }).click();
   await expect(page.getByRole("link", { name: "Contactar a Perfil fixture por WhatsApp" })).toHaveAttribute("href", /wa.me/);
-  await page.getByLabel(/Entiendo los términos/).check();
-  await page.getByRole("button", { name: "Verificar perfiles para Express" }).click();
-  await expect(page.getByRole("button", { name: "Solicitar pago con tarjeta RD$299" })).toBeDisabled();
-  await expect(page.getByText(/Express no está disponible/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ListoRD Express" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Solicitar pago con tarjeta RD$299" })).toHaveCount(0);
   await page.getByRole("button", { name: "Cerrar solicitud" }).click();
   await expect(page.getByRole("heading", { name: "Puerto Plata · Cerrada" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Cerrar solicitud" })).toBeDisabled();

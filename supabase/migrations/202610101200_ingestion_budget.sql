@@ -1,11 +1,8 @@
--- UNAPPLIED additive candidate. No legacy records, contacts or credentials change.
+-- Additive ingestion budget only. Historical phone conflicts are handled separately.
+-- No legacy records, contacts or credentials change.
 begin;
--- Abort atomically if legacy duplicates exist; never merge/delete profiles here.
-create unique index workers_normalized_phone_unique on public.workers (
-  (case when length(regexp_replace(whatsapp_number,'[^0-9]','','g'))=10
-    then '1'||regexp_replace(whatsapp_number,'[^0-9]','','g')
-    else regexp_replace(whatsapp_number,'[^0-9]','','g') end)
-) where whatsapp_number is not null and length(regexp_replace(whatsapp_number,'[^0-9]','','g')) between 10 and 15;
+set local lock_timeout = '2s';
+set local statement_timeout = '30s';
 create table public.marketplace_ingestion_limits (
   action text not null, subject text not null, bucket timestamptz not null,
   attempts integer not null check(attempts > 0), primary key(action,subject,bucket)

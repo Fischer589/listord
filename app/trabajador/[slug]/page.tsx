@@ -106,11 +106,11 @@ export async function generateMetadata({
 
   const name = worker.full_name || "Trabajador ListoRD";
   const skills = getSkills(worker);
-  const primarySkill = skills[0] || "Trabajador disponible";
+  const primarySkill = skills[0] || "Perfil de trabajador";
   const city = worker.city || "República Dominicana";
   const description =
     worker.short_intro ||
-    `${name} es ${primarySkill} en ${city}. Perfil verificado en ListoRD. Contáctalo directo por WhatsApp — sin intermediarios.`;
+    `${name} ofrece ${primarySkill} en ${city}. Perfil revisado por ListoRD; confirma identidad y disponibilidad antes de contratar.`;
 
   return {
     title: `${name} — ${primarySkill} en ${city}`,
@@ -120,7 +120,7 @@ export async function generateMetadata({
       primarySkill,
       city,
       ...skills.slice(0, 3),
-      "trabajador verificado",
+      "perfil de trabajador revisado",
       "República Dominicana",
       "ListoRD",
     ].filter(Boolean),
@@ -210,7 +210,7 @@ export default async function WorkerProfilePage({
   const fullName = worker.full_name || "Trabajador ListoRD";
   const city = worker.city || "República Dominicana";
   const skills = getSkills(worker);
-  const primarySkill = skills[0] || "Trabajador disponible";
+  const primarySkill = skills[0] || "Perfil de trabajador";
   const supportingSkills = skills.slice(1);
   const workStyle =
     worker.work_style && worker.work_style in workStyleLabels
@@ -285,7 +285,7 @@ export default async function WorkerProfilePage({
                           {primarySkill}
                         </p>
                       </div>
-                      <span className="profile-verified-pill">✓ Verificado</span>
+                      <span className="profile-verified-pill">✓ Perfil revisado</span>
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.625rem" }}>
@@ -396,7 +396,7 @@ export default async function WorkerProfilePage({
                     <div>
                       <p style={{ fontWeight: 800, color: "var(--ink)", marginBottom: "0.375rem" }}>Perfil revisado por nuestro equipo</p>
                       <p style={{ fontSize: "0.83rem", lineHeight: 1.65, color: "rgba(26,61,43,0.65)" }}>
-                        Cada perfil en ListoRD es verificado manualmente antes de publicarse. Sin bots, sin perfiles falsos. Estás hablando con una persona real en República Dominicana.
+                        El equipo revisa los datos del perfil antes de publicarlo. La revisión no confirma identidad, disponibilidad actual ni una contratación; verifica estos datos directamente antes de acordar un trabajo.
                       </p>
                     </div>
                   </div>

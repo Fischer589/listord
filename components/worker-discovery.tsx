@@ -75,7 +75,7 @@ export function WorkerDiscovery({ workers, categoryLabel }: WorkerDiscoveryProps
           <span className="discovery-live-dot" aria-hidden="true" />
           <span>
             {workers.length}{" "}
-            {workers.length === 1 ? "disponible" : "disponibles"} ahora
+            {workers.length === 1 ? "perfil revisado" : "perfiles revisados"}
           </span>
         </div>
         <span
@@ -98,7 +98,7 @@ export function WorkerDiscovery({ workers, categoryLabel }: WorkerDiscoveryProps
         aria-label={
           categoryLabel
             ? `Trabajadores de ${categoryLabel}`
-            : "Trabajadores disponibles"
+            : "Perfiles de trabajadores revisados"
         }
       >
         {workers.map((worker, i) => (

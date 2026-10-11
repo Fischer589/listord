@@ -1,6 +1,8 @@
--- CANDIDATE / UNAPPLIED. Review catalog preflight and hosted staging before approval.
+-- Worker privacy repair. Review the live catalog and deployed caller behavior.
 -- Run as table owner in one transaction. No worker data/token/photo changes.
 begin;
+set local lock_timeout = '2s';
+set local statement_timeout = '15s';
 alter table public.workers enable row level security;
 alter table public.contact_requests enable row level security;
 

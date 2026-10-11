@@ -17,7 +17,7 @@ test("marketplace HTTP verifies Auth identity, binds RPC actor, protects contact
     assert.equal(init?.method, "POST");
     const body = JSON.parse(String(init?.body)); assert.equal(body.p_actor, actor);
     if (fail) return Response.json({ message: "PRIVATE_DATABASE_DETAIL", code: "XX000" }, { status: 400 });
-    if (url.pathname.endsWith("marketplace_contacts")) return Response.json([{ name: "Fixture", phone: "18090000111" }]);
+    if (url.pathname.endsWith("marketplace_contacts_v2")) return Response.json([{ name: "Fixture", phone: "18090000111", worker_id: id, worker_name: "Fixture worker" }]);
     assert.equal(body.p_decision, "interested");
     return new Response(null, { status: 204 });
   };
@@ -29,8 +29,11 @@ test("marketplace HTTP verifies Auth identity, binds RPC actor, protects contact
     confirmed = true; fail = true;
     const failed = await POST(request(body)); assert.equal(failed.status, 503); assert.doesNotMatch(await failed.text(), /PRIVATE_DATABASE_DETAIL/);
     fail = false;
-    const response = await contacts(request({ id })); assert.equal(response.status, 200);
+    const response = await contacts(request({ id, workerId: id })); assert.equal(response.status, 200);
     const data = await response.json(); assert.match(data.contacts[0].url, /wa.me\/18090000111\?text=/);
+    assert.equal(data.contacts[0].workerId, id);
+    const message = new URL(data.contacts[0].url).searchParams.get("text")!;
+    assert.match(message, /Fixture worker/); assert.ok(message.includes(id));
     assert.equal(response.headers.get("cache-control"), "private, no-store");
     assert.equal((await GET(new Request("https://example.test/api/marketplace?mine=true"))).status, 401);
   } finally { globalThis.fetch = original; names.forEach((n, i) => { if (before[i] === undefined) delete process.env[n]; else process.env[n] = before[i]; }); }

@@ -1,7 +1,8 @@
--- ListoRD 2.0 / Phase 1B. Additive only. DO NOT apply to production without
--- live-schema review, backup, staged validation and explicit approval.
+-- ListoRD 2.0 / Phase 1B. Additive only. Review live schema and dependencies.
 -- No legacy leads are published, no workers changed, no payments touched.
 begin;
+set local lock_timeout = '2s';
+set local statement_timeout = '30s';
 
 create table public.marketplace_opportunities (
   id uuid primary key default gen_random_uuid(),

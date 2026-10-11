@@ -1,5 +1,10 @@
 # ListoRD 2.0 production deployment handoff — 2026-10-10
 
+**Historical checkpoint.** The security repairs, narrow hotfix deployment and
+reviewed additive schema migrations described as pending here are complete.
+Use the [2026-10-11 production handoff](PRODUCTION_RELEASE_HANDOFF_2026-10-11.md)
+for current state and next steps.
+
 **Decision: BLOCKED for the full 2.0 launch.** This is a production-only
 handoff for the existing Vercel `listord` project in
 `darnellfischer1-3955s-projects` and `listordapp.com`. The earlier staging

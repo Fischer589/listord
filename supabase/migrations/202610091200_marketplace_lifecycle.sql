@@ -1,6 +1,8 @@
--- UNAPPLIED candidate. Requires foundation + availability + privacy candidates.
+-- Requires foundation, availability, private owner identity and worker privacy.
 -- No legacy ownership is inferred, no worker activated, no financial row rewritten.
 begin;
+set local lock_timeout = '2s';
+set local statement_timeout = '30s';
 alter table public.marketplace_interests add column decision_user_id uuid references auth.users(id);
 create table public.marketplace_rate_limits (
   actor uuid not null references auth.users(id), action text not null,

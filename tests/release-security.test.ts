@@ -3,6 +3,7 @@ import test from "node:test";
 import { sanitizeAnalytics } from "../lib/analytics-policy";
 import { readJsonBody } from "../lib/http-json";
 import { submitHiringOutcome } from "../app/resultados/actions";
+import { upsertEmployerSession } from "../lib/employer-sessions";
 
 const url = "https://listord.example/api/analytics/events";
 const request = (body: string, headers = {}) => new Request(url, {
@@ -45,6 +46,31 @@ test("legacy outcome action cannot write or claim success from a caller-supplied
     });
     assert.equal(calls, 0);
   } finally { globalThis.fetch = oldFetch; }
+});
+
+test("employer session tracking reports database write failures", async () => {
+  const oldFetch = globalThis.fetch;
+  const oldUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const oldKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://session-fixture.example";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "fixture-only";
+  let calls = 0;
+  globalThis.fetch = async input => {
+    calls++;
+    assert.equal(new URL(String(input)).pathname, "/rest/v1/employer_sessions");
+    return new Response(JSON.stringify({ code: "23514", message: "fixture write failed" }), {
+      status: 400,
+      headers: { "content-type": "application/json" }
+    });
+  };
+  try {
+    assert.equal(await upsertEmployerSession({ browserSessionId: "fixture-session" }), false);
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = oldUrl;
+    if (oldKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = oldKey;
+  }
 });
 
 test("registration rejects malformed/oversized fields and never accepts caller-supplied activation", async () => {
@@ -101,7 +127,7 @@ test("directory contact is a bounded read-only approved-worker handoff, independ
     assert.equal(target.pathname, "/rest/v1/workers");
     assert.equal(init?.method, "GET");
     assert.equal(target.searchParams.get("is_verified"), "eq.true");
-    return new Response(JSON.stringify(missing ? [] : [{ whatsapp_number: "+18095550100" }]), { headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify(missing ? [] : [{ full_name: "Fixture Worker", whatsapp_number: "+18095550100" }]), { headers: { "content-type": "application/json" } });
   };
   try {
     const { POST } = await import("../app/api/workers/contact/route");
@@ -110,7 +136,11 @@ test("directory contact is a bounded read-only approved-worker handoff, independ
     const response = await POST(request('{"workerId":"22222222-2222-4222-8222-222222222222"}'));
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "private, no-store");
-    assert.deepEqual(await response.json(), { url: "https://wa.me/18095550100", reason: "free_contact", free_contacts_remaining: null });
+    const result = await response.json();
+    assert.equal(new URL(result.url).origin, "https://wa.me");
+    assert.match(new URL(result.url).searchParams.get("text")!, /Fixture Worker/);
+    assert.match(new URL(result.url).searchParams.get("text")!, /22222222-2222-4222-8222-222222222222/);
+    assert.equal(result.reason, "free_contact");
     missing = true; assert.equal((await POST(request('{"workerId":"22222222-2222-4222-8222-222222222222"}'))).status, 404);
   } finally {
     globalThis.fetch = oldFetch;

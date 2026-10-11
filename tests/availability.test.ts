@@ -71,6 +71,8 @@ test("HTTP renewal requires private key, server gate, CSRF checks and admin auth
   process.env.ADMIN_SESSION_SECRET = "test-admin";
   let mode = "ok";
   let calls = 0;
+  let ownerLinked = true;
+  let issueCalls = 0;
   globalThis.fetch = async (input, init) => {
     calls++;
     const url = new URL(String(input));
@@ -82,12 +84,19 @@ test("HTTP renewal requires private key, server gate, CSRF checks and admin auth
       return new Response(JSON.stringify(mode === "revoked" ? [] : [{ available: body.p_available, confirmed_at: new Date().toISOString() }]), { headers: { "content-type": "application/json" } });
     }
     if (url.pathname.endsWith("/issue_worker_availability")) {
+      issueCalls++;
       const body = JSON.parse(String(init?.body)); assert.equal(body.p_worker_id, id); assert.match(body.p_token_hash, /^[a-f0-9]{64}$/);
       return new Response(null, { status: 204 });
+    }
+    if (url.pathname.endsWith("/workers")) {
+      assert.equal(url.searchParams.get("id"), `eq.${id}`);
+      assert.equal(url.searchParams.get("is_verified"), "eq.true");
+      return new Response(JSON.stringify([{ owner_user_id: ownerLinked ? "11111111-1111-4111-8111-111111111111" : null }]), { headers: { "content-type": "application/json" } });
     }
     if (!url.searchParams.has("token_hash")) {
       assert.equal(url.searchParams.get("available"), "eq.true");
       assert.equal(url.searchParams.get("workers.is_verified"), "eq.true");
+      assert.equal(url.searchParams.get("workers.owner_user_id"), "not.is.null");
       assert.ok(url.searchParams.has("access_expires_at"));
       return new Response(JSON.stringify([{ confirmed_at: new Date(Date.now() - 1000).toISOString(), workers: { id, full_name: "Fixture", city: "Puerto Plata", skills: ["Limpieza"], is_verified: true, available_now: true, created_at: "2020-01-01", desired_income: 1000, income_type: "daily" } }]), { headers: { "content-type": "application/json", "content-range": "0-0/1" } });
     }
@@ -125,8 +134,13 @@ test("HTTP renewal requires private key, server gate, CSRF checks and admin auth
         else {
           assert.equal((await issue(req({ workerId: id, ownershipConfirmed: false }))).status, 400);
           assert.equal((await issue(req({ workerId: id, ownershipConfirmed: true }))).status, 400, "consent is required separately from ownership");
+          ownerLinked = false;
+          assert.equal((await issue(req({ workerId: id, ownershipConfirmed: true, consentConfirmed: true }))).status, 409);
+          assert.equal(issueCalls, 0, "unowned listings never receive an availability key");
+          ownerLinked = true;
           const issued = await issue(req({ workerId: id, ownershipConfirmed: true, consentConfirmed: true }));
           assert.equal(issued.status, 200); assert.match((await issued.json()).path, /^\/trabajadores\/disponibilidad#clave=[a-f0-9]{64}$/);
+          assert.equal(issueCalls, 1);
         }
       });
     }

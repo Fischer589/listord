@@ -7,7 +7,7 @@ export function outreachConfigured() {
     && /^[a-z0-9_]{1,100}$/.test(process.env.WHATSAPP_EXPRESS_TEMPLATE ?? "")
     && Boolean(process.env.WHATSAPP_ACCESS_TOKEN?.trim());
 }
-/** Reviewed Meta template body takes one public opportunity URL. The template
+/** Reviewed Meta template body takes one public opportunity/profile URL. The template
  * itself must explain opt-out; account, language, template and provider remain gated. */
 export async function sendExpressInvitation(invitation: Invitation, fetcher: typeof fetch = fetch) {
   if (!outreachConfigured()) throw new Error("OUTREACH_UNAVAILABLE");
@@ -19,7 +19,7 @@ export async function sendExpressInvitation(invitation: Invitation, fetcher: typ
     headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify({ messaging_product: "whatsapp", to: phone, type: "template", template: {
       name: process.env.WHATSAPP_EXPRESS_TEMPLATE, language: { code: "es" },
-      components: [{ type: "body", parameters: [{ type: "text", text: `${origin.origin}/oportunidades?id=${invitation.opportunity_id}` }] }]
+      components: [{ type: "body", parameters: [{ type: "text", text: `${origin.origin}/oportunidades?id=${invitation.opportunity_id}&worker=${invitation.worker_id}` }] }]
     } })
   });
   if (!response.ok) throw new Error("DELIVERY_UNCONFIRMED");

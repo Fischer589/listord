@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s | ListoRD"
   },
   description:
-    "Encuentra trabajadores verificados y disponibles hoy en República Dominicana. Filtra por ciudad, habilidad, ingreso y disponibilidad.",
+    "Explora perfiles de trabajadores revisados en República Dominicana. Filtra por ciudad y habilidad; confirma la disponibilidad directamente.",
   applicationName: "ListoRD",
   keywords: [
     "trabajadores República Dominicana",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ListoRD | Trabajadores listos para trabajar hoy",
     description:
-      "Personas reales, disponibles ahora mismo en tu ciudad.",
+      "Perfiles revisados en tu ciudad; confirma la disponibilidad.",
     url: "https://listordapp.com",
     siteName: "ListoRD",
     images: [
@@ -116,7 +116,7 @@ export default function RootLayout({
             <Link href="/trabajadores/editar" className="hover:text-[var(--ink)] transition-colors">Editar mi perfil</Link>
           </nav>
           <p className="mt-4 text-xs text-[var(--ink)]/40">
-            Trabajadores verificados en República Dominicana · Contacto directo por WhatsApp
+            Perfiles de trabajadores revisados en República Dominicana · Contacto directo por WhatsApp
           </p>
         </footer>
       </body>

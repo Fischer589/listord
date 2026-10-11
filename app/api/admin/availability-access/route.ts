@@ -13,6 +13,12 @@ export async function POST(request: Request) {
   try {
     const client = getSupabaseAdminClient();
     if (!client) throw new Error("unavailable");
+    // An approved legacy listing is not proof that this account owns it.
+    // Link ownership through the audited recovery flow before issuing a key.
+    const worker = await client.from("workers").select("owner_user_id")
+      .eq("id", body.workerId).eq("is_verified", true)
+      .abortSignal(AbortSignal.timeout(8000)).maybeSingle();
+    if (worker.error || !worker.data?.owner_user_id) return NextResponse.json({ error: "Vincula primero a un titular verificado. No se creó ningún enlace." }, { status: 409, headers: MATCH_HEADERS });
     const key = randomBytes(32).toString("hex");
     const { error } = await client.rpc("issue_worker_availability", { p_worker_id: body.workerId, p_token_hash: createHash("sha256").update(key).digest("hex") }).abortSignal(AbortSignal.timeout(8000));
     if (error) throw new Error("unavailable");

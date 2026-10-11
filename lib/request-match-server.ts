@@ -14,6 +14,7 @@ export async function getRequestMatches(draft: RequestDraft) {
       const { data, error, count } = await admin.from("worker_availability")
         .select(`confirmed_at,workers!inner(${MATCH_COLUMNS})`, { count: "exact" })
         .eq("available", true).eq("workers.is_verified", true).eq("workers.available_now", true)
+        .not("workers.owner_user_id", "is", null)
         .gt("confirmed_at", new Date(now.getTime() - MATCH_WINDOW_DAYS * 86400000).toISOString())
         .lte("confirmed_at", now.toISOString()).gt("access_expires_at", now.toISOString())
         .order("worker_id").range(0, MATCH_LIMIT - 1).abortSignal(AbortSignal.timeout(8000));

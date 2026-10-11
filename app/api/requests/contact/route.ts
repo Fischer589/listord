@@ -16,10 +16,11 @@ export async function POST(request: Request) {
   try {
     const client = getSupabaseAdminClient();
     if (!client) return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503);
-    const { data, error } = await client.from("workers").select(`${MATCH_COLUMNS},whatsapp_number`).eq("id", id).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
+    const { data, error } = await client.from("workers").select(`${MATCH_COLUMNS},whatsapp_number,owner_user_id`).eq("id", id).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
     if (error) return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503);
     let confirmedAt: string | null = null;
     const renewed = availabilityRenewalEnabled();
+    if (renewed && !data?.owner_user_id) return reply("La titularidad de este perfil aún no está confirmada.", 409);
     if (renewed && data) {
       const state = await client.from("worker_availability").select("confirmed_at")
         .eq("worker_id", id).eq("available", true).gt("access_expires_at", new Date().toISOString())
@@ -30,6 +31,6 @@ export async function POST(request: Request) {
     if (!data || !matchWorker({ ...data, availability_confirmed_at: confirmedAt }, draft, new Date(), renewed ? "confirmed" : "legacy")) return reply("Este perfil ya no cumple los criterios. Actualiza los resultados.", 409);
     const url = buildWhatsAppUrl(data.whatsapp_number);
     if (!url) return reply("Este perfil no tiene un contacto disponible.", 404);
-    return NextResponse.json({ url: `${url}?text=${encodeURIComponent(`Hola, vi tu perfil en ListoRD. ¿Te interesa este trabajo?\n\n${requestSummary(draft)}\n\n¿Puedes confirmar el horario, las tareas y el pago?`)}` }, { headers: MATCH_HEADERS });
+    return NextResponse.json({ url: `${url}?text=${encodeURIComponent(`Hola ${data.full_name}, vi tu perfil en ListoRD (${id}). ¿Te interesa este trabajo?\n\n${requestSummary(draft)}\n\n¿Puedes confirmar el horario, las tareas y el pago?`)}` }, { headers: MATCH_HEADERS });
   } catch { return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503); }
 }

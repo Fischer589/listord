@@ -7,17 +7,17 @@ export async function upsertEmployerSession({
 }: {
   browserSessionId?: string | null;
   whatsappNumber?: string | null;
-}) {
+}): Promise<boolean> {
   const normalizedSessionId = browserSessionId?.trim();
 
   if (!normalizedSessionId) {
-    return;
+    return false;
   }
 
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
-    return;
+    return false;
   }
 
   const normalizedWhatsAppNumber = normalizeWhatsAppNumber(whatsappNumber);
@@ -42,5 +42,7 @@ export async function upsertEmployerSession({
     console.warn("Employer session tracking failed.", {
       code: error.code
     });
+    return false;
   }
+  return true;
 }

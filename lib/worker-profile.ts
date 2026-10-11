@@ -65,61 +65,6 @@ export function formatWhatsAppNumber(value: string) {
   return normalizeWhatsAppNumber(value);
 }
 
-export type ExistingWorkerLookup = {
-  workerId: string;
-};
-
-/**
- * Looks up an existing worker profile by (normalized) WhatsApp number.
- * Used only for duplicate detection. A phone match is NOT proof of ownership
- * and must never return a bearer edit token or recover an edit link.
- */
-export async function findWorkerByWhatsAppNumber(
-  whatsappNumber?: string
-): Promise<ExistingWorkerLookup | null> {
-  const normalizedWhatsAppNumber = normalizeWhatsAppNumber(
-    whatsappNumber?.trim() || ""
-  );
-
-  if (!normalizedWhatsAppNumber) {
-    return null;
-  }
-
-  const supabase = getSupabaseAdminClient();
-
-  if (!supabase) {
-    console.warn("Worker lookup by WhatsApp skipped: Supabase admin client unavailable.");
-    return null;
-  }
-
-  const { data, error } = await supabase
-    .from("workers")
-    .select("id, whatsapp_number")
-    .not("whatsapp_number", "is", null);
-
-  if (error) {
-    console.warn("Worker lookup by WhatsApp failed.", { code: error.code });
-    return null;
-  }
-
-  const worker = (data ?? []).find((row) => {
-    const existingNumber =
-      typeof row.whatsapp_number === "string"
-        ? normalizeWhatsAppNumber(row.whatsapp_number)
-        : null;
-
-    return existingNumber === normalizedWhatsAppNumber;
-  });
-
-  if (!worker) {
-    return null;
-  }
-
-  return {
-    workerId: worker.id
-  };
-}
-
 export function hasBlockedText(values: string[]) {
   const text = values.join(" ").toLowerCase();
 
