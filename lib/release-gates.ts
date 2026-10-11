@@ -6,3 +6,6 @@ export function legacyWorkerEditingEnabled() {
 export function legacyCheckoutEnabled() {
   return process.env.LEGACY_CHECKOUT_ENABLED === "true";
 }
+export function employerDepositEnabled() {
+  return process.env.EMPLOYER_DEPOSIT_ENABLED === "true";
+}

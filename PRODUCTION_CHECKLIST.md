@@ -34,7 +34,7 @@ outreach closed until operational fulfillment is approved and verified.
 - Preserve payment history and existing entitlements; verify historical webhook replay
   and idempotency in Stripe sandbox before any new payment behavior is accepted.
 - Keep `MARKETPLACE_ENABLED`, `EXPRESS_ENABLED`, `WORKER_AVAILABILITY_RENEWAL_ENABLED`, `LEGACY_WORKER_EDIT_ENABLED` and
-  `LEGACY_CHECKOUT_ENABLED` false. These production variables and `EXPRESS_OUTREACH_ACCEPTED=false`
+  `LEGACY_CHECKOUT_ENABLED` and `EMPLOYER_DEPOSIT_ENABLED` false. These production variables and `EXPRESS_OUTREACH_ACCEPTED=false`
   were added to the existing Vercel project; the current deployed hotfix was not rebuilt.
   Express checkout stays disabled and its purchase controls are hidden in the 2.0 app.
 - Complete the full 2.0 acceptance contract in `LISTORD_2_RELEASE.md`; disabled incomplete

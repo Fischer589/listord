@@ -1,4 +1,4 @@
-import { legacyCheckoutEnabled } from "@/lib/release-gates";
+import { employerDepositEnabled } from "@/lib/release-gates";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import {
@@ -19,16 +19,22 @@ function getStripeErrorMessage(error: unknown) {
 }
 
 export async function POST(request: Request) {
-  if (!legacyCheckoutEnabled()) return NextResponse.json({ error: "Los nuevos pagos están temporalmente deshabilitados. El contacto con trabajadores es gratis." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  if (!employerDepositEnabled()) return NextResponse.json({ error: "Los depósitos están temporalmente deshabilitados. El contacto con trabajadores es gratis." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
-  const nextPublicAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const supabase = getSupabaseAdminClient();
 
-  if (!stripeSecretKey) {
-    return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
+  if (!stripeSecretKey || !supabase) {
+    return NextResponse.json({ error: GENERIC_ERROR }, { status: 503 });
   }
 
-  const origin =
-    request.headers.get("origin") || nextPublicAppUrl || "http://localhost:3000";
+  let origin: string;
+  try {
+    const configured = new URL(process.env.APP_ORIGIN?.trim() || process.env.NEXT_PUBLIC_APP_URL?.trim() || "");
+    if (configured.protocol !== "https:" || configured.username || configured.password || configured.pathname !== "/" || configured.search || configured.hash) throw new Error("INVALID_ORIGIN");
+    origin = configured.origin;
+  } catch {
+    return NextResponse.json({ error: GENERIC_ERROR }, { status: 503 });
+  }
 
   try {
     const stripe = new Stripe(stripeSecretKey);
@@ -64,22 +70,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
     }
 
-    const supabase = getSupabaseAdminClient();
-    if (supabase) {
-      const { error } = await supabase.from("employer_payments").insert({
-        stripe_session_id: session.id,
-        amount: EMPLOYER_DEPOSIT_AMOUNT_CENTS,
-        currency: EMPLOYER_DEPOSIT_CURRENCY,
-        status: "pending"
-      });
+    const { data, error } = await supabase.from("employer_payments").insert({
+      stripe_session_id: session.id,
+      amount: EMPLOYER_DEPOSIT_AMOUNT_CENTS,
+      currency: EMPLOYER_DEPOSIT_CURRENCY,
+      status: "pending"
+    }).select("id").single();
 
-      if (error) {
-        console.warn("Employer deposit payment record insert failed.", {
-          code: error.code
-        });
-      }
-    } else {
-      console.warn("Employer deposit checkout: Supabase admin client unavailable.");
+    if (error || !data?.id) {
+      console.warn("Employer deposit payment record insert failed.", { code: error?.code });
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 503 });
     }
 
     return NextResponse.json({ url: session.url });

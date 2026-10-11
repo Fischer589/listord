@@ -73,6 +73,10 @@ export async function POST(request: Request) {
     catch { return NextResponse.json({ error: "Express requiere reconciliación; el evento puede reintentarse." }, { status: 503 }); }
   }
 
+  if (event.type === "checkout.session.async_payment_succeeded" && (event.data.object as Stripe.Checkout.Session).metadata?.purpose === "employer_deposit") {
+    return handleEmployerDepositWebhook(event.data.object as Stripe.Checkout.Session);
+  }
+
   if (event.type !== "checkout.session.completed") {
     return NextResponse.json({ received: true });
   }
@@ -225,13 +229,17 @@ async function handleEmployerDepositWebhook(session: Stripe.Checkout.Session) {
   }
 
   // Idempotency guard: if this session was already marked paid, do nothing.
-  const { data: existing } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from("employer_payments")
     .select("status")
     .eq("stripe_session_id", session.id)
     .maybeSingle();
 
-  if (existing?.status === "paid") {
+  if (lookupError || !existing) {
+    return NextResponse.json({ error: "El depósito requiere reconciliación; el evento puede reintentarse." }, { status: 503 });
+  }
+
+  if (existing.status === "paid" || existing.status === "refunded") {
     return NextResponse.json({ received: true, already_processed: true });
   }
 
@@ -251,7 +259,7 @@ async function handleEmployerDepositWebhook(session: Stripe.Checkout.Session) {
   const amountTotal = session.amount_total ?? 0;
   const currency = (session.currency || "").toLowerCase();
 
-  if (amountTotal !== EMPLOYER_DEPOSIT_AMOUNT_CENTS || currency !== EMPLOYER_DEPOSIT_CURRENCY) {
+  if (session.mode !== "payment" || amountTotal !== EMPLOYER_DEPOSIT_AMOUNT_CENTS || currency !== EMPLOYER_DEPOSIT_CURRENCY) {
     console.error("Employer deposit webhook amount/currency mismatch — refusing to mark paid.", {
       sessionId: session.id,
       amountTotal,
@@ -269,8 +277,12 @@ async function handleEmployerDepositWebhook(session: Stripe.Checkout.Session) {
       : session.payment_intent?.id ?? null;
   const customerDetails = session.customer_details;
 
+  if (!paymentIntentId) {
+    return NextResponse.json({ error: "Falta la referencia de pago de Stripe." }, { status: 503 });
+  }
+
   try {
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("employer_payments")
       .update({
         status: "paid",
@@ -280,12 +292,15 @@ async function handleEmployerDepositWebhook(session: Stripe.Checkout.Session) {
         customer_phone: customerDetails?.phone ?? null,
         paid_at: new Date().toISOString()
       })
-      .eq("stripe_session_id", session.id);
+      .eq("stripe_session_id", session.id)
+      .eq("status", existing.status)
+      .select("id")
+      .maybeSingle();
 
-    if (error) {
+    if (error || !updated?.id) {
       console.error("Employer deposit payment update failed.", {
         sessionId: session.id,
-        code: error.code
+        code: error?.code
       });
       return NextResponse.json(
         { error: "No pudimos registrar el pago." },

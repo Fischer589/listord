@@ -4,6 +4,22 @@
 Vercel `listord` project, and the reviewed additive 2.0 schema is in production.
 The full 2.0 application and feature gates have not been released.
 
+**Revenue activation audit, 2026-10-11:** the existing RD$3,000 DOP one-time
+employer deposit pays for an operator-led search and connection effort, not
+Express or a digital premium entitlement. Its checkout and admin payment ledger
+are separate from the employer request list: no payment-to-request link, worker
+availability proof, operator assignment, response window or remedy is verified.
+The public copy promises available workers, while the hosted sample match had
+zero fresh matches and no current availability pool has been verified. Do not
+charge for this offer until the owner
+approves an honest, deliverable service scope and an operator can carry it out.
+The local payment repair now uses a separate default-off
+`EMPLOYER_DEPOSIT_ENABLED` gate, refuses checkout URLs without a saved payment
+row, uses a configured HTTPS return origin, retries signed paid webhooks without
+a confirmed row update, and processes delayed-payment success. It is committed
+locally but **not deployed**. The Netlify candidate and every paid gate remain
+off; no Stripe Checkout or live payment was attempted in this audit.
+
 **Latest hosted acceptance, 2026-10-11:** Netlify draft deploy
 `6acc1429e7e62296355409a0` is serving
 `https://release-candidate--listord-2.netlify.app` after the current Netlify
