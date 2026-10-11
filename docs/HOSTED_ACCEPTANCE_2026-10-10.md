@@ -1,5 +1,65 @@
 # Hosted acceptance matrix — prepared, not executed
 
+## Authenticated Vercel and Supabase configuration check — 2026-10-10
+
+The authenticated Vercel CLI resolves the existing `listord` project to
+`darnellfischer1-3955s-projects` (`prj_wp6T2w2PIiML7Ryr5LvApzhdogU9`).
+It reports Next.js and Node 24. The team has five projects and no separate
+ListoRD staging project. This project's only targets are production, preview
+and development; there is no custom staging target. All six listed ListoRD
+deployments target production, with no hosted preview deployment to exercise.
+
+The ten Vercel environment variable records each target **both production and
+preview**, including `NEXT_PUBLIC_SUPABASE_URL`, the Supabase service-role key
+and Stripe credentials. This is a shared targeting configuration, not evidence
+of isolated preview services. Credential values are omitted from this report.
+Supabase MCP lists only the known production ListoRD ref
+`rkgtykbekaeruyhdmvbo`, Spark and DefenderDesk; the ListoRD production project
+has **zero branches**. No existing isolated synthetic ListoRD staging database
+or hosted app was identified.
+
+**Decision: BLOCKED.** It is unsafe to run any synthetic hosted acceptance row
+against this configuration. No hosted matrix row was executed, and no Vercel or
+Supabase configuration, data or deployment was changed. The previously recorded
+local regression passes remain local evidence only.
+This authenticated check supersedes the earlier Vercel-access limitation below.
+
+## Supplied project ref is production — 2026-10-10
+
+The owner supplied `rkgtykbekaeruyhdmvbo` as a proposed ListoRD staging ref.
+Supabase `get_project_url` identifies its API host as
+`https://rkgtykbekaeruyhdmvbo.supabase.co`. The live
+[listordapp.com](https://listordapp.com/) production page references the same
+host for worker photos, and its response headers identify Vercel. Therefore this
+Supabase project serves production assets and **must not be used for synthetic
+staging tests**. At that time, its private Vercel environment configuration
+could not be read: the connected Vercel account listed no projects or teams,
+and domain lookup returned 403. The live asset evidence is sufficient to
+classify the project as a production resource, without claiming access to
+private configuration.
+Only project metadata and the public production page were read; **no database,
+Auth, storage, migration, payment or outreach operation was attempted**. Every
+hosted row remains **BLOCKED** until a distinct authorized synthetic staging
+project is identified.
+
+## Fresh-session recheck from `44a2924` — 2026-10-10 22:05 UTC
+
+Supabase MCP tools are available. `list_projects` returned three existing projects
+(a generic personal project, Spark and DefenderDesk), but none is identified as
+the authorized synthetic ListoRD staging project. The repository and current
+environment provide no staging project ref or credentials. Project metadata was
+the only Supabase information accessed; no project database, Auth, storage, SQL,
+schema ledger or production data was accessed or changed. Every hosted matrix row
+remains **BLOCKED**, with no hosted PASS or FAIL evidence. The operator has been
+asked to identify the existing synthetic staging project before any data access.
+
+Node 24.21.0 local verification from this checkpoint passed: 69 unit/integration
+tests, 52 desktop/mobile Chromium cases, lint, typecheck, a 167-page production
+build and the security scan. The production dependency audit found zero
+vulnerabilities; the full audit still reports seven high development-tool entries
+from the known `braces` advisory. These local results do not satisfy hosted rows.
+No verified repository defect was found in this recheck.
+
 ## Access check — 2026-10-10 continuation
 
 **Hosted status: BLOCKED for every row below.** No authorized synthetic Supabase

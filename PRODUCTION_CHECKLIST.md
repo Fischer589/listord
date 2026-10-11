@@ -1,6 +1,7 @@
 # ListoRD production acceptance checklist
 
-Current decision and evidence: [release preparation](docs/RELEASE_PREPARATION_2026-10-10.md).
+Current decision and evidence: [production deployment handoff](docs/PRODUCTION_DEPLOYMENT_HANDOFF_2026-10-10.md).
+Earlier implementation checkpoint: [release preparation](docs/RELEASE_PREPARATION_2026-10-10.md).
 Local verification does not authorize a migration, worker activation, push or deployment.
 
 ## Required before production acceptance
