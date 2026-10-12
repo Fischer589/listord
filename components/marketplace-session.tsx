@@ -2,7 +2,7 @@
 import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { getMarketplaceBrowserClient } from "@/lib/marketplace-browser";
 
-/** Tab-scoped session; tokens never enter URLs, analytics or rendered markup. */
+/** Tab-scoped session; magic-link fragments are consumed and cleared on return. */
 export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.", emailRedirectPath }: { children: (token: string) => ReactNode; description?: string; emailRedirectPath?: "/empleadores/mi-cuenta" }) {
   const [client, setClient] = useState<ReturnType<typeof getMarketplaceBrowserClient>>(null);
   const [account, setAccount] = useState("");
@@ -13,13 +13,21 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   useEffect(() => {
-    setClient(getMarketplaceBrowserClient());
+    const browserClient = getMarketplaceBrowserClient();
+    if (!browserClient) clearAuthFragment();
+    setClient(browserClient);
   }, []);
   useEffect(() => {
-    const subscription = client?.auth.onAuthStateChange((_event, session) => {
+    if (!client) return;
+    let mounted = true;
+    const subscription = client.auth.onAuthStateChange((_event, session) => {
       setToken(session?.access_token ?? ""); setAccount(session?.user.id ?? "");
     });
-    return () => subscription?.data.subscription.unsubscribe();
+    void client.auth.initialize().then(({ error }) => {
+      clearAuthFragment();
+      if (mounted && error) setNotice("No se pudo verificar el enlace. Solicita uno nuevo.");
+    });
+    return () => { mounted = false; subscription.data.subscription.unsubscribe(); };
   }, [client]);
   async function submit(e: FormEvent) {
     e.preventDefault(); setBusy(true); setNotice("");
@@ -55,6 +63,13 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
       <button className="btn-primary" disabled={busy}>{sent ? "Verificar código" : "Enviar código"}</button>
       {sent && <button type="button" className="btn-secondary" disabled={busy} onClick={() => { setSent(false); setCode(""); }}>Usar otro correo</button>}
     </form>{notice && <p role="status">{notice}</p>}</section>;
+}
+
+function clearAuthFragment() {
+  const fragment = new URLSearchParams(window.location.hash.slice(1));
+  if (fragment.has("access_token") || fragment.has("refresh_token") || fragment.has("error") || window.location.href.endsWith("#")) {
+    window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+  }
 }
 
 export async function marketplaceRequest(token: string, body?: unknown, path = "/api/marketplace?mine=true") {

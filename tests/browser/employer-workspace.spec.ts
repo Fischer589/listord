@@ -36,6 +36,44 @@ test("email button explains invalid input and sends an OTP request for a valid a
   await expect(page.getByLabel("Código de verificación")).toBeVisible();
 });
 
+test("magic-link callback validates and stores the session, clears URL tokens, and survives refresh without paid access", async ({ page }) => {
+  const accessToken = "fixture_magic_access_token_not_live_123456789";
+  const refreshToken = "fixture_magic_refresh_token_not_live_123456789";
+  const user = { id: "11111111-1111-4111-8111-111111111111", aud: "authenticated", email: "employer@example.test", email_confirmed_at: "2026-01-01T00:00:00Z" };
+  let userValidations = 0;
+  await page.route("**/auth/v1/user", route => {
+    userValidations++;
+    expect(route.request().headers().authorization).toBe(`Bearer ${accessToken}`);
+    return route.fulfill({ headers: { "Access-Control-Allow-Origin": "*" }, json: { user } });
+  });
+  await page.route("**/api/employer-workspace", route => {
+    expect(route.request().headers().authorization).toBe(`Bearer ${accessToken}`);
+    return route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } });
+  });
+  await page.goto(`/empleadores/mi-cuenta#access_token=${accessToken}&refresh_token=${refreshToken}&expires_in=3600&token_type=bearer&type=magiclink`);
+  await expect(page.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await expect(page).toHaveURL("http://127.0.0.1:3188/empleadores/mi-cuenta");
+  expect(userValidations).toBeGreaterThan(0);
+  expect(await page.evaluate(() => sessionStorage.getItem("listord-marketplace-session-v1"))).not.toBeNull();
+  await expect(page.getByRole("button", { name: "Guardar candidato" })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enviar código" })).toHaveCount(0);
+  await expect(page).toHaveURL("http://127.0.0.1:3188/empleadores/mi-cuenta");
+});
+
+test("failed magic-link validation clears sensitive URL tokens and offers a fresh login", async ({ page }) => {
+  await page.route("**/auth/v1/user", route => route.fulfill({
+    status: 401, headers: { "Access-Control-Allow-Origin": "*", "X-Supabase-Api-Version": "2024-01-01" },
+    json: { code: "bad_jwt", msg: "Invalid token" },
+  }));
+  await page.goto("/empleadores/mi-cuenta#access_token=fixture_invalid_magic_token&refresh_token=fixture_invalid_refresh&expires_in=3600&token_type=bearer&type=magiclink");
+  await expect(page).toHaveURL("http://127.0.0.1:3188/empleadores/mi-cuenta");
+  await expect(page.getByRole("button", { name: "Enviar código" })).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("No se pudo verificar el enlace. Solicita uno nuevo.");
+  expect(await page.evaluate(() => sessionStorage.getItem("listord-marketplace-session-v1"))).toBeNull();
+});
+
 // Browser transport fixtures verify the paid UI state. Signed provider events,
 // ledger writes and access control are checked in the server tests, not here.
 test("unpaid employer cannot use workspace; verified paid state enables saved candidates and private requests until expiry", async ({ page }) => {

@@ -13,7 +13,7 @@ export function getMarketplaceBrowserClient() {
   const memory = new Map<string, string>();
   client = createClient(config.env.supabaseUrl, config.env.supabaseAnonKey, {
     auth: {
-      persistSession: true, autoRefreshToken: true, detectSessionInUrl: false,
+      persistSession: true, autoRefreshToken: true, detectSessionInUrl: true,
       storageKey: "listord-marketplace-session-v1",
       storage: {
         getItem: key => { try { return sessionStorage.getItem(key); } catch { return memory.get(key) ?? null; } },
