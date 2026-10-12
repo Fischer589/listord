@@ -1,13 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { takeProfileRequest } from "@/lib/contact-context";
 import { openFreeWorkerContact } from "@/lib/free-contact";
+import type { RequestDraft } from "@/lib/request-specification";
 
 export function WorkerProfileContactButton({ workerId, workerName, primarySkill }: { workerId: string; workerName: string; primarySkill: string }) {
   const [contactError, setContactError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [requestDraft, setRequestDraft] = useState<RequestDraft | null>(null);
+  useEffect(() => { setRequestDraft(takeProfileRequest(workerId)); }, [workerId]);
   async function handleContact() {
     setLoading(true); setContactError("");
-    try { await openFreeWorkerContact(workerId, workerName, primarySkill); }
+    try { await openFreeWorkerContact(workerId, workerName, primarySkill, requestDraft); }
     catch { setContactError("No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo."); }
     finally { setLoading(false); }
   }

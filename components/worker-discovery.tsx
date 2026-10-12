@@ -2,7 +2,9 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { WorkerCard } from "./worker-card";
+import { takeDiscoveryRequest } from "@/lib/contact-context";
 import type { Worker } from "@/lib/types";
+import type { RequestDraft } from "@/lib/request-specification";
 
 interface WorkerDiscoveryProps {
   workers: Worker[];
@@ -13,6 +15,8 @@ export function WorkerDiscovery({ workers, categoryLabel }: WorkerDiscoveryProps
   const carouselRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [requestDraft, setRequestDraft] = useState<RequestDraft | null>(null);
+  useEffect(() => { setRequestDraft(takeDiscoveryRequest()); }, []);
 
   // Track which slide is most visible via IntersectionObserver
   useEffect(() => {
@@ -108,7 +112,7 @@ export function WorkerDiscovery({ workers, categoryLabel }: WorkerDiscoveryProps
               i === activeIndex ? " discovery-slide--active" : ""
             }`}
           >
-            <WorkerCard worker={worker} />
+            <WorkerCard worker={worker} requestDraft={requestDraft} />
           </div>
         ))}
       </div>

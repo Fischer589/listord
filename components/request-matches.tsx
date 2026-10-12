@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { trackEvent } from "@/lib/analytics";
+import { storeProfileRequest } from "@/lib/contact-context";
 import type { MatchResult } from "@/lib/request-matching";
 import type { RequestDraft } from "@/lib/request-specification";
 
@@ -66,7 +67,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
           <h3>{worker.name}</h3><p>{worker.city}</p>
           <p>{worker.reasons.join(" · ")}</p>
           {worker.scopeEvidence.length > 0 && <p>Habilidades que aparecen en tu alcance: {worker.scopeEvidence.join(", ")}</p>}
-          <div className="request-actions"><Link className="btn-secondary" href={`/trabajador/${worker.id}`}>Ver perfil</Link><Link className="btn-secondary" href={`/empleadores/mi-cuenta?worker=${encodeURIComponent(worker.id)}`}>Guardar en mi espacio</Link><button className="btn-primary" disabled={contacting !== null} onClick={() => contact(worker.id)}>{contacting === worker.id ? "Preparando contacto…" : "Contactar gratis por WhatsApp"}</button></div>
+          <div className="request-actions"><Link className="btn-secondary" href={`/trabajador/${worker.id}`} onClick={() => storeProfileRequest(draft, worker.id)}>Ver perfil</Link><Link className="btn-secondary" href={`/empleadores/mi-cuenta?worker=${encodeURIComponent(worker.id)}`}>Guardar en mi espacio</Link><button className="btn-primary" disabled={contacting !== null} onClick={() => contact(worker.id)}>{contacting === worker.id ? "Preparando contacto…" : "Contactar gratis por WhatsApp"}</button></div>
         </li>)}</ul>}
         {result.count > visible && <button className="btn-secondary" onClick={() => setVisible(previous => previous + 20)}>Ver más perfiles</button>}
         <div className="request-express">

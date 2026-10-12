@@ -72,3 +72,25 @@ for (const category of CATEGORIES) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 }
+
+test("preview carries a valid request to filtered discovery without putting private details in its URL", async ({ page }) => {
+  await page.goto("/solicitar");
+  await page.locator("#category").selectOption("limpieza");
+  await page.locator("#city").fill("Puerto Plata");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.locator("#property").selectOption("Casa");
+  await page.locator("#tasks").fill("Pisos y baños");
+  await page.locator("#supplies").selectOption("Los pongo yo");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.locator("#timing").fill("15 de octubre, 9:00 a. m.");
+  await page.locator("#duration").fill("4 horas");
+  await page.locator("#amount").fill("1500");
+  await page.locator("#exclusions").fill("Cocinar");
+  await page.getByRole("button", { name: "Ver mi solicitud" }).click();
+  await page.getByRole("link", { name: "Explorar perfiles" }).click();
+  await expect(page).toHaveURL(/\?skill=limpieza&city=Puerto\+Plata#descubre$/);
+  expect(page.url()).not.toMatch(/Pisos|Cocinar|1500|octubre/i);
+  const handoff = await page.evaluate(() => sessionStorage.getItem("listord-discovery-request-v1"));
+  expect(handoff).not.toBeNull();
+  expect(JSON.parse(handoff!).draft.answers.tasks).toBe("Pisos y baños");
+});

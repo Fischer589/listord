@@ -4,8 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { trackEvent } from "@/lib/analytics";
+import { storeProfileRequest } from "@/lib/contact-context";
 import { openFreeWorkerContact } from "@/lib/free-contact";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
+import type { RequestDraft } from "@/lib/request-specification";
 import type { Worker } from "@/lib/types";
 const FALLBACK_PRIMARY_SKILL = "Perfil de trabajador";
 
@@ -63,7 +65,7 @@ function hasCompleteProfile(worker: Worker): boolean {
 
 // ─── Component ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-export function WorkerCard({ worker }: { worker: Worker }) {
+export function WorkerCard({ worker, requestDraft = null }: { worker: Worker; requestDraft?: RequestDraft | null }) {
   const fullName = worker.full_name || "Trabajador ListoRD";
   const photoUrl = worker.photo_url?.trim();
   const city = worker.city || "República Dominicana";
@@ -107,7 +109,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
 
   async function handleContactClick(selectedWorker: Worker) {
     setContactError(""); setContacting(true);
-    try { await openFreeWorkerContact(selectedWorker.id, fullName, primarySkill); }
+    try { await openFreeWorkerContact(selectedWorker.id, fullName, primarySkill, requestDraft); }
     catch { setContactError("No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo."); }
     finally { setContacting(false); }
   }
@@ -186,7 +188,7 @@ export function WorkerCard({ worker }: { worker: Worker }) {
             <WhatsAppIcon />
             Contactar por WhatsApp
           </button>
-          <Link href={`/trabajador/${worker.id}`} className="wc-profile-link">
+          <Link href={`/trabajador/${worker.id}`} onClick={() => { if (requestDraft) storeProfileRequest(requestDraft, worker.id); }} className="wc-profile-link">
             Ver perfil completo →
           </Link>
           <Link href={`/empleadores/mi-cuenta?worker=${encodeURIComponent(worker.id)}`} className="wc-profile-link">

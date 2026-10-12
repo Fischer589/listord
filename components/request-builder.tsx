@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { trackEvent } from "@/lib/analytics";
+import { storeDiscoveryRequest } from "@/lib/contact-context";
 import { RequestMatches } from "./request-matches";
 import { MarketplacePublication } from "./marketplace-publication";
 import { parseMatchRequest } from "@/lib/request-matching";
@@ -96,7 +97,7 @@ export function RequestBuilder({ publicationEnabled = false }: { publicationEnab
     </form> : <>
       <article className="request-preview" aria-label="Resumen de la solicitud"><p>{requestSummary(draft)}</p></article>
       <div className="request-actions" aria-label="Editar solicitud"><button className="btn-secondary" onClick={() => go(0)}>Editar servicio y lugar</button><button className="btn-secondary" onClick={() => go(1)}>Editar alcance</button><button className="btn-secondary" onClick={() => go(2)}>Editar fecha y pago</button></div>
-      <div className="request-actions"><button className="btn-primary" onClick={copy}>Copiar resumen</button><Link className="btn-secondary" href={`/?${new URLSearchParams({ skill: draft.category, city: draft.city }).toString()}#descubre`}>Explorar perfiles</Link></div>
+      <div className="request-actions"><button className="btn-primary" onClick={copy}>Copiar resumen</button><Link className="btn-secondary" href={`/?${new URLSearchParams({ skill: draft.category, city: draft.city }).toString()}#descubre`} onClick={event => storeDiscoveryRequest(draft, event.currentTarget.href)}>Explorar perfiles</Link></div>
       <p role="status">{copyStatus}</p>
       <RequestMatches draft={draft} />
       {publicationEnabled && <MarketplacePublication draft={draft} />}

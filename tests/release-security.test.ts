@@ -4,6 +4,7 @@ import { sanitizeAnalytics } from "../lib/analytics-policy";
 import { readJsonBody } from "../lib/http-json";
 import { submitHiringOutcome } from "../app/resultados/actions";
 import { upsertEmployerSession } from "../lib/employer-sessions";
+import { emptyRequest } from "../lib/request-specification";
 
 const url = "https://listord.example/api/analytics/events";
 const request = (body: string, headers = {}) => new Request(url, {
@@ -158,6 +159,19 @@ test("directory contact is a bounded read-only approved-worker handoff, independ
     assert.match(new URL(result.url).searchParams.get("text")!, /Fixture Worker/);
     assert.match(new URL(result.url).searchParams.get("text")!, /22222222-2222-4222-8222-222222222222/);
     assert.equal(result.reason, "free_contact");
+    const draft = { ...emptyRequest(), category: "limpieza", city: "Puerto Plata", answers: {
+      property: "Casa", tasks: "Pisos y baños", supplies: "Los pongo yo"
+    }, timing: "15 de octubre, 9:00 a. m.", duration: "4 horas", amount: "1500", exclusions: "Cocinar" };
+    const contextual = await POST(request(JSON.stringify({ workerId: "22222222-2222-4222-8222-222222222222", draft })));
+    assert.equal(contextual.status, 200);
+    const message = new URL((await contextual.json()).url).searchParams.get("text")!;
+    for (const detail of ["Fixture Worker", "LIMPIEZA", "Puerto Plata", "Pisos y baños", "15 de octubre, 9:00 a. m.", "4 horas", "RD$1,500", "No incluye: Cocinar"]) {
+      assert.ok(message.includes(detail), detail);
+    }
+    assert.match(message, /confirmar tu disponibilidad/);
+    assert.doesNotMatch(message, /disponibilidad confirmada|aceptaste|garantiz/i);
+    assert.equal((await POST(request(JSON.stringify({ workerId: "22222222-2222-4222-8222-222222222222", draft: { ...draft, answers: { ...draft.answers, private: "no" } } })))).status, 400);
+    assert.equal(calls, 2);
     missing = true; assert.equal((await POST(request('{"workerId":"22222222-2222-4222-8222-222222222222"}'))).status, 404);
   } finally {
     globalThis.fetch = oldFetch;
