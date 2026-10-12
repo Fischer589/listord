@@ -43,6 +43,12 @@ test("workspace checkout fails closed without gate, verified account, and safe o
     process.env.STRIPE_SECRET_KEY = "sk_live_fixture";
     assert.equal((await checkout(new Request("https://example.test/api/stripe/workspace-checkout", { method: "POST" }))).status, 503);
     process.env.STRIPE_SECRET_KEY = "sk_test_fixture";
+    process.env.APP_ORIGIN = "https://listordapp.com";
+    assert.equal((await checkout(new Request("https://listordapp.com/api/stripe/workspace-checkout", { method: "POST" }))).status, 503);
+    process.env.APP_ORIGIN = "https://www.listordapp.com";
+    assert.equal((await checkout(new Request("https://www.listordapp.com/api/stripe/workspace-checkout", { method: "POST" }))).status, 503);
+    process.env.APP_ORIGIN = "https://release-candidate--listord-2.netlify.app";
+    assert.equal((await checkout(new Request("https://listordapp.com/api/stripe/workspace-checkout", { method: "POST" }))).status, 503);
     assert.equal((await checkout(new Request("https://example.test/api/stripe/workspace-checkout", { method: "POST" }))).status, 401);
     assert.throws(() => workspaceAccessUntil(new Date("invalid")), /Invalid time value/);
   } finally { names.forEach((name, i) => { if (old[i] === undefined) delete process.env[name]; else process.env[name] = old[i]; }); }

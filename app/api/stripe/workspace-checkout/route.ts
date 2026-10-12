@@ -9,7 +9,7 @@ const headers = { "Cache-Control": "private, no-store" };
 const unavailable = () => NextResponse.json({ error: "No pudimos iniciar el pago. Intenta más tarde." }, { status: 503, headers });
 
 export async function POST(request: Request) {
-  if (!workspaceEnabled() || !workspaceStripeReady()) return unavailable();
+  if (!workspaceEnabled() || !workspaceStripeReady(request.url)) return unavailable();
   let ownerId: string;
   let origin: string;
   try {
