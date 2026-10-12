@@ -8,8 +8,10 @@ test("email button explains invalid input and sends an OTP request for a valid a
   let fail = true;
   await page.route("**/auth/v1/otp**", route => {
     requests++;
+    expect(route.request().method()).toBe("POST");
+    expect(new URL(route.request().url()).searchParams.get("redirect_to")).toBe("http://127.0.0.1:3188/empleadores/mi-cuenta");
     return route.fulfill(fail
-      ? { status: 400, json: { code: "email_address_not_authorized", msg: "Email address not authorized" } }
+      ? { status: 400, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Expose-Headers": "X-Supabase-Api-Version", "X-Supabase-Api-Version": "2024-01-01" }, json: { code: "email_address_not_authorized", msg: "Email address not authorized" } }
       : { json: {} });
   });
   await page.goto("/empleadores/mi-cuenta");
@@ -26,7 +28,7 @@ test("email button explains invalid input and sends an OTP request for a valid a
   await email.fill("employer@example.test");
   await page.getByRole("button", { name: "Enviar código" }).click();
   await expect.poll(() => requests).toBe(1);
-  await expect(page.getByRole("status")).toHaveText("No se pudo enviar el código. Comprueba el correo e intenta más tarde.");
+  await expect(page.getByRole("status")).toHaveText("Este correo no está autorizado para recibir códigos. Contacta al administrador.");
   await expect(page.getByRole("button", { name: "Enviar código" })).toBeEnabled();
   fail = false;
   await page.getByRole("button", { name: "Enviar código" }).click();

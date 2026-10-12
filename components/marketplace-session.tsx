@@ -3,7 +3,7 @@ import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { getMarketplaceBrowserClient } from "@/lib/marketplace-browser";
 
 /** Tab-scoped session; tokens never enter URLs, analytics or rendered markup. */
-export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece." }: { children: (token: string) => ReactNode; description?: string }) {
+export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.", emailRedirectPath }: { children: (token: string) => ReactNode; description?: string; emailRedirectPath?: "/empleadores/mi-cuenta" }) {
   const [client, setClient] = useState<ReturnType<typeof getMarketplaceBrowserClient>>(null);
   const [account, setAccount] = useState("");
   const [token, setToken] = useState("");
@@ -26,7 +26,10 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
     try {
       if (!client) throw new Error();
       if (!sent) {
-        const { error } = await client.auth.signInWithOtp({ email: email.trim() });
+        const { error } = await client.auth.signInWithOtp({
+          email: email.trim(),
+          ...(emailRedirectPath ? { options: { emailRedirectTo: new URL(emailRedirectPath, window.location.origin).href } } : {}),
+        });
         if (error) throw error;
         setSent(true); setNotice("Revisa tu correo para obtener el código. No lo compartas.");
       } else {
@@ -34,9 +37,13 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
         if (error || !data.session) throw new Error();
         setAccount(data.session.user.id); setToken(data.session.access_token); setCode(""); setNotice("");
       }
-    } catch {
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? error.code : null;
       setNotice(!client ? "El acceso por correo no está disponible. Intenta más tarde." : sent
         ? "No se pudo verificar el código. Comprueba que sea correcto e intenta de nuevo."
+        : code === "email_address_not_authorized" ? "Este correo no está autorizado para recibir códigos. Contacta al administrador."
+        : code === "email_address_invalid" ? "Este correo no es válido para el servicio de verificación. Usa otra dirección."
+        : code === "over_email_send_rate_limit" || code === "over_request_rate_limit" ? "Se alcanzó el límite de solicitudes de código. Espera antes de intentar de nuevo."
         : "No se pudo enviar el código. Comprueba el correo e intenta más tarde.");
     }
     finally { setBusy(false); }

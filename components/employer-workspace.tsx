@@ -121,7 +121,7 @@ function WorkspaceAccount({ token, selectedWorkerId, returned }: { token: string
 }
 
 export function EmployerWorkspace({ selectedWorkerId, returned }: { selectedWorkerId: string | null; returned: boolean }) {
-  return <MarketplaceSession description="Verifica tu correo para comprar y usar tu espacio privado de empleador. La exploración y el contacto directo son gratis.">
+  return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar y usar tu espacio privado de empleador. La exploración y el contacto directo son gratis.">
     {token => <WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} />}
   </MarketplaceSession>;
 }
