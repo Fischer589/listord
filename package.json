@@ -15,6 +15,7 @@
     "postinstall": "node scripts/patch-braces.mjs"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^10.0.0",
     "@supabase/supabase-js": "2.117.3",
     "next": "15.5.27",
     "react": "19.2.8",

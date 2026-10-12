@@ -218,7 +218,7 @@ test("paid contact tracking stores a private handoff with the selected worker an
   }
 });
 
-test("test-mode checkout uses fixed one-time RD$299 terms and withholds its URL unless the session is bound to a ledger row", async () => {
+test("checkout keeps one-time RD$299 terms, per-session Blackthorne branding, and a bound embedded or hosted session", async () => {
   const names = ["EMPLOYER_WORKSPACE_ENABLED", "STRIPE_SECRET_KEY", "APP_ORIGIN", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
   const old = names.map(name => process.env[name]);
   const oldFetch = globalThis.fetch;
@@ -229,24 +229,41 @@ test("test-mode checkout uses fixed one-time RD$299 terms and withholds its URL 
   const sessionsPrototype = Object.getPrototypeOf(stripe.checkout.sessions);
   const originalCreate = sessionsPrototype.create;
   const originalRetrieve = sessionsPrototype.retrieve;
+  const originalExpire = sessionsPrototype.expire;
   let created = 0;
+  let expired = 0;
+  let expectedMode: "hosted" | "embedded" = "hosted";
+  let retrievedMode: "hosted" | "embedded" = "hosted";
   let acknowledgeBinding = true;
   let pendingRow: { id: string; stripe_session_id: string; created_at: string } | null = null;
   sessionsPrototype.retrieve = async (id: string) => {
     assert.equal(id, "cs_test_workspace_fixture");
-    return { id, status: "open", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture" };
+    return retrievedMode === "embedded"
+      ? { id, status: "open", ui_mode: "embedded_page", client_secret: "cs_test_workspace_fixture_secret_fixture" }
+      : { id, status: "open", ui_mode: "hosted_page", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture" };
   };
+  sessionsPrototype.expire = async (id: string) => { assert.equal(id, "cs_test_workspace_fixture"); expired++; return { id, status: "expired" }; };
   sessionsPrototype.create = async (params: Record<string, unknown>, options: { idempotencyKey: string }) => {
     created++;
     assert.equal(params.mode, "payment");
+    assert.equal(params.ui_mode, expectedMode === "embedded" ? "embedded_page" : "hosted_page");
     assert.deepEqual(params.payment_method_types, ["card"]);
+    assert.equal(params.locale, "es");
+    assert.deepEqual(params.branding_settings, { display_name: "BLACKTHORNE INDUSTRIES", background_color: "#FDFCF8", button_color: "#1A3D2B", font_family: "inter" });
     assert.equal((params.line_items as Array<{price_data:{unit_amount:number;currency:string}}>)[0].price_data.unit_amount, 29_900);
     assert.equal((params.line_items as Array<{price_data:{unit_amount:number;currency:string}}>)[0].price_data.currency, "dop");
     assert.equal((params.metadata as Record<string,string>).order_id, orderId);
     assert.equal((params.metadata as Record<string,string>).owner_user_id, owner);
     assert.equal(options.idempotencyKey, `workspace:${orderId}`);
+    if (expectedMode === "embedded") {
+      assert.equal(params.return_url, "https://release-candidate--listord-2.netlify.app/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}");
+      assert.equal(params.redirect_on_completion, "if_required");
+      assert.equal(params.success_url, undefined);
+      return { id: "cs_test_workspace_fixture", client_secret: "cs_test_workspace_fixture_secret_fixture" };
+    }
     assert.equal(params.success_url, "https://release-candidate--listord-2.netlify.app/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}");
     assert.equal(params.cancel_url, "https://release-candidate--listord-2.netlify.app/empleadores/mi-cuenta?checkout=cancel");
+    assert.equal(params.return_url, undefined);
     return { id: "cs_test_workspace_fixture", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture" };
   };
   globalThis.fetch = async (input, init) => {
@@ -261,24 +278,40 @@ test("test-mode checkout uses fixed one-time RD$299 terms and withholds its URL 
     if (body.stripe_session_id) return Response.json(acknowledgeBinding ? { id: orderId } : null);
     return Response.json(null);
   };
-  const makeRequest = () => new Request("https://example.test/api/stripe/workspace-checkout", {
-    method: "POST", headers: { Authorization: "Bearer fixture_token_12345678901234567890" } });
+  const makeRequest = (body?: Record<string, unknown>) => new Request("https://example.test/api/stripe/workspace-checkout", {
+    method: "POST", headers: { Authorization: "Bearer fixture_token_12345678901234567890", ...(body ? { "Content-Type": "application/json" } : {}) },
+    ...(body ? { body: JSON.stringify(body) } : {}) });
   try {
     const success = await checkout(makeRequest());
     assert.equal(success.status, 200);
-    assert.deepEqual(await success.json(), { url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });
+    assert.deepEqual(await success.json(), { mode: "hosted", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });
     pendingRow = { id: orderId, stripe_session_id: "cs_test_workspace_fixture", created_at: new Date().toISOString() };
     const resumed = await checkout(makeRequest());
     assert.equal(resumed.status, 200);
-    assert.deepEqual(await resumed.json(), { url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });
+    assert.deepEqual(await resumed.json(), { mode: "hosted", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });
     assert.equal(created, 1);
     pendingRow = null;
     acknowledgeBinding = false;
     assert.equal((await checkout(makeRequest())).status, 503);
     assert.equal(created, 2);
+    acknowledgeBinding = true;
+    expectedMode = "embedded";
+    retrievedMode = "embedded";
+    const embedded = await checkout(makeRequest({ mode: "embedded" }));
+    assert.equal(embedded.status, 200);
+    assert.deepEqual(await embedded.json(), { mode: "embedded", clientSecret: "cs_test_workspace_fixture_secret_fixture", sessionId: "cs_test_workspace_fixture" });
+    pendingRow = { id: orderId, stripe_session_id: "cs_test_workspace_fixture", created_at: new Date().toISOString() };
+    assert.equal((await checkout(makeRequest({ mode: "embedded" }))).status, 200);
+    assert.equal(created, 3);
+    assert.equal((await checkout(makeRequest({ mode: "hosted" }))).status, 409);
+    expectedMode = "hosted";
+    assert.equal((await checkout(makeRequest({ mode: "hosted", replaceEmbedded: true }))).status, 200);
+    assert.equal(expired, 1);
+    assert.equal(created, 4);
   } finally {
     sessionsPrototype.create = originalCreate;
     sessionsPrototype.retrieve = originalRetrieve;
+    sessionsPrototype.expire = originalExpire;
     globalThis.fetch = oldFetch;
     names.forEach((name, i) => { if (old[i] === undefined) delete process.env[name]; else process.env[name] = old[i]; });
   }

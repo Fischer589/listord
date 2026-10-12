@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { MarketplaceSession } from "./marketplace-session";
-import { bindWorkspaceCheckoutReturn, clearWorkspaceCheckoutReturn, prepareWorkspaceCheckoutReturn } from "@/lib/marketplace-browser";
 import { isValidWhatsAppUrl } from "@/lib/whatsapp";
 
 type Candidate = { id: string; full_name: string; city: string | null; skills: string[] | null; savedAt: string };
@@ -20,7 +19,7 @@ async function api(token: string, body?: Record<string, unknown>, path = "/api/e
   return data;
 }
 
-function WorkspaceAccount({ token, selectedWorkerId, returned }: { token: string; selectedWorkerId: string | null; returned: boolean }) {
+function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { token: string; selectedWorkerId: string | null; returned: boolean; canceled: boolean }) {
   const [data, setData] = useState<Workspace | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -52,16 +51,6 @@ function WorkspaceAccount({ token, selectedWorkerId, returned }: { token: string
     catch (e) { setError(e instanceof Error ? e.message : "No pudimos guardar."); return false; }
     finally { setBusy(false); }
   }
-  async function buy() {
-    setBusy(true); setError("");
-    try {
-      if (!await prepareWorkspaceCheckoutReturn()) throw new Error("Tu navegador no pudo conservar la sesión para volver del pago. Intenta en una pestaña normal.");
-      const result = await api(token, {}, "/api/stripe/workspace-checkout");
-      if (typeof result.url !== "string" || !result.url.startsWith("https://checkout.stripe.com/")) throw new Error("No se confirmó la página de pago.");
-      if (typeof result.sessionId !== "string" || !bindWorkspaceCheckoutReturn(result.sessionId)) throw new Error("No pudimos conservar tu sesión para volver del pago.");
-      window.location.assign(result.url);
-    } catch (e) { clearWorkspaceCheckoutReturn(); setError(e instanceof Error ? e.message : "No pudimos iniciar el pago."); setBusy(false); }
-  }
   async function contact(workerId: string) {
     setBusy(true); setError(""); setNotice("");
     try {
@@ -90,10 +79,11 @@ function WorkspaceAccount({ token, selectedWorkerId, returned }: { token: string
       <p className="workspace-offer__price">RD$299 <span>/ 30 días</span></p>
       <p>Pago único. Sin renovación automática.</p>
       <div className="workspace-actions">
-        <button type="button" className="btn-primary" disabled={busy} onClick={buy}>{busy ? "Preparando pago..." : "Comprar 30 días · RD$299"}</button>
+        <Link className="btn-primary" href="/empleadores/pago">Comprar 30 días · RD$299</Link>
         <button type="button" className="btn-secondary" onClick={() => void load()}>Actualizar estado</button>
       </div>
       {returned && <p role="status" className="workspace-feedback">Esperando confirmación del pago por Stripe. El regreso desde Checkout no activa el acceso.</p>}
+      {canceled && <p role="status" className="workspace-feedback">Volviste del pago. Tu pase solo se activa cuando Stripe confirme el cobro.</p>}
       {error && <p role="alert" className="workspace-feedback workspace-feedback--error">{error}</p>}
     </div>
   </section>;
@@ -151,8 +141,8 @@ function WorkspaceAccount({ token, selectedWorkerId, returned }: { token: string
   </section>;
 }
 
-export function EmployerWorkspace({ selectedWorkerId, returned }: { selectedWorkerId: string | null; returned: boolean }) {
+export function EmployerWorkspace({ selectedWorkerId, returned, canceled }: { selectedWorkerId: string | null; returned: boolean; canceled: boolean }) {
   return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar y usar tu espacio privado de empleador. La exploración y el contacto directo son gratis.">
-    {token => <WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} />}
+    {token => <WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} canceled={canceled} />}
   </MarketplaceSession>;
 }

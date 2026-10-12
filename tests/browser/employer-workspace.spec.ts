@@ -51,13 +51,13 @@ test("magic-link callback validates and stores the session, clears URL tokens, a
     return route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } });
   });
   await page.goto(`/empleadores/mi-cuenta#access_token=${accessToken}&refresh_token=${refreshToken}&expires_in=3600&token_type=bearer&type=magiclink`);
-  await expect(page.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Comprar 30 días · RD$299" })).toBeVisible();
   await expect(page).toHaveURL("http://127.0.0.1:3188/empleadores/mi-cuenta");
   expect(userValidations).toBeGreaterThan(0);
   expect(await page.evaluate(() => sessionStorage.getItem("listord-marketplace-session-v1"))).not.toBeNull();
   await expect(page.getByRole("button", { name: "Guardar candidato" })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Comprar 30 días · RD$299" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Enviar código" })).toHaveCount(0);
   await expect(page).toHaveURL("http://127.0.0.1:3188/empleadores/mi-cuenta");
 });
@@ -86,7 +86,7 @@ test("Checkout return in a new tab resumes auth once; payment and expiry still c
     expect(route.request().headers().authorization).toBe(`Bearer ${token}`);
     return route.fulfill({ json: { active, accessUntil: active ? "2099-01-01T00:00:00Z" : null, candidates: [], requests: [], contacts: [] } });
   });
-  await context.route("**/api/stripe/workspace-checkout", route => route.fulfill({ json: { url: "https://checkout.stripe.com/test/cs_fixture", sessionId: "cs_test_workspace_fixture" } }));
+  await context.route("**/api/stripe/workspace-checkout", route => route.fulfill({ json: { mode: "hosted", url: "https://checkout.stripe.com/test/cs_fixture", sessionId: "cs_test_workspace_fixture" } }));
   await context.route("https://checkout.stripe.com/**", route => route.fulfill({ contentType: "text/html",
     body: '<h1>Stripe Checkout fixture</h1><a href="http://127.0.0.1:3188/empleadores/mi-cuenta?checkout=return&amp;session_id=cs_test_workspace_fixture">Return</a>' }));
   await page.goto("/empleadores/mi-cuenta");
@@ -94,8 +94,10 @@ test("Checkout return in a new tab resumes auth once; payment and expiry still c
   await page.getByRole("button", { name: "Enviar código" }).click();
   await page.getByLabel("Código de verificación").fill("123456");
   await page.getByRole("button", { name: "Verificar código" }).click();
-  await expect(page.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
-  await page.getByRole("button", { name: "Comprar 30 días · RD$299" }).click();
+  await expect(page.getByRole("link", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await page.getByRole("link", { name: "Comprar 30 días · RD$299" }).click();
+  await expect(page.getByRole("heading", { name: "Confirma tu pase" })).toBeVisible();
+  await page.getByRole("button", { name: "Continuar en Stripe" }).click();
   await expect(page.getByRole("heading", { name: "Stripe Checkout fixture" })).toBeVisible();
 
   const mismatched = await context.newPage();
@@ -115,7 +117,7 @@ test("Checkout return in a new tab resumes auth once; payment and expiry still c
   await expect(returned.getByRole("button", { name: "Guardar solicitud" })).toBeVisible();
   active = false; // Server-side entitlement expired.
   await returned.reload();
-  await expect(returned.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await expect(returned.getByRole("link", { name: "Comprar 30 días · RD$299" })).toBeVisible();
   await expect(returned.getByRole("button", { name: "Guardar solicitud" })).toHaveCount(0);
 
   const unrelatedTab = await context.newPage();
@@ -154,16 +156,18 @@ test("unpaid employer cannot use workspace; verified paid state enables saved ca
     if (body.action === "add_request") requestTitle = body.title;
     return route.fulfill({ json: { ok: true } });
   });
-  await page.route("**/api/stripe/workspace-checkout", route => route.fulfill({ json: { url: "https://checkout.stripe.com/test/cs_fixture", sessionId: "cs_test_workspace_fixture" } }));
+  await page.route("**/api/stripe/workspace-checkout", route => route.fulfill({ json: { mode: "hosted", url: "https://checkout.stripe.com/test/cs_fixture", sessionId: "cs_test_workspace_fixture" } }));
   await page.route("https://checkout.stripe.com/**", route => route.fulfill({ contentType: "text/html", body: "<h1>Stripe Checkout fixture</h1>" }));
   await page.goto(`/empleadores/mi-cuenta?worker=${workerId}`);
   await page.getByLabel("Correo electrónico").fill("employer@example.test");
   await page.getByRole("button", { name: "Enviar código" }).click();
   await page.getByLabel("Código de verificación").fill("123456");
   await page.getByRole("button", { name: "Verificar código" }).click();
-  await expect(page.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Comprar 30 días · RD$299" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Guardar candidato" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Comprar 30 días · RD$299" }).click();
+  await page.getByRole("link", { name: "Comprar 30 días · RD$299" }).click();
+  await expect(page.getByRole("heading", { name: "Confirma tu pase" })).toBeVisible();
+  await page.getByRole("button", { name: "Continuar en Stripe" }).click();
   await expect(page.getByRole("heading", { name: "Stripe Checkout fixture" })).toBeVisible();
   active = true; // Fixture models verified webhook fulfillment; redirect alone does not set this.
   await page.goto("/empleadores/mi-cuenta?checkout=return&session_id=cs_test_workspace_fixture");
@@ -176,7 +180,7 @@ test("unpaid employer cannot use workspace; verified paid state enables saved ca
   await expect(page.getByRole("heading", { name: "Limpieza semanal" })).toBeVisible();
   active = false; // Expired entitlement fixture.
   await page.reload();
-  await expect(page.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Comprar 30 días · RD$299" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Perfil de prueba" })).toHaveCount(0);
 });
 

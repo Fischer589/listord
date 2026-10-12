@@ -1,0 +1,138 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { loadStripe } from "@stripe/stripe-js/pure";
+import type { StripeEmbeddedCheckout } from "@stripe/stripe-js";
+import { bindWorkspaceCheckoutReturn, clearWorkspaceCheckoutReturn, prepareWorkspaceCheckoutReturn } from "@/lib/marketplace-browser";
+import { MarketplaceSession } from "./marketplace-session";
+
+type Phase = "loading" | "embedded" | "fallback" | "verifying" | "confirmed";
+type CheckoutResult = { mode?: string; sessionId?: string; clientSecret?: string; url?: string; error?: string };
+
+async function createCheckout(token: string, mode: "embedded" | "hosted", replaceEmbedded = false): Promise<CheckoutResult> {
+  const response = await fetch("/api/stripe/workspace-checkout", { method: "POST", cache: "no-store",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ mode, replaceEmbedded }), signal: AbortSignal.timeout(20000) });
+  const result = await response.json() as CheckoutResult;
+  if (!response.ok) throw new Error(result.error || "No pudimos preparar el pago. Intenta más tarde.");
+  return result;
+}
+
+function checkoutSessionId(result: CheckoutResult) {
+  if (typeof result.sessionId !== "string" || !/^cs_(?:test|live)_[A-Za-z0-9_]+$/.test(result.sessionId)) throw new Error("No se confirmó la sesión de pago.");
+  return result.sessionId;
+}
+
+export function EmployerPaymentSession({ publishableKey }: { publishableKey: string }) {
+  return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar el pase. La exploración y el contacto directo siguen siendo gratis.">
+    {token => <WorkspaceCheckout token={token} publishableKey={publishableKey} />}
+  </MarketplaceSession>;
+}
+
+function WorkspaceCheckout({ token, publishableKey }: { token: string; publishableKey: string }) {
+  const [phase, setPhase] = useState<Phase>("loading");
+  const [error, setError] = useState("");
+  const [sessionId, setSessionId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const mount = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let disposed = false;
+    let checkout: StripeEmbeddedCheckout | null = null;
+    async function start() {
+      if (!/^pk_(?:test|live)_[A-Za-z0-9]+$/.test(publishableKey)) {
+        setPhase("fallback");
+        return;
+      }
+      try {
+        const stripe = await loadStripe(publishableKey);
+        if (!stripe || disposed) throw new Error("No se pudo cargar el formulario seguro.");
+        if (!await prepareWorkspaceCheckoutReturn()) throw new Error("Tu navegador no pudo conservar la sesión para volver del pago.");
+        const result = await createCheckout(token, "embedded");
+        if (disposed) return;
+        const id = checkoutSessionId(result);
+        if (!bindWorkspaceCheckoutReturn(id)) throw new Error("No pudimos conservar tu sesión para volver del pago.");
+        if (result.mode === "hosted" && result.url?.startsWith("https://checkout.stripe.com/")) {
+          window.location.assign(result.url);
+          return;
+        }
+        if (result.mode !== "embedded" || typeof result.clientSecret !== "string" ||
+            !result.clientSecret.startsWith(`${id}_secret_`)) throw new Error("No se confirmó el formulario seguro.");
+        setSessionId(id);
+        const embedded = await stripe.createEmbeddedCheckoutPage({ clientSecret: result.clientSecret, onComplete: () => {
+          if (!disposed) setPhase("verifying");
+        } });
+        checkout = embedded;
+        if (disposed) { embedded.destroy(); return; }
+        if (!mount.current) throw new Error("No se pudo mostrar el formulario seguro.");
+        embedded.mount(mount.current);
+        setPhase("embedded");
+      } catch (cause) {
+        if (!disposed) {
+          setError(cause instanceof Error ? cause.message : "No se pudo mostrar el formulario seguro.");
+          setPhase("fallback");
+        }
+      }
+    }
+    void start();
+    return () => { disposed = true; checkout?.destroy(); };
+  }, [token, publishableKey]);
+
+  useEffect(() => {
+    if (phase !== "verifying") return;
+    let stopped = false;
+    const check = async () => {
+      try {
+        const response = await fetch("/api/employer-workspace", { cache: "no-store", headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000) });
+        if (!response.ok) return;
+        const state = await response.json() as { active?: boolean };
+        if (!stopped && state.active) {
+          clearWorkspaceCheckoutReturn(sessionId);
+          setPhase("confirmed");
+        }
+      } catch { /* Webhook confirmation can arrive after this request. */ }
+    };
+    void check();
+    const poll = window.setInterval(() => { void check(); }, 4000);
+    const timeout = window.setTimeout(() => { window.clearInterval(poll); setError("La confirmación sigue pendiente. Revisa el estado en tu cuenta; no vuelvas a pagar."); }, 60000);
+    return () => { stopped = true; window.clearInterval(poll); window.clearTimeout(timeout); };
+  }, [phase, token, sessionId]);
+
+  useEffect(() => {
+    if (phase !== "confirmed") return;
+    const timeout = window.setTimeout(() => window.location.assign("/empleadores/mi-cuenta"), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [phase]);
+
+  async function hostedFallback() {
+    setBusy(true); setError("");
+    try {
+      if (!await prepareWorkspaceCheckoutReturn()) throw new Error("Tu navegador no pudo conservar la sesión para volver del pago.");
+      const result = await createCheckout(token, "hosted", true);
+      const id = checkoutSessionId(result);
+      if (result.mode !== "hosted" || !result.url?.startsWith("https://checkout.stripe.com/") ||
+          !bindWorkspaceCheckoutReturn(id)) throw new Error("No se confirmó la página de pago.");
+      window.location.assign(result.url);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No pudimos abrir el pago seguro.");
+      setBusy(false);
+    }
+  }
+
+  return <div className="payment-flow">
+    <p className="workspace-eyebrow">Pago seguro · Stripe</p>
+    <h2>Confirma tu pase</h2>
+    <p className="payment-flow__line">RD$299 · 30 días · Pago único · Sin renovación automática</p>
+    {phase === "loading" && <p role="status" className="payment-flow__status">Preparando tu formulario de pago seguro...</p>}
+    <div ref={mount} className="payment-flow__stripe" hidden={phase !== "loading" && phase !== "embedded"} />
+    {phase === "embedded" && <button type="button" className="btn-secondary" onClick={() => { clearWorkspaceCheckoutReturn(); window.location.assign("/empleadores/mi-cuenta?checkout=cancel"); }}>Cancelar y volver a mi cuenta</button>}
+    {phase === "fallback" && <div className="payment-flow__fallback"><p role="status">Puedes completar el pago en la página segura de Stripe.</p>
+      <button type="button" className="btn-primary" disabled={busy} onClick={() => void hostedFallback()}>{busy ? "Abriendo Stripe..." : "Continuar en Stripe"}</button>
+      <a href="/empleadores/mi-cuenta">Cancelar y volver a mi cuenta</a>
+    </div>}
+    {phase === "verifying" && <p role="status" className="payment-flow__status">Stripe completó el formulario. Esperando la confirmación firmada del pago; todavía no se ha activado el pase.</p>}
+    {phase === "confirmed" && <p role="status" className="payment-flow__success">Pago confirmado. Tu Pase de Empleador está activo. Abriendo tu espacio...</p>}
+    {error && <p role="alert" className="workspace-feedback workspace-feedback--error">{error}</p>}
+    {phase === "verifying" && error && <a className="btn-secondary" href="/empleadores/mi-cuenta?checkout=return">Revisar estado en mi cuenta</a>}
+  </div>;
+}
