@@ -1,6 +1,6 @@
 "use client";
 import { FormEvent, ReactNode, useEffect, useState } from "react";
-import { getMarketplaceBrowserClient } from "@/lib/marketplace-browser";
+import { clearWorkspaceCheckoutReturn, getMarketplaceBrowserClient } from "@/lib/marketplace-browser";
 
 /** Tab-scoped session; magic-link fragments are consumed and cleared on return. */
 export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.", emailRedirectPath }: { children: (token: string) => ReactNode; description?: string; emailRedirectPath?: "/empleadores/mi-cuenta" }) {
@@ -14,7 +14,7 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
   const [notice, setNotice] = useState("");
   useEffect(() => {
     const browserClient = getMarketplaceBrowserClient();
-    if (!browserClient) clearAuthFragment();
+    if (!browserClient) { clearAuthFragment(); clearCheckoutReturnBridge(); }
     setClient(browserClient);
   }, []);
   useEffect(() => {
@@ -25,6 +25,7 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
     });
     void client.auth.initialize().then(({ error }) => {
       clearAuthFragment();
+      clearCheckoutReturnBridge();
       if (mounted && error) setNotice("No se pudo verificar el enlace. Solicita uno nuevo.");
     });
     return () => { mounted = false; subscription.data.subscription.unsubscribe(); };
@@ -56,7 +57,7 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
     }
     finally { setBusy(false); }
   }
-  if (token) return <><button className="btn-secondary" onClick={() => { setToken(""); setSent(false); setCode(""); void client?.auth.signOut({ scope: "local" }); }}>Cerrar sesión</button><p className="text-sm">Sesión verificada en esta pestaña.</p><div key={account}>{children(token)}</div></>;
+  if (token) return <><button className="btn-secondary" onClick={() => { clearWorkspaceCheckoutReturn(); setToken(""); setSent(false); setCode(""); void client?.auth.signOut({ scope: "local" }); }}>Cerrar sesión</button><p className="text-sm">Sesión verificada en esta pestaña.</p><div key={account}>{children(token)}</div></>;
   return <section aria-label="Acceso verificado"><h2>Verifica tu correo</h2><p>{description}</p>
     <form onSubmit={submit} className="request-fields"><label>Correo electrónico<input type="email" autoComplete="email" required maxLength={254} value={email} disabled={sent || busy} onChange={e => { setEmail(e.target.value); setNotice(""); }} onInvalid={e => setNotice(e.currentTarget.validity.valueMissing ? "Escribe tu correo electrónico para recibir el código." : "Escribe un correo electrónico válido.")} /></label>
       {sent && <label>Código de verificación<input autoComplete="one-time-code" inputMode="numeric" required minLength={6} maxLength={10} value={code} onChange={e => setCode(e.target.value)} /></label>}
@@ -69,6 +70,14 @@ function clearAuthFragment() {
   const fragment = new URLSearchParams(window.location.hash.slice(1));
   if (fragment.has("access_token") || fragment.has("refresh_token") || fragment.has("error") || window.location.href.endsWith("#")) {
     window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+  }
+}
+
+function clearCheckoutReturnBridge() {
+  const query = new URLSearchParams(window.location.search);
+  if (query.get("checkout") === "cancel") clearWorkspaceCheckoutReturn();
+  else if (query.get("checkout") === "return" && query.get("session_id")) {
+    clearWorkspaceCheckoutReturn(query.get("session_id")!);
   }
 }
 

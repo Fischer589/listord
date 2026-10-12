@@ -239,7 +239,8 @@ test("test-mode checkout uses fixed one-time RD$299 terms and withholds its URL 
     assert.equal((params.metadata as Record<string,string>).order_id, orderId);
     assert.equal((params.metadata as Record<string,string>).owner_user_id, owner);
     assert.equal(options.idempotencyKey, `workspace:${orderId}`);
-    assert.equal(params.success_url, "https://release-candidate--listord-2.netlify.app/empleadores/mi-cuenta?checkout=return");
+    assert.equal(params.success_url, "https://release-candidate--listord-2.netlify.app/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}");
+    assert.equal(params.cancel_url, "https://release-candidate--listord-2.netlify.app/empleadores/mi-cuenta?checkout=cancel");
     return { id: "cs_test_workspace_fixture", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture" };
   };
   globalThis.fetch = async (input, init) => {
@@ -259,9 +260,11 @@ test("test-mode checkout uses fixed one-time RD$299 terms and withholds its URL 
   try {
     const success = await checkout(makeRequest());
     assert.equal(success.status, 200);
-    assert.equal((await success.json()).url, "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture");
+    assert.deepEqual(await success.json(), { url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });
     pendingRow = { id: orderId, stripe_session_id: "cs_test_workspace_fixture", created_at: new Date().toISOString() };
-    assert.equal((await checkout(makeRequest())).status, 200);
+    const resumed = await checkout(makeRequest());
+    assert.equal(resumed.status, 200);
+    assert.deepEqual(await resumed.json(), { url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });
     assert.equal(created, 1);
     pendingRow = null;
     acknowledgeBinding = false;

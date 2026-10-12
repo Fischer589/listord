@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { MarketplaceSession } from "./marketplace-session";
+import { bindWorkspaceCheckoutReturn, clearWorkspaceCheckoutReturn, prepareWorkspaceCheckoutReturn } from "@/lib/marketplace-browser";
 import { isValidWhatsAppUrl } from "@/lib/whatsapp";
 
 type Candidate = { id: string; full_name: string; city: string | null; skills: string[] | null; savedAt: string };
@@ -54,10 +55,12 @@ function WorkspaceAccount({ token, selectedWorkerId, returned }: { token: string
   async function buy() {
     setBusy(true); setError("");
     try {
+      if (!await prepareWorkspaceCheckoutReturn()) throw new Error("Tu navegador no pudo conservar la sesión para volver del pago. Intenta en una pestaña normal.");
       const result = await api(token, {}, "/api/stripe/workspace-checkout");
       if (typeof result.url !== "string" || !result.url.startsWith("https://checkout.stripe.com/")) throw new Error("No se confirmó la página de pago.");
+      if (typeof result.sessionId !== "string" || !bindWorkspaceCheckoutReturn(result.sessionId)) throw new Error("No pudimos conservar tu sesión para volver del pago.");
       window.location.assign(result.url);
-    } catch (e) { setError(e instanceof Error ? e.message : "No pudimos iniciar el pago."); setBusy(false); }
+    } catch (e) { clearWorkspaceCheckoutReturn(); setError(e instanceof Error ? e.message : "No pudimos iniciar el pago."); setBusy(false); }
   }
   async function contact(workerId: string) {
     setBusy(true); setError(""); setNotice("");

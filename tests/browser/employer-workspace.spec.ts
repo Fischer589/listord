@@ -74,6 +74,65 @@ test("failed magic-link validation clears sensitive URL tokens and offers a fres
   expect(await page.evaluate(() => sessionStorage.getItem("listord-marketplace-session-v1"))).toBeNull();
 });
 
+test("Checkout return in a new tab resumes auth once; payment and expiry still come only from the server", async ({ page, context }) => {
+  const token = "fixture_checkout_return_access_not_live_123456789";
+  const user = { id: "11111111-1111-4111-8111-111111111111", aud: "authenticated", email: "employer@example.test", email_confirmed_at: "2026-01-01T00:00:00Z" };
+  let active = false;
+  await context.route("**/auth/v1/**", route => route.fulfill({ headers: { "Access-Control-Allow-Origin": "*" }, json:
+    route.request().url().includes("/verify")
+      ? { access_token: token, refresh_token: "fixture_checkout_return_refresh_not_live", expires_in: 3600, token_type: "bearer", user }
+      : { user } }));
+  await context.route("**/api/employer-workspace", route => {
+    expect(route.request().headers().authorization).toBe(`Bearer ${token}`);
+    return route.fulfill({ json: { active, accessUntil: active ? "2099-01-01T00:00:00Z" : null, candidates: [], requests: [], contacts: [] } });
+  });
+  await context.route("**/api/stripe/workspace-checkout", route => route.fulfill({ json: { url: "https://checkout.stripe.com/test/cs_fixture", sessionId: "cs_test_workspace_fixture" } }));
+  await context.route("https://checkout.stripe.com/**", route => route.fulfill({ contentType: "text/html",
+    body: '<h1>Stripe Checkout fixture</h1><a href="http://127.0.0.1:3188/empleadores/mi-cuenta?checkout=return&amp;session_id=cs_test_workspace_fixture">Return</a>' }));
+  await page.goto("/empleadores/mi-cuenta");
+  await page.getByLabel("Correo electrónico").fill("employer@example.test");
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  await page.getByLabel("Código de verificación").fill("123456");
+  await page.getByRole("button", { name: "Verificar código" }).click();
+  await expect(page.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await page.getByRole("button", { name: "Comprar 30 días · RD$299" }).click();
+  await expect(page.getByRole("heading", { name: "Stripe Checkout fixture" })).toBeVisible();
+
+  const mismatched = await context.newPage();
+  await mismatched.goto("/empleadores/mi-cuenta?checkout=return&session_id=cs_test_other_fixture");
+  await expect(mismatched.getByRole("button", { name: "Enviar código" })).toBeVisible();
+  const returned = await context.newPage();
+  await returned.goto("https://checkout.stripe.com/test/cs_fixture");
+  await returned.getByRole("link", { name: "Return" }).click();
+  await expect(returned.getByText("Sesión verificada en esta pestaña.")).toBeVisible();
+  await expect(returned.getByText("Esperando confirmación del pago por Stripe.", { exact: false })).toBeVisible();
+  await expect(returned.getByRole("button", { name: "Guardar solicitud" })).toHaveCount(0);
+  expect(await returned.evaluate(() => document.cookie.includes("listord_workspace_checkout_bridge_v1="))).toBe(false);
+  active = true; // Fixture models a server-side paid entitlement, never the URL query.
+  await returned.getByRole("button", { name: "Actualizar estado" }).click();
+  await expect(returned.getByRole("button", { name: "Guardar solicitud" })).toBeVisible();
+  await returned.reload();
+  await expect(returned.getByRole("button", { name: "Guardar solicitud" })).toBeVisible();
+  active = false; // Server-side entitlement expired.
+  await returned.reload();
+  await expect(returned.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
+  await expect(returned.getByRole("button", { name: "Guardar solicitud" })).toHaveCount(0);
+
+  const unrelatedTab = await context.newPage();
+  await unrelatedTab.goto("/empleadores/mi-cuenta?checkout=return&session_id=cs_test_workspace_fixture");
+  await expect(unrelatedTab.getByRole("button", { name: "Enviar código" })).toBeVisible();
+  await returned.evaluate(() => {
+    const session = JSON.parse(sessionStorage.getItem("listord-marketplace-session-v1")!);
+    document.cookie = `listord_workspace_checkout_bridge_v1=${encodeURIComponent(JSON.stringify({
+      expiresAt: Date.now() - 1, sessionId: "cs_test_workspace_fixture", session,
+    }))}; Max-Age=3000; Path=/empleadores/mi-cuenta; SameSite=Strict`;
+  });
+  const expiredTab = await context.newPage();
+  await expiredTab.goto("/empleadores/mi-cuenta?checkout=return&session_id=cs_test_workspace_fixture");
+  await expect(expiredTab.getByRole("button", { name: "Enviar código" })).toBeVisible();
+  expect(await expiredTab.evaluate(() => document.cookie.includes("listord_workspace_checkout_bridge_v1="))).toBe(false);
+});
+
 // Browser transport fixtures verify the paid UI state. Signed provider events,
 // ledger writes and access control are checked in the server tests, not here.
 test("unpaid employer cannot use workspace; verified paid state enables saved candidates and private requests until expiry", async ({ page }) => {
@@ -95,7 +154,7 @@ test("unpaid employer cannot use workspace; verified paid state enables saved ca
     if (body.action === "add_request") requestTitle = body.title;
     return route.fulfill({ json: { ok: true } });
   });
-  await page.route("**/api/stripe/workspace-checkout", route => route.fulfill({ json: { url: "https://checkout.stripe.com/test/cs_fixture" } }));
+  await page.route("**/api/stripe/workspace-checkout", route => route.fulfill({ json: { url: "https://checkout.stripe.com/test/cs_fixture", sessionId: "cs_test_workspace_fixture" } }));
   await page.route("https://checkout.stripe.com/**", route => route.fulfill({ contentType: "text/html", body: "<h1>Stripe Checkout fixture</h1>" }));
   await page.goto(`/empleadores/mi-cuenta?worker=${workerId}`);
   await page.getByLabel("Correo electrónico").fill("employer@example.test");
@@ -107,7 +166,7 @@ test("unpaid employer cannot use workspace; verified paid state enables saved ca
   await page.getByRole("button", { name: "Comprar 30 días · RD$299" }).click();
   await expect(page.getByRole("heading", { name: "Stripe Checkout fixture" })).toBeVisible();
   active = true; // Fixture models verified webhook fulfillment; redirect alone does not set this.
-  await page.goto("/empleadores/mi-cuenta?checkout=return");
+  await page.goto("/empleadores/mi-cuenta?checkout=return&session_id=cs_test_workspace_fixture");
   await expect(page.getByRole("button", { name: "Guardar candidato" })).toBeVisible();
   await page.getByRole("button", { name: "Guardar candidato" }).click();
   await expect(page.getByRole("heading", { name: "Perfil de prueba" })).toBeVisible();

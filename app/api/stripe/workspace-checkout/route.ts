@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     try {
       const existing = await stripe.checkout.sessions.retrieve(pending.stripe_session_id);
       if (existing.status === "open" && existing.url?.startsWith("https://checkout.stripe.com/")) {
-        return NextResponse.json({ url: existing.url }, { headers });
+        return NextResponse.json({ url: existing.url, sessionId: existing.id }, { headers });
       }
       if (existing.status !== "expired") return NextResponse.json({ error: "Esperando confirmación del pago." }, { status: 409, headers });
     } catch { return unavailable(); }
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       }, quantity: 1 }],
       client_reference_id: ownerId,
       metadata: { purpose: WORKSPACE_PURPOSE, order_id: order.id, owner_user_id: ownerId },
-      success_url: `${origin}/empleadores/mi-cuenta?checkout=return`,
+      success_url: `${origin}/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/empleadores/mi-cuenta?checkout=cancel`
     }, { idempotencyKey: `workspace:${order.id}` });
     if (!session.id || !session.url || !session.url.startsWith("https://checkout.stripe.com/")) throw new Error("INVALID_SESSION");
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       .update({ stripe_session_id: session.id }).eq("id", order.id).eq("owner_user_id", ownerId)
       .eq("status", "pending").select("id").maybeSingle();
     if (bindError || !bound?.id) return unavailable();
-    return NextResponse.json({ url: session.url }, { headers });
+    return NextResponse.json({ url: session.url, sessionId: session.id }, { headers });
   } catch {
     await db.from("employer_workspace_orders").update({ status: "failed" })
       .eq("id", order.id).eq("status", "pending").is("stripe_session_id", null);
