@@ -3,6 +3,37 @@ import { expect, test } from "@playwright/test";
 const workerId = "22222222-2222-4222-8222-222222222222";
 const requestId = "33333333-3333-4333-8333-333333333333";
 
+test("email button explains invalid input and sends an OTP request for a valid address", async ({ page }) => {
+  let requests = 0;
+  let fail = true;
+  await page.route("**/auth/v1/otp**", route => {
+    requests++;
+    return route.fulfill(fail
+      ? { status: 400, json: { code: "email_address_not_authorized", msg: "Email address not authorized" } }
+      : { json: {} });
+  });
+  await page.goto("/empleadores/mi-cuenta");
+  const email = page.getByLabel("Correo electrónico");
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  await expect(page.getByRole("status")).toHaveText("Escribe tu correo electrónico para recibir el código.");
+  expect(requests).toBe(0);
+
+  await email.fill("correo-invalido");
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  await expect(page.getByRole("status")).toHaveText("Escribe un correo electrónico válido.");
+  expect(requests).toBe(0);
+
+  await email.fill("employer@example.test");
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  await expect.poll(() => requests).toBe(1);
+  await expect(page.getByRole("status")).toHaveText("No se pudo enviar el código. Comprueba el correo e intenta más tarde.");
+  await expect(page.getByRole("button", { name: "Enviar código" })).toBeEnabled();
+  fail = false;
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  await expect.poll(() => requests).toBe(2);
+  await expect(page.getByLabel("Código de verificación")).toBeVisible();
+});
+
 // Browser transport fixtures verify the paid UI state. Signed provider events,
 // ledger writes and access control are checked in the server tests, not here.
 test("unpaid employer cannot use workspace; verified paid state enables saved candidates and private requests until expiry", async ({ page }) => {

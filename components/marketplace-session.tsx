@@ -34,12 +34,16 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
         if (error || !data.session) throw new Error();
         setAccount(data.session.user.id); setToken(data.session.access_token); setCode(""); setNotice("");
       }
-    } catch { setNotice("No se pudo verificar. Comprueba el correo y código o intenta más tarde."); }
+    } catch {
+      setNotice(!client ? "El acceso por correo no está disponible. Intenta más tarde." : sent
+        ? "No se pudo verificar el código. Comprueba que sea correcto e intenta de nuevo."
+        : "No se pudo enviar el código. Comprueba el correo e intenta más tarde.");
+    }
     finally { setBusy(false); }
   }
   if (token) return <><button className="btn-secondary" onClick={() => { setToken(""); setSent(false); setCode(""); void client?.auth.signOut({ scope: "local" }); }}>Cerrar sesión</button><p className="text-sm">Sesión verificada en esta pestaña.</p><div key={account}>{children(token)}</div></>;
   return <section aria-label="Acceso verificado"><h2>Verifica tu correo</h2><p>{description}</p>
-    <form onSubmit={submit} className="request-fields"><label>Correo electrónico<input type="email" autoComplete="email" required maxLength={254} value={email} disabled={sent || busy} onChange={e => setEmail(e.target.value)} /></label>
+    <form onSubmit={submit} className="request-fields"><label>Correo electrónico<input type="email" autoComplete="email" required maxLength={254} value={email} disabled={sent || busy} onChange={e => { setEmail(e.target.value); setNotice(""); }} onInvalid={e => setNotice(e.currentTarget.validity.valueMissing ? "Escribe tu correo electrónico para recibir el código." : "Escribe un correo electrónico válido.")} /></label>
       {sent && <label>Código de verificación<input autoComplete="one-time-code" inputMode="numeric" required minLength={6} maxLength={10} value={code} onChange={e => setCode(e.target.value)} /></label>}
       <button className="btn-primary" disabled={busy}>{sent ? "Verificar código" : "Enviar código"}</button>
       {sent && <button type="button" className="btn-secondary" disabled={busy} onClick={() => { setSent(false); setCode(""); }}>Usar otro correo</button>}
