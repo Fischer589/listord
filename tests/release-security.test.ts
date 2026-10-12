@@ -32,6 +32,23 @@ test("JSON reader bounds streamed UTF-8 bytes regardless of content length and r
   await assert.rejects(readJsonBody(request("invalid")));
 });
 
+test("JSON reader accepts only the configured HTTPS public origin when Netlify uses an internal request URL", async () => {
+  const previous = process.env.APP_ORIGIN;
+  try {
+    process.env.APP_ORIGIN = "https://listordapp.com";
+    assert.deepEqual(await readJsonBody(request('{"valid":true}', { origin: "https://listordapp.com" })), { valid: true });
+    await assert.rejects(readJsonBody(request("{}", { origin: "https://listordapp.com.evil.example" })));
+    await assert.rejects(readJsonBody(request("{}", { origin: "https://evil.example" })));
+    for (const invalid of ["http://listordapp.com", "https://user:pass@listordapp.com", "https://listordapp.com/path"]) {
+      process.env.APP_ORIGIN = invalid;
+      await assert.rejects(readJsonBody(request("{}", { origin: "https://listordapp.com" })));
+    }
+  } finally {
+    if (previous === undefined) delete process.env.APP_ORIGIN;
+    else process.env.APP_ORIGIN = previous;
+  }
+});
+
 test("legacy outcome action cannot write or claim success from a caller-supplied ID", async () => {
   const oldFetch = globalThis.fetch;
   let calls = 0;
