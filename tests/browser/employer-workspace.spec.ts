@@ -179,3 +179,62 @@ test("unpaid employer cannot use workspace; verified paid state enables saved ca
   await expect(page.getByRole("button", { name: "Comprar 30 días · RD$299" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Perfil de prueba" })).toHaveCount(0);
 });
+
+test("employer forms and dashboard controls remain separated and usable at narrow and wide widths", async ({ page }) => {
+  const token = "fixture_layout_access_not_live_123456789";
+  const user = { id: "11111111-1111-4111-8111-111111111111", aud: "authenticated", email: "employer@example.test", email_confirmed_at: "2026-01-01T00:00:00Z" };
+  await page.route("**/auth/v1/**", route => route.fulfill({ headers: { "Access-Control-Allow-Origin": "*" }, json: route.request().url().includes("/verify")
+    ? { access_token: token, refresh_token: "fixture_layout_refresh_not_live", expires_in: 3600, token_type: "bearer", user }
+    : { user } }));
+  await page.route("**/api/employer-workspace", route => route.fulfill({ json: {
+    active: true, accessUntil: "2099-01-01T00:00:00Z",
+    candidates: [{ id: workerId, full_name: "Perfil de prueba con un nombre largo", city: "Puerto Plata", skills: ["limpieza"], savedAt: "2026-01-01T00:00:00Z" }],
+    requests: [{ id: requestId, title: "Limpieza semanal", details: "Zona general", status: "open", created_at: "2026-01-01T00:00:00Z" }],
+    contacts: [{ id: "44444444-4444-4444-8444-444444444444", worker_id: workerId, worker_name: "Perfil de prueba", request_id: requestId, created_at: "2026-01-01T00:00:00Z" }],
+  } }));
+
+  await page.goto("/empleadores/mi-cuenta");
+  await expect(page.getByLabel("Correo electrónico")).toBeVisible();
+  for (const width of [320, 1280]) {
+    await page.setViewportSize({ width, height: 800 });
+    const emailGap = await page.getByLabel("Correo electrónico").evaluate(input => {
+      const label = input.closest("label")!;
+      const range = document.createRange();
+      range.selectNodeContents(label.firstChild!);
+      return input.getBoundingClientRect().top - range.getBoundingClientRect().bottom;
+    });
+    expect(emailGap).toBeGreaterThanOrEqual(4);
+  }
+
+  await page.getByLabel("Correo electrónico").fill("employer@example.test");
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  await page.getByLabel("Código de verificación").fill("123456");
+  await page.getByRole("button", { name: "Verificar código" }).click();
+  await expect(page.getByRole("heading", { name: "Tu pase está activo" })).toBeVisible();
+  await expect(page.getByText("Válido hasta")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Candidatos guardados" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Solicitudes privadas" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Registro de contacto" })).toBeVisible();
+
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 800 });
+    const geometry = await page.locator(".employer-account").evaluate(root => {
+      const fields = Array.from(root.querySelectorAll("label")).map(label => {
+        const control = label.querySelector("input, textarea, select")!;
+        const range = document.createRange();
+        range.selectNodeContents(label.firstChild!);
+        return control.getBoundingClientRect().top - range.getBoundingClientRect().bottom;
+      });
+      const actions = Array.from(root.querySelectorAll(".workspace-item .workspace-actions > *")).map(item => item.getBoundingClientRect());
+      const actionsOverlap = actions.some((a, i) => actions.slice(i + 1).some(b =>
+        Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1));
+      return { fields, actionsOverlap, pageOverflows: root.scrollWidth > root.clientWidth + 1 };
+    });
+    expect(geometry.fields).toHaveLength(3);
+    expect(geometry.fields.every(gap => gap >= 4)).toBe(true);
+    expect(geometry.actionsOverlap).toBe(false);
+    expect(geometry.pageOverflows).toBe(false);
+  }
+  await page.getByLabel("Título").focus();
+  await expect(page.getByLabel("Título")).toBeFocused();
+});
