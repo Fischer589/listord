@@ -408,6 +408,7 @@ export default async function WorkerProfilePage({
                   workerName={fullName}
                   primarySkill={primarySkill}
                 />
+                <Link className="btn-secondary mt-3 inline-block" href={`/empleadores/mi-cuenta?worker=${encodeURIComponent(worker.id)}`}>Guardar en mi espacio</Link>
 
               </div>
 

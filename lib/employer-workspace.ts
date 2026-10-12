@@ -1,0 +1,30 @@
+export const WORKSPACE_AMOUNT_CENTS = 29_900;
+export const WORKSPACE_CURRENCY = "dop";
+export const WORKSPACE_DAYS = 30;
+export const WORKSPACE_PURPOSE = "employer_workspace_30d";
+
+export function workspaceEnabled() {
+  return process.env.EMPLOYER_WORKSPACE_ENABLED === "true";
+}
+
+export function workspaceStripeReady() {
+  const key = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
+  return key.startsWith("sk_test_") ||
+    (key.startsWith("sk_live_") && process.env.WORKSPACE_LIVE_PAYMENTS_ENABLED === "true");
+}
+
+export function workspaceOrigin() {
+  const url = new URL(process.env.APP_ORIGIN?.trim() ?? "");
+  if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
+    throw new Error("INVALID_ORIGIN");
+  }
+  return url.origin;
+}
+
+export function workspaceAccessUntil(paidAt: Date) {
+  return new Date(paidAt.getTime() + WORKSPACE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
+export function isUuid(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}

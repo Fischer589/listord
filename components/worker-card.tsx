@@ -189,6 +189,9 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           <Link href={`/trabajador/${worker.id}`} className="wc-profile-link">
             Ver perfil completo →
           </Link>
+          <Link href={`/empleadores/mi-cuenta?worker=${encodeURIComponent(worker.id)}`} className="wc-profile-link">
+            Guardar en mi espacio →
+          </Link>
         </div>
 
         {contactError && (

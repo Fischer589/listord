@@ -3,7 +3,7 @@ import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { getMarketplaceBrowserClient } from "@/lib/marketplace-browser";
 
 /** Tab-scoped session; tokens never enter URLs, analytics or rendered markup. */
-export function MarketplaceSession({ children }: { children: (token: string) => ReactNode }) {
+export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece." }: { children: (token: string) => ReactNode; description?: string }) {
   const [client, setClient] = useState<ReturnType<typeof getMarketplaceBrowserClient>>(null);
   const [account, setAccount] = useState("");
   const [token, setToken] = useState("");
@@ -38,7 +38,7 @@ export function MarketplaceSession({ children }: { children: (token: string) => 
     finally { setBusy(false); }
   }
   if (token) return <><button className="btn-secondary" onClick={() => { setToken(""); setSent(false); setCode(""); void client?.auth.signOut({ scope: "local" }); }}>Cerrar sesión</button><p className="text-sm">Sesión verificada en esta pestaña.</p><div key={account}>{children(token)}</div></>;
-  return <section aria-label="Acceso verificado"><h2>Verifica tu correo</h2><p>Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.</p>
+  return <section aria-label="Acceso verificado"><h2>Verifica tu correo</h2><p>{description}</p>
     <form onSubmit={submit} className="request-fields"><label>Correo electrónico<input type="email" autoComplete="email" required maxLength={254} value={email} disabled={sent || busy} onChange={e => setEmail(e.target.value)} /></label>
       {sent && <label>Código de verificación<input autoComplete="one-time-code" inputMode="numeric" required minLength={6} maxLength={10} value={code} onChange={e => setCode(e.target.value)} /></label>}
       <button className="btn-primary" disabled={busy}>{sent ? "Verificar código" : "Enviar código"}</button>

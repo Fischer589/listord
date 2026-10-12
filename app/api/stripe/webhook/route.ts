@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { recordExpressPayment } from "@/lib/express-server";
+import { recordWorkspacePayment, revokeWorkspacePayment } from "@/lib/employer-workspace-payment";
+import { WORKSPACE_PURPOSE } from "@/lib/employer-workspace";
 import { readBoundedText } from "@/lib/http-json";
 import {
   getPaidAccessUntil,
@@ -66,6 +68,15 @@ export async function POST(request: Request) {
       { error: "Firma de Stripe invalida." },
       { status: 400 }
     );
+  }
+
+  if (event.type === "charge.refunded" &&
+      (event.data.object as Stripe.Charge).payment_intent) {
+    return revokeWorkspacePayment(event, stripe);
+  }
+  if (["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired"].includes(event.type) &&
+      (event.data.object as Stripe.Checkout.Session).metadata?.purpose === WORKSPACE_PURPOSE) {
+    return recordWorkspacePayment(event);
   }
 
   if ((event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") && (event.data.object as Stripe.Checkout.Session).metadata?.purpose === "listord_express") {
