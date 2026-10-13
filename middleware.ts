@@ -4,23 +4,31 @@ import { isAdminSession } from './lib/admin-session'
 
 const COOKIE_NAME = 'admin_session'
 
-export function middleware(request: NextRequest) {
+function loginRedirect(request: NextRequest) {
+  const url = new URL('/admin/login', request.url)
+  // Next can use its internal hostname here; the browser's Host keeps the redirect on-site.
+  const host = request.headers.get('host')
+  if (host) url.host = host
+  return NextResponse.redirect(url)
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Always allow the login page through
-  if (pathname === '/admin/login') {
+  // Allow only the login page and its form submission through.
+  if (pathname === '/admin/login' || (pathname === '/admin/session' && request.method === 'POST')) {
     return NextResponse.next()
   }
 
   const secret = process.env.ADMIN_SESSION_SECRET
   if (!secret) {
     console.warn('ADMIN_SESSION_SECRET not set — admin access blocked')
-    return NextResponse.redirect(new URL('/admin/login', request.url))
+    return loginRedirect(request)
   }
 
   const sessionCookie = request.cookies.get(COOKIE_NAME)
-  if (!isAdminSession(sessionCookie?.value, secret)) {
-    const res = NextResponse.redirect(new URL('/admin/login', request.url))
+  if (!await isAdminSession(sessionCookie?.value, secret)) {
+    const res = loginRedirect(request)
     res.cookies.delete(COOKIE_NAME)
     return res
   }

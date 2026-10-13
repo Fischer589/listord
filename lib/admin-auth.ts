@@ -4,7 +4,7 @@ import { isAdminSession } from "./admin-session";
 
 /** Every privileged read/action must check authorization, even behind middleware. */
 export async function requireAdmin() {
-  if (!isAdminSession((await cookies()).get("admin_session")?.value, process.env.ADMIN_SESSION_SECRET)) {
+  if (!await isAdminSession((await cookies()).get("admin_session")?.value, process.env.ADMIN_SESSION_SECRET)) {
     redirect("/admin/login");
   }
 }

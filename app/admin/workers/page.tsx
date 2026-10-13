@@ -233,12 +233,11 @@ export default async function AdminWorkersPage({
               >
                 Depósitos
               </a>
-              <a
-                href="/admin/logout"
-                className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5"
-              >
-                Cerrar sesión
-              </a>
+              <form action="/admin/logout" method="post">
+                <button type="submit" className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5">
+                  Cerrar sesión
+                </button>
+              </form>
             </div>
           </div>
 

@@ -239,6 +239,17 @@ export default async function AdminDashboardPage() {
               Trabajadores
             </Link>
             <Link
+              href="/admin/marketplace"
+              style={{
+                color: "rgba(255,255,255,0.5)",
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                textDecoration: "none",
+              }}
+            >
+              Oportunidades
+            </Link>
+            <Link
               href="/admin/employer-requests"
               style={{
                 color: "rgba(255,255,255,0.5)",
@@ -262,17 +273,11 @@ export default async function AdminDashboardPage() {
             </Link>
           </nav>
         </div>
-        <Link
-          href="/admin/logout"
-          style={{
-            color: "rgba(255,255,255,0.45)",
-            fontSize: "0.8rem",
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Cerrar sesión
-        </Link>
+        <form action="/admin/logout" method="post">
+          <button type="submit" style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.8rem", fontWeight: 600 }}>
+            Cerrar sesión
+          </button>
+        </form>
       </header>
 
       {/* Content */}

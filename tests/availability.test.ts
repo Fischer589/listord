@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { PGlite } from "@electric-sql/pglite";
 import { withAdminCookie } from "./request-context";
+import { createAdminSession } from "../lib/admin-session";
 import { isFreshAvailability, validAvailabilityKey } from "../lib/availability";
 import { matchWorker } from "../lib/request-matching";
 import { emptyRequest } from "../lib/request-specification";
@@ -128,9 +129,10 @@ test("HTTP renewal requires private key, server gate, CSRF checks and admin auth
     assert.equal(matched.count, 1); assert.equal(matched.freshness, "confirmed");
     assert.doesNotMatch(JSON.stringify(matched), /token_hash|confirmed_at|access_expires_at/);
     mode = "error"; await assert.rejects(getRequestMatches({ ...emptyRequest(), category: "limpieza", city: "Puerto Plata" })); mode = "ok";
-    for (const cookie of [undefined, "wrong", "test-admin"]) {
+    const adminToken = await createAdminSession("test-admin");
+    for (const cookie of [undefined, "wrong", adminToken]) {
       await withAdminCookie(cookie, async () => {
-        if (cookie !== "test-admin") await assert.rejects(issue(req({ workerId: id, ownershipConfirmed: true })), /NEXT_REDIRECT/);
+        if (cookie !== adminToken) await assert.rejects(issue(req({ workerId: id, ownershipConfirmed: true })), /NEXT_REDIRECT/);
         else {
           assert.equal((await issue(req({ workerId: id, ownershipConfirmed: false }))).status, 400);
           assert.equal((await issue(req({ workerId: id, ownershipConfirmed: true }))).status, 400, "consent is required separately from ownership");
