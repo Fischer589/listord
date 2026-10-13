@@ -85,7 +85,8 @@ export default async function Home({
         ══════════════════════════════════════════ */}
         <section className="hero">
           <div className="container">
-            <div className="hero-inner">
+            <div className="hero-layout">
+              <div className="hero-inner">
 
               <p className="hero-eyebrow">
                 <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--green)", marginRight: "0.5rem", opacity: 0.85 }} />
@@ -131,6 +132,13 @@ export default async function Home({
                 </Link>
               </div>
 
+              </div>
+              <aside className="hero-brand-statement" aria-label="La visión de ListoRD">
+                <span className="hero-brand-statement__rule" aria-hidden="true" />
+                <p className="hero-brand-statement__label">Nuestra razón de ser</p>
+                <p className="hero-brand-statement__quote">Un negocio que gana dinero ayudando a otros a ganar el suyo.</p>
+                <p className="hero-brand-statement__signature">ListoRD</p>
+              </aside>
             </div>
           </div>
         </section>
