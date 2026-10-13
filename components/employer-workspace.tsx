@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { MarketplaceSession } from "./marketplace-session";
 import { isValidWhatsAppUrl } from "@/lib/whatsapp";
+import { EmployerOpportunities } from "./employer-opportunities";
 
 type Candidate = { id: string; full_name: string; city: string | null; skills: string[] | null; savedAt: string };
 type StaffingRequest = { id: string; title: string; details: string; status: "open" | "closed"; created_at: string };
@@ -141,8 +142,9 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
   </section>;
 }
 
-export function EmployerWorkspace({ selectedWorkerId, returned, canceled }: { selectedWorkerId: string | null; returned: boolean; canceled: boolean }) {
+export function EmployerWorkspace({ selectedWorkerId, returned, canceled, opportunitiesEnabled = false, expressAvailable = false }: { selectedWorkerId: string | null; returned: boolean; canceled: boolean; opportunitiesEnabled?: boolean; expressAvailable?: boolean }) {
   return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar y usar tu espacio privado de empleador. La exploración y el contacto directo son gratis.">
-    {token => <WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} canceled={canceled} />}
+    {token => <><WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} canceled={canceled} />
+      {opportunitiesEnabled && <EmployerOpportunities token={token} expressAvailable={expressAvailable} />}</>}
   </MarketplaceSession>;
 }

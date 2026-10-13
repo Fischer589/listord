@@ -121,6 +121,14 @@
 .workspace-form textarea { min-height: 7rem; resize: vertical; }
 .workspace-form button,
 .employer-account [aria-label="Acceso verificado"] form button { justify-self: start; }
+.employer-opportunities { margin-top: 2rem; }
+.employer-opportunities__applicants { display: grid; gap: .6rem; list-style: none; margin: 1rem 0; }
+.employer-opportunities__applicants li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1rem; border: 1px solid var(--border-mid); border-radius: var(--r); background: var(--surface-pure); }
+.employer-opportunities__applicants li > div { display: grid; gap: .15rem; min-width: 0; }
+.employer-opportunities__applicants strong { color: var(--ink); }
+.employer-opportunities__applicants span, .employer-opportunities__note { color: rgba(26,61,43,.7); font-size: .875rem; }
+.employer-opportunities__note { margin-top: .75rem; }
+@media (max-width: 560px) { .employer-opportunities__applicants li { align-items: stretch; flex-direction: column; } .employer-opportunities__applicants button { width: 100%; } }
 .workspace-select-label { max-width: 34rem; margin-top: 1.4rem; }
 
 .workspace-offer,

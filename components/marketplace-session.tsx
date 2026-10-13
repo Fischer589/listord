@@ -3,7 +3,7 @@ import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { clearWorkspaceCheckoutReturn, getMarketplaceBrowserClient } from "@/lib/marketplace-browser";
 
 /** Tab-scoped session; magic-link fragments are consumed and cleared on return. */
-export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.", emailRedirectPath }: { children: (token: string) => ReactNode; description?: string; emailRedirectPath?: "/empleadores/mi-cuenta" }) {
+export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.", emailRedirectPath }: { children: (token: string) => ReactNode; description?: string; emailRedirectPath?: "/empleadores/mi-cuenta" | "/solicitar" | "/oportunidades" }) {
   const [client, setClient] = useState<ReturnType<typeof getMarketplaceBrowserClient>>(null);
   const [account, setAccount] = useState("");
   const [token, setToken] = useState("");

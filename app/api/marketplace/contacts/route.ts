@@ -6,12 +6,18 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 export async function POST(request: Request) {
   if (!marketplaceEnabled()) return NextResponse.json({ error: "Deshabilitado." }, { status: 503, headers });
   const b = object(await readJsonBody(request, 1024).catch(() => null));
-  if (!uuid(b?.id) || (b.workerId !== undefined && !uuid(b.workerId))) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400, headers });
+  if (!uuid(b?.id) || !uuid(b.workerId)) return NextResponse.json({ error: "Selecciona un trabajador válido." }, { status: 400, headers });
   try {
     const actor = await verifiedMarketplaceUser(request);
-    const { data, error } = await marketplaceAdmin().rpc("marketplace_contacts_v2", { p_actor: actor, p_id: b.id, p_worker: b.workerId ?? null }).abortSignal(AbortSignal.timeout(8000));
+    const admin = marketplaceAdmin();
+    const { data: owner, error: ownerError } = await admin.from("marketplace_opportunity_owners")
+      .select("opportunity_id").eq("opportunity_id", b.id).eq("owner_user_id", actor)
+      .abortSignal(AbortSignal.timeout(8000)).maybeSingle();
+    if (ownerError) throw ownerError;
+    if (!owner) return NextResponse.json({ error: "Solo el empleador puede elegir a quién contactar." }, { status: 403, headers });
+    const { data, error } = await admin.rpc("marketplace_contacts_v2", { p_actor: actor, p_id: b.id, p_worker: b.workerId }).abortSignal(AbortSignal.timeout(8000));
     rpcFailure(error);
-    const contacts = (data as { name: string; phone: string; worker_id: string; worker_name: string }[]).flatMap(c => {
+    const contacts = (data as { name: string; phone: string; worker_id: string; worker_name: string }[]).filter(c => c.worker_id === b.workerId).flatMap(c => {
       const url = buildWhatsAppUrl(c.phone);
       if (!url || !uuid(c.worker_id)) return [];
       const workerName = c.worker_name?.trim().slice(0, 100) || "trabajador";

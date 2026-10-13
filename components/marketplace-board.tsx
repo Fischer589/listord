@@ -1,65 +1,134 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/lib/categories";
 import { requestSummary, type RequestDraft } from "@/lib/request-specification";
 import { MarketplaceSession, marketplaceRequest } from "./marketplace-session";
-import { ExpressOrders } from "./express-orders";
 
-type Opportunity = { id: string; city: string; category: string; specification: RequestDraft; status: string; expires_at: string };
-type Decision = { opportunity_id: string; worker_id: string; decision: string; marketplace_opportunities: Opportunity };
-const decisionLabels: Record<string, string> = { interested: "SÍ, me interesa", declined: "NO, no me interesa", withdrawn: "Respuesta retirada" };
-const statusLabel = (o: Opportunity) => o.status === "open" && Date.parse(o.expires_at) <= Date.now() ? "Vencida" : ({ draft: "En revisión", open: "Abierta", closed: "Cerrada", filled: "Cubierta", expired: "Vencida" }[o.status] ?? o.status);
+type Opportunity = {
+  id: string; category: string; city: string; scope: string; specification: RequestDraft;
+  timing_note: string | null; duration_note: string | null; compensation_kind: string;
+  compensation_min: number | null; compensation_unit: string | null; expires_at: string;
+};
 type Worker = { id: string; full_name: string };
-export function MarketplaceBoard({ expressAvailable }: { expressAvailable: boolean }) {
-  const [items, setItems] = useState<Opportunity[]>([]); const [notice, setNotice] = useState("Cargando oportunidades…");
-  const [category, setCategory] = useState(""); const [city, setCity] = useState("");
+type Decision = { opportunity_id: string; worker_id: string; decision: string; marketplace_opportunities?: Opportunity };
+const units: Record<string, string> = { hour: "hora", day: "día", week: "semana", month: "mes", task: "trabajo" };
+
+function compensation(o: Opportunity) {
+  if (o.compensation_kind === "negotiable" || o.compensation_min == null) return "Pago por acordar";
+  const amount = Number(o.compensation_min).toLocaleString("es-DO", { maximumFractionDigits: 2 });
+  return `${o.compensation_kind === "budget" ? "Presupuesto" : "Pago"}: RD$${amount}${o.compensation_unit ? ` por ${units[o.compensation_unit] ?? o.compensation_unit}` : ""}`;
+}
+
+export function MarketplaceBoard() {
+  const [items, setItems] = useState<Opportunity[]>([]);
+  const [notice, setNotice] = useState("Cargando oportunidades…");
+  const [category, setCategory] = useState("");
+  const [city, setCity] = useState("");
+  const [selected, setSelected] = useState("");
   useEffect(() => {
     const abort = new AbortController();
     const id = new URLSearchParams(window.location.search).get("id");
-    fetch(`/api/marketplace${id ? `?id=${encodeURIComponent(id)}` : ""}`, { cache: "no-store", signal: abort.signal }).then(async r => { if (!r.ok) throw new Error(); return r.json(); }).then(data => { setItems(data.opportunities); setNotice(data.opportunities.length ? "Se muestran hasta 50 oportunidades recientes." : "No hay oportunidades abiertas por ahora."); }).catch(() => { if (!abort.signal.aborted) setNotice("No se pudieron cargar las oportunidades. Recarga para reintentar."); });
+    fetch(`/api/marketplace${id ? `?id=${encodeURIComponent(id)}` : ""}`, { cache: "no-store", signal: abort.signal })
+      .then(async response => { if (!response.ok) throw new Error(); return response.json(); })
+      .then(data => { setItems(data.opportunities); setNotice(data.opportunities.length ? `Mostrando ${data.opportunities.length} oportunidades recientes` : "No hay oportunidades abiertas por ahora."); })
+      .catch(() => { if (!abort.signal.aborted) setNotice("No se pudieron cargar las oportunidades. Recarga para reintentar."); });
     return () => abort.abort();
   }, []);
   const visible = items.filter(o => (!category || o.category === category) && o.city.toLocaleLowerCase("es").includes(city.trim().toLocaleLowerCase("es")));
-  return <><p>Revisa tareas, pago, horario y requisitos antes de responder. SÍ expresa interés; no confirma una contratación.</p><Link href="/solicitar">Crear una solicitud</Link> · <Link href="/trabajadores/registro">Crear mi perfil de trabajador</Link>
-    <div className="request-fields"><label>Filtrar por servicio<select value={category} onChange={e => setCategory(e.target.value)}><option value="">Todos</option>{CATEGORIES.map(c => <option key={c.searchKey} value={c.searchKey}>{c.label}</option>)}</select></label><label>Filtrar por ciudad<input maxLength={100} value={city} onChange={e => setCity(e.target.value)} /></label></div>
-    <p role="status">{notice}</p>{items.length > 0 && visible.length === 0 && <p>No hay oportunidades con estos filtros.</p>}{visible.map(o => <article key={o.id} className="request-preview"><h2>{CATEGORIES.find(c => c.searchKey === o.category)?.label} · {o.city}</h2><p style={{ whiteSpace: "pre-line" }}>{requestSummary(o.specification)}</p><p>Vence: {new Date(o.expires_at).toLocaleDateString("es-DO")}</p></article>)}
-    <MarketplaceSession>{token => <ParticipantPanel token={token} opportunities={visible} expressAvailable={expressAvailable} />}</MarketplaceSession></>;
-}
-function ParticipantPanel({ token, opportunities, expressAvailable }: { token: string; opportunities: Opportunity[]; expressAvailable: boolean }) {
-  const router = useRouter();
-  const [decisions, setDecisions] = useState<Decision[]>([]);
-  const [workers, setWorkers] = useState<Worker[]>([]); const [owned, setOwned] = useState<Opportunity[]>([]); const [worker, setWorker] = useState("");
-  const [notice, setNotice] = useState(""); const [busy, setBusy] = useState(false); const [shortlist, setShortlist] = useState<{ name: string; workerId: string; url: string }[]>([]);
-  function reuse(o: Opportunity) {
-    try { sessionStorage.setItem("listord-reuse-request-v1", JSON.stringify(o.specification)); router.push("/solicitar"); }
-    catch { setNotice("No se pudo abrir una copia. Puedes copiar los términos de tu solicitud."); }
+  function choose(id: string) {
+    setSelected(id);
+    const target = document.getElementById("participar");
+    target?.focus();
+    target?.scrollIntoView({ block: "start" });
   }
+  return <>
+    <div className="opportunity-intro"><p>Trabajos publicados tras revisión. Explora gratis y confirma los términos directamente con el empleador antes de aceptar.</p>
+      <div className="opportunity-intro__links"><Link href="/solicitar">Crear una oportunidad</Link><Link href="/empleadores/mi-cuenta">Mis publicaciones</Link></div>
+    </div>
+    <div className="opportunity-filters"><label>Servicio<select value={category} onChange={event => setCategory(event.target.value)}><option value="">Todos los servicios</option>{CATEGORIES.map(c => <option key={c.searchKey} value={c.searchKey}>{c.label}</option>)}</select></label>
+      <label>Ciudad<input maxLength={100} value={city} onChange={event => setCity(event.target.value)} placeholder="Todas las ciudades" /></label></div>
+    <p role="status" className="opportunity-count">{notice}</p>
+    {items.length > 0 && visible.length === 0 && <p className="opportunity-empty">No hay oportunidades con estos filtros.</p>}
+    <div className="opportunity-grid">{visible.map(o => <article key={o.id} className="opportunity-card">
+      <div className="opportunity-card__top"><span className="opportunity-card__badge">Oportunidad abierta</span><span>{o.city}</span></div>
+      <h2>{CATEGORIES.find(c => c.searchKey === o.category)?.label ?? o.category}</h2>
+      <p className="opportunity-card__pay">{compensation(o)}</p>
+      {o.timing_note && <p><strong>Horario:</strong> {o.timing_note}</p>}
+      {o.duration_note && <p><strong>Duración:</strong> {o.duration_note}</p>}
+      <p className="opportunity-card__description">{requestSummary(o.specification)}</p>
+      <div className="opportunity-card__bottom"><span>Hasta {new Date(o.expires_at).toLocaleDateString("es-DO")}</span>
+        <button type="button" className="btn-primary" onClick={() => choose(o.id)}>Me interesa</button></div>
+    </article>)}</div>
+    <section id="participar" className="opportunity-participate" aria-label="Responder a oportunidades" tabIndex={-1}>
+      <MarketplaceSession emailRedirectPath="/oportunidades" description="Verifica tu correo para expresar interés gratis. Necesitas un perfil de trabajador aprobado y vinculado a tu cuenta.">
+        {token => <WorkerInterestPanel token={token} opportunities={visible} selected={selected} />}
+      </MarketplaceSession>
+    </section>
+  </>;
+}
+
+function WorkerInterestPanel({ token, opportunities, selected }: { token: string; opportunities: Opportunity[]; selected: string }) {
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [worker, setWorker] = useState("");
+  const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     let alive = true;
     const invitedWorker = new URLSearchParams(window.location.search).get("worker");
-    marketplaceRequest(token).then(data => { if (alive) { setWorkers(data.workers); setDecisions(data.decisions ?? []); setOwned(data.owned.map((x: { marketplace_opportunities: Opportunity }) => x.marketplace_opportunities)); if (invitedWorker && data.workers.some((w: Worker) => w.id === invitedWorker)) setWorker(invitedWorker); } }).catch(e => { if (alive) setNotice(e.message); });
+    marketplaceRequest(token).then(data => {
+      if (!alive) return;
+      const profiles = data.workers as Worker[];
+      setWorkers(profiles); setDecisions(data.decisions ?? []);
+      setWorker(invitedWorker && profiles.some(profile => profile.id === invitedWorker) ? invitedWorker : profiles.length === 1 ? profiles[0].id : "");
+    }).catch(error => { if (alive) setNotice(error.message); });
     return () => { alive = false; };
   }, [token]);
-  async function act(body: unknown) {
-    setBusy(true); setNotice(""); setShortlist([]);
-    try { await marketplaceRequest(token, body); const latest = await marketplaceRequest(token); setDecisions(latest.decisions ?? []); setOwned(latest.owned.map((x: { marketplace_opportunities: Opportunity }) => x.marketplace_opportunities)); setNotice("Cambio guardado. Una respuesta no equivale a contratación."); }
-    catch (e) { setNotice(e instanceof Error ? e.message : "No se confirmó el cambio."); }
+  async function decide(id: string, decision: "interested" | "declined" | "withdrawn") {
+    setBusy(true); setNotice("");
+    try {
+      await marketplaceRequest(token, { action: "decide", id, workerId: worker, decision });
+      const latest = await marketplaceRequest(token);
+      setDecisions(latest.decisions ?? []);
+      setNotice(decision === "interested" ? "Interés enviado. El empleador puede elegir contactarte; esto no confirma una contratación." : decision === "declined" ? "Respuesta NO guardada." : "Retiraste tu interés.");
+    } catch (error) { setNotice(error instanceof Error ? error.message : "No se confirmó la respuesta."); }
     finally { setBusy(false); }
   }
-  async function contacts(id: string) {
-    setBusy(true); setNotice(""); setShortlist([]);
-    try { const data = await marketplaceRequest(token, { id, workerId: worker || undefined }, "/api/marketplace/contacts"); setShortlist(data.contacts); setNotice(data.contacts.length ? "Solo respuestas SÍ vigentes. No son contrataciones." : "Todavía no hay respuestas SÍ vigentes."); }
-    catch (e) { setNotice(e instanceof Error ? e.message : "No se pudieron cargar los contactos."); }
+  async function report(id: string) {
+    setBusy(true); setNotice("");
+    try { await marketplaceRequest(token, { action: "report", id, reason: "privacy" }); setNotice("Reporte enviado para revisión."); }
+    catch (error) { setNotice(error instanceof Error ? error.message : "No se confirmó el reporte."); }
     finally { setBusy(false); }
   }
-  return <section><h2>Mi participación</h2><p role="status">{notice}</p>{shortlist.map(c => <p key={c.workerId}><a href={c.url} target="_blank" rel="noreferrer">Contactar a {c.name} por WhatsApp</a></p>)}
-    {workers.length ? <label>Mi perfil verificado<select value={worker} onChange={e => setWorker(e.target.value)}><option value="">Elige tu perfil</option>{workers.map(w => <option value={w.id} key={w.id}>{w.full_name}</option>)}</select></label> : <p>No hay un perfil de trabajador aprobado vinculado a esta cuenta. La recuperación requiere verificar al titular; un teléfono no demuestra propiedad.</p>}
-    {worker && <p>Al responder SÍ autorizas compartir tu WhatsApp con quien publicó la solicitud. Puedes cambiar de opinión o retirar tu respuesta.</p>}{worker && <div className="request-actions"><button disabled={busy} onClick={() => act({ action: "consent", workerId: worker, agree: true })}>Acepto recibir invitaciones Express por WhatsApp</button><button disabled={busy} onClick={() => act({ action: "consent", workerId: worker, agree: false })}>Retirar consentimiento de invitaciones</button></div>}
-    {opportunities.map(o => <section key={o.id}><h3>{o.city} · {CATEGORIES.find(c => c.searchKey === o.category)?.label}</h3><p style={{ whiteSpace: "pre-line" }}>{requestSummary(o.specification)}</p><div className="request-actions">{([['interested','SÍ, me interesa'],['declined','NO, no me interesa'],['withdrawn','Retirar mi respuesta']] as const).map(([decision,label]) => <button key={decision} disabled={!worker || busy} onClick={() => act({ action: "decide", id: o.id, workerId: worker, decision })}>{label}</button>)}<button disabled={busy} onClick={() => act({ action: "report", id: o.id, reason: "privacy" })}>Reportar datos privados</button><button disabled={busy} onClick={() => contacts(o.id)}>Abrir contacto autorizado</button></div></section>)}
-    <h2>Mis respuestas</h2>{decisions.map(d => <article key={`${d.opportunity_id}:${d.worker_id}`}><h3>{d.marketplace_opportunities.city} · {statusLabel(d.marketplace_opportunities)}</h3><p>{decisionLabels[d.decision]}</p><button disabled={busy || d.decision === "withdrawn"} onClick={() => act({ action: "decide", id: d.opportunity_id, workerId: d.worker_id, decision: "withdrawn" })}>Retirar respuesta guardada</button></article>)}
-    <h2>Mis solicitudes</h2>{owned.map(o => <section key={o.id}><h3>{o.city} · {statusLabel(o)}</h3><p style={{ whiteSpace: "pre-line" }}>{requestSummary(o.specification)}</p><div className="request-actions"><button disabled={busy} onClick={() => reuse(o)}>Reutilizar detalles</button><button disabled={busy} onClick={() => contacts(o.id)}>Ver respuestas SÍ</button><button disabled={busy || !["open","draft"].includes(o.status)} onClick={() => act({ action: "transition", id: o.id, status: "closed" })}>Cerrar solicitud</button><button disabled={busy || o.status !== "open"} onClick={() => act({ action: "transition", id: o.id, status: "filled" })}>Marcar como cubierta</button></div></section>)}
-    {expressAvailable && <ExpressOrders token={token} opportunities={owned} />}
-  </section>;
+  async function consent(agree: boolean) {
+    setBusy(true); setNotice("");
+    try { await marketplaceRequest(token, { action: "consent", workerId: worker, agree }); setNotice(agree ? "Consentimiento para invitaciones Express guardado." : "Consentimiento para invitaciones Express retirado."); }
+    catch (error) { setNotice(error instanceof Error ? error.message : "No se confirmó el consentimiento."); }
+    finally { setBusy(false); }
+  }
+  return <div className="opportunity-interest"><div><p className="t-eyebrow">Para trabajadores</p><h2>Responde con tu perfil</h2>
+    <p>Tu perfil aprobado identifica tu respuesta. Explorar y expresar interés siempre es gratis.</p></div>
+    {workers.length ? <label>Mi perfil verificado<select value={worker} onChange={event => setWorker(event.target.value)}><option value="">Elige tu perfil</option>{workers.map(profile => <option key={profile.id} value={profile.id}>{profile.full_name}</option>)}</select></label>
+      : <p>No hay un perfil aprobado vinculado a esta cuenta. <Link href="/trabajadores/registro">Registrar mi perfil</Link>. Si ya tienes uno, solicita la vinculación tras verificar tu identidad.</p>}
+    {worker && <><p>Al expresar interés autorizas compartir tu WhatsApp con quien publicó la oportunidad. Puedes retirar la respuesta.</p>
+      <div className="opportunity-interest__consent"><button type="button" className="btn-secondary" disabled={busy} onClick={() => void consent(true)}>Acepto recibir invitaciones Express por WhatsApp</button>
+        <button type="button" className="btn-secondary" disabled={busy} onClick={() => void consent(false)}>Retirar consentimiento de invitaciones</button></div></>}
+    {opportunities.map(o => {
+      const interested = decisions.some(d => d.opportunity_id === o.id && d.worker_id === worker && d.decision === "interested");
+      const declined = decisions.some(d => d.opportunity_id === o.id && d.worker_id === worker && d.decision === "declined");
+      return <div key={o.id} className={selected === o.id ? "opportunity-interest__row opportunity-interest__row--selected" : "opportunity-interest__row"}>
+        <div><strong>{CATEGORIES.find(c => c.searchKey === o.category)?.label ?? o.category} · {o.city}</strong><span>{interested ? "Interés enviado" : declined ? "Respuesta NO guardada" : "Aún no has respondido"}</span></div>
+        <div className="opportunity-interest__actions"><button type="button" className={interested ? "btn-secondary" : "btn-primary"} disabled={busy || !worker} onClick={() => void decide(o.id, interested ? "withdrawn" : "interested")}>{interested ? "Retirar interés" : "Me interesa"}</button>
+          {!interested && <button type="button" className="btn-secondary" disabled={busy || !worker || declined} onClick={() => void decide(o.id, "declined")}>No me interesa</button>}
+          <button type="button" className="btn-secondary" disabled={busy} onClick={() => void report(o.id)}>Reportar datos privados</button></div>
+      </div>;
+    })}
+    {worker && decisions.filter(d => d.worker_id === worker && d.decision === "interested" && !opportunities.some(o => o.id === d.opportunity_id)).map(d => <div key={d.opportunity_id} className="opportunity-interest__row">
+      <div><strong>{d.marketplace_opportunities?.city ?? "Oportunidad anterior"}</strong><span>Interés enviado · oportunidad cerrada o fuera de este filtro</span></div>
+      <button type="button" className="btn-secondary" disabled={busy} onClick={() => void decide(d.opportunity_id, "withdrawn")}>Retirar interés</button>
+    </div>)}
+    {notice && <p role="status">{notice}</p>}
+  </div>;
 }

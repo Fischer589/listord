@@ -9,15 +9,19 @@ test("marketplace HTTP verifies Auth identity, binds RPC actor, protects contact
   const names = ["MARKETPLACE_ENABLED", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
   const before = names.map(n => process.env[n]); const original = globalThis.fetch;
   Object.assign(process.env, { MARKETPLACE_ENABLED: "true", NEXT_PUBLIC_SUPABASE_URL: "https://marketplace-fixture.example.test", NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_public", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
-  let confirmed = true; let fail = false; let calls = 0;
+  let confirmed = true; let fail = false; let owns = true; let calls = 0;
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
     if (url.pathname === "/auth/v1/user") return Response.json({ id: actor, email_confirmed_at: confirmed ? "2026-01-01T00:00:00Z" : null });
+    if (url.pathname.endsWith("/marketplace_opportunity_owners")) return Response.json(owns ? { opportunity_id: id } : null);
     calls++;
     assert.equal(init?.method, "POST");
     const body = JSON.parse(String(init?.body)); assert.equal(body.p_actor, actor);
     if (fail) return Response.json({ message: "PRIVATE_DATABASE_DETAIL", code: "XX000" }, { status: 400 });
-    if (url.pathname.endsWith("marketplace_contacts_v2")) return Response.json([{ name: "Fixture", phone: "18090000111", worker_id: id, worker_name: "Fixture worker" }]);
+    if (url.pathname.endsWith("marketplace_contacts_v2")) return Response.json([
+      { name: "Fixture", phone: "18090000111", worker_id: id, worker_name: "Fixture worker" },
+      { name: "Other", phone: "18090000222", worker_id: "33333333-3333-4333-8333-333333333333", worker_name: "Other worker" }
+    ]);
     assert.equal(body.p_decision, "interested");
     return new Response(null, { status: 204 });
   };
@@ -30,11 +34,46 @@ test("marketplace HTTP verifies Auth identity, binds RPC actor, protects contact
     const failed = await POST(request(body)); assert.equal(failed.status, 503); assert.doesNotMatch(await failed.text(), /PRIVATE_DATABASE_DETAIL/);
     fail = false;
     const response = await contacts(request({ id, workerId: id })); assert.equal(response.status, 200);
-    const data = await response.json(); assert.match(data.contacts[0].url, /wa.me\/18090000111\?text=/);
+    const data = await response.json(); assert.equal(data.contacts.length, 1, "only the chosen worker is returned"); assert.match(data.contacts[0].url, /wa.me\/18090000111\?text=/);
     assert.equal(data.contacts[0].workerId, id);
     const message = new URL(data.contacts[0].url).searchParams.get("text")!;
     assert.match(message, /Fixture worker/); assert.ok(message.includes(id));
     assert.equal(response.headers.get("cache-control"), "private, no-store");
+    owns = false;
+    assert.equal((await contacts(request({ id, workerId: id }))).status, 403, "an interested worker cannot reveal employer contact");
     assert.equal((await GET(new Request("https://example.test/api/marketplace?mine=true"))).status, 401);
+  } finally { globalThis.fetch = original; names.forEach((n, i) => { if (before[i] === undefined) delete process.env[n]; else process.env[n] = before[i]; }); }
+});
+
+test("employer applicant view includes only current, verified responses to owned opportunities", async () => {
+  const names = ["MARKETPLACE_ENABLED", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+  const before = names.map(n => process.env[n]); const original = globalThis.fetch;
+  Object.assign(process.env, { MARKETPLACE_ENABLED: "true", NEXT_PUBLIC_SUPABASE_URL: "https://marketplace-fixture.example.test", NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_public", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
+  const other = "33333333-3333-4333-8333-333333333333";
+  let overLimit = false;
+  globalThis.fetch = async input => {
+    const url = new URL(String(input));
+    if (url.pathname === "/auth/v1/user") return Response.json({ id: actor, email_confirmed_at: "2026-01-01T00:00:00Z" });
+    if (url.pathname.endsWith("/marketplace_opportunity_owners")) return Response.json([{ opportunity_id: id, marketplace_opportunities: { id, status: "open", moderation_status: "approved" } }]);
+    if (url.pathname.endsWith("/marketplace_interests")) return Response.json(url.searchParams.has("decision_user_id") ? [] : overLimit ? Array.from({ length: 501 }, () => ({ opportunity_id: id, worker_id: id, decision_user_id: actor, created_at: "2026-10-13T00:00:00Z" })) : [
+      { opportunity_id: id, worker_id: id, decision_user_id: actor, created_at: "2026-10-13T00:00:00Z" },
+      { opportunity_id: id, worker_id: other, decision_user_id: actor, created_at: "2026-10-13T00:00:00Z" }
+    ]);
+    if (url.pathname.endsWith("/workers")) return Response.json(url.searchParams.has("owner_user_id") ? [] : [
+      { id, full_name: "Verified applicant", city: "Puerto Plata", skills: ["Limpieza"], owner_user_id: actor },
+      { id: other, full_name: "Transferred profile", city: "Santo Domingo", skills: [], owner_user_id: other }
+    ]);
+    throw new Error(`Unexpected fixture query: ${url.pathname}`);
+  };
+  try {
+    const request = new Request("https://example.test/api/marketplace?mine=true", { headers: { Authorization: "Bearer fixture_token_12345678901234567890" } });
+    const response = await GET(request); assert.equal(response.status, 200);
+    const data = await response.json();
+    assert.deepEqual(data.applicants, [{ opportunity_id: id, worker_id: id, full_name: "Verified applicant", city: "Puerto Plata", skills: ["Limpieza"], created_at: "2026-10-13T00:00:00Z" }]);
+    assert.doesNotMatch(JSON.stringify(data), /Transferred profile|whatsapp_number|contact_name/);
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    overLimit = true;
+    const capped = await GET(request); assert.equal(capped.status, 503, "an incomplete applicant list is not presented as complete");
+    assert.equal((await capped.json()).applicants, undefined);
   } finally { globalThis.fetch = original; names.forEach((n, i) => { if (before[i] === undefined) delete process.env[n]; else process.env[n] = before[i]; }); }
 });

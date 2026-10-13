@@ -7,7 +7,7 @@ export async function GET() {
   await requireAdmin();
   if (!marketplaceEnabled()) return NextResponse.json({ error: "Deshabilitado." }, { status: 503, headers });
   try {
-    const { data, error } = await marketplaceAdmin().from("marketplace_opportunities").select("id,scope,city,specification,timing_note,duration_note,compensation_kind,compensation_min,compensation_unit,expires_at").eq("status", "draft").eq("moderation_status", "pending").order("created_at").limit(50).abortSignal(AbortSignal.timeout(8000));
+    const { data, error } = await marketplaceAdmin().from("marketplace_opportunities").select("id,category,scope,city,specification,timing_note,duration_note,compensation_kind,compensation_min,compensation_unit,expires_at").eq("status", "draft").eq("moderation_status", "pending").order("created_at").limit(50).abortSignal(AbortSignal.timeout(8000));
     if (error) throw error;
     const reports = await marketplaceAdmin().from("marketplace_reports").select("id,opportunity_id,reason,created_at").eq("status", "pending").order("created_at").limit(100).abortSignal(AbortSignal.timeout(8000));
     if (reports.error) throw reports.error;

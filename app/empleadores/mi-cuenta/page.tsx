@@ -2,6 +2,10 @@ import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
 import { EmployerWorkspace } from "@/components/employer-workspace";
 import { isUuid, workspaceEnabled } from "@/lib/employer-workspace";
+import { marketplaceEnabled } from "@/lib/marketplace";
+import { MarketplaceSession } from "@/components/marketplace-session";
+import { EmployerOpportunities } from "@/components/employer-opportunities";
+import { expressEnabled } from "@/lib/express";
 import { unstable_noStore as noStore } from "next/cache";
 import "./workspace.css";
 
@@ -19,7 +23,8 @@ export default async function EmployerAccountPage({ searchParams }: { searchPara
       <Link className="btn-secondary" href="/solicitar">Buscar trabajadores gratis</Link>
     </header>
     <p className="employer-account__legacy-note">Conservamos los registros de pagos y accesos anteriores. Su revisión requiere verificar al titular; no vuelvas a pagar para recuperar un acceso.</p>
-    {workspaceEnabled() ? <EmployerWorkspace selectedWorkerId={selectedWorkerId} returned={query.checkout === "return"} canceled={query.checkout === "cancel"} /> :
+    {workspaceEnabled() ? <EmployerWorkspace selectedWorkerId={selectedWorkerId} returned={query.checkout === "return"} canceled={query.checkout === "cancel"} opportunitiesEnabled={marketplaceEnabled()} expressAvailable={expressEnabled()} /> :
+      marketplaceEnabled() ? <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta">{token => <EmployerOpportunities token={token} expressAvailable={expressEnabled()} />}</MarketplaceSession> :
       <p className="workspace-panel">El espacio de empleador estará disponible después de completar la verificación de pagos.</p>}
   </main></>;
 }

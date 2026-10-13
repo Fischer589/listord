@@ -34,3 +34,8 @@
 .request-express strong, .request-express button { display: block; margin: 1rem 0; }
 .request-matches button:disabled { opacity: .65; cursor: not-allowed; }
 .request-empty { border-left: 3px solid var(--green); padding-left: 1rem; }
+.publication-panel { margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border-mid); }
+.publication-panel h2 { margin: .4rem 0 1rem; color: var(--ink); font-size: clamp(1.7rem, 4vw, 2.2rem); font-weight: 400; }
+.publication-panel > p { margin: .75rem 0; }
+.publication-panel .request-preview { margin: 1rem 0; }
+.publication-panel .request-fields { margin-top: 1.25rem; }

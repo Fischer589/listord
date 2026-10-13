@@ -13,12 +13,37 @@ export async function GET(request: Request) {
     if (url.searchParams.get("mine") === "true") {
       const actor = await verifiedMarketplaceUser(request);
       const [owned, workers, decisions] = await Promise.all([
-        admin.from("marketplace_opportunity_owners").select(`opportunity_id,marketplace_opportunities(${PUBLIC_OPPORTUNITY_COLUMNS})`).eq("owner_user_id", actor).order("created_at", { ascending: false }).limit(50).abortSignal(AbortSignal.timeout(8000)),
+        admin.from("marketplace_opportunity_owners").select(`opportunity_id,marketplace_opportunities(${PUBLIC_OPPORTUNITY_COLUMNS},moderation_status)`).eq("owner_user_id", actor).order("created_at", { ascending: false }).limit(50).abortSignal(AbortSignal.timeout(8000)),
         admin.from("workers").select("id,full_name").eq("owner_user_id", actor).eq("is_verified", true).limit(20).abortSignal(AbortSignal.timeout(8000)),
         admin.from("marketplace_interests").select(`opportunity_id,worker_id,decision,marketplace_opportunities(${PUBLIC_OPPORTUNITY_COLUMNS})`).eq("decision_user_id", actor).order("updated_at", { ascending: false }).limit(100).abortSignal(AbortSignal.timeout(8000))
       ]);
       if (owned.error || workers.error || decisions.error) throw new Error("unavailable");
-      return json({ owned: owned.data, workers: workers.data, decisions: decisions.data?.filter(d => workers.data?.some(w => w.id === d.worker_id)) });
+      const opportunityIds = (owned.data ?? []).map(row => row.opportunity_id);
+      const interests = opportunityIds.length ? await admin.from("marketplace_interests")
+        .select("opportunity_id,worker_id,decision_user_id,created_at")
+        .in("opportunity_id", opportunityIds).eq("decision", "interested")
+        .order("created_at", { ascending: false }).limit(501).abortSignal(AbortSignal.timeout(8000))
+        : { data: [], error: null };
+      if (interests.error) throw new Error("unavailable");
+      if ((interests.data?.length ?? 0) > 500) throw new Error("applicant list exceeds limit");
+      const interestedWorkerIds = Array.from(new Set((interests.data ?? []).map(row => row.worker_id)));
+      const interestedWorkers = interestedWorkerIds.length ? await admin.from("workers")
+        .select("id,full_name,city,skills,owner_user_id").in("id", interestedWorkerIds)
+        .eq("is_verified", true).abortSignal(AbortSignal.timeout(8000))
+        : { data: [], error: null };
+      if (interestedWorkers.error) throw new Error("unavailable");
+      const byWorker = new Map((interestedWorkers.data ?? []).map(worker => [worker.id, worker]));
+      const applicants = (interests.data ?? []).flatMap(interest => {
+        const worker = byWorker.get(interest.worker_id);
+        if (!worker || worker.owner_user_id !== interest.decision_user_id) return [];
+        return [{
+          opportunity_id: interest.opportunity_id, worker_id: worker.id,
+          full_name: worker.full_name, city: worker.city, skills: worker.skills,
+          created_at: interest.created_at
+        }];
+      });
+      return json({ owned: owned.data, workers: workers.data,
+        decisions: decisions.data?.filter(d => workers.data?.some(w => w.id === d.worker_id)), applicants });
     }
     const id = url.searchParams.get("id");
     if (id && !uuid(id)) return json({ error: "Identificador inválido." }, 400);
