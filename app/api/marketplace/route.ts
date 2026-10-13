@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readJsonBody } from "@/lib/http-json";
 import { MARKETPLACE_HEADERS as headers, marketplaceEnabled, object, publication, PUBLIC_OPPORTUNITY_COLUMNS, uuid } from "@/lib/marketplace";
 import { MarketplaceError, marketplaceAdmin, rpcFailure, verifiedMarketplaceUser } from "@/lib/marketplace-server";
+import { featuredCheckoutReady, featuredReadEnabled } from "@/lib/marketplace-featured";
 
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers });
 function failure(e: unknown) { return e instanceof MarketplaceError ? json({ error: e.message }, e.status) : json({ error: "Servicio no disponible. No se confirmó ningún cambio." }, 503); }
@@ -42,16 +43,43 @@ export async function GET(request: Request) {
           created_at: interest.created_at
         }];
       });
-      return json({ owned: owned.data, workers: workers.data,
+      let featured: { opportunity_id: string; status: string; featured_until: string | null }[] = [];
+      if (featuredReadEnabled()) {
+        const result = await admin.from("marketplace_featured_orders")
+          .select("opportunity_id,status,featured_until").eq("owner_user_id", actor)
+          .in("opportunity_id", opportunityIds.length ? opportunityIds : ["00000000-0000-0000-0000-000000000000"])
+          .order("created_at", { ascending: false }).limit(100).abortSignal(AbortSignal.timeout(8000));
+        if (result.error) throw new Error("unavailable");
+        featured = result.data ?? [];
+      }
+      return json({ owned: owned.data, workers: workers.data, featured, featuredCheckoutAvailable: featuredCheckoutReady(request.url),
         decisions: decisions.data?.filter(d => workers.data?.some(w => w.id === d.worker_id)), applicants });
     }
     const id = url.searchParams.get("id");
     if (id && !uuid(id)) return json({ error: "Identificador inválido." }, 400);
-    let query = admin.from("marketplace_opportunities").select(PUBLIC_OPPORTUNITY_COLUMNS).eq("status", "open").eq("moderation_status", "approved").gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(50);
+    const now = new Date().toISOString();
+    let query = admin.from("marketplace_opportunities").select(PUBLIC_OPPORTUNITY_COLUMNS).eq("status", "open").eq("moderation_status", "approved").gt("expires_at", now).order("created_at", { ascending: false }).limit(50);
     if (id) query = query.eq("id", id);
     const { data, error } = await query.abortSignal(AbortSignal.timeout(8000));
     if (error) throw new Error("unavailable");
-    return json({ opportunities: data });
+    if (!featuredReadEnabled()) return json({ opportunities: data });
+    const active = await admin.from("marketplace_featured_orders")
+      .select("opportunity_id").eq("status", "paid").gt("featured_until", now)
+      .order("paid_at", { ascending: false }).limit(50).abortSignal(AbortSignal.timeout(8000));
+    if (active.error) throw new Error("unavailable");
+    const ids = Array.from(new Set((active.data ?? []).map(row => row.opportunity_id)));
+    const featured = ids.length ? await admin.from("marketplace_opportunities")
+      .select(PUBLIC_OPPORTUNITY_COLUMNS).in("id", ids).eq("status", "open")
+      .eq("moderation_status", "approved").gt("expires_at", now)
+      .abortSignal(AbortSignal.timeout(8000)) : { data: [], error: null };
+    if (featured.error) throw new Error("unavailable");
+    const featuredById = new Map((featured.data ?? []).map(row => [row.id, row]));
+    const leading = (id ? ids.filter(value => value === id) : ids).flatMap(value => {
+      const row = featuredById.get(value);
+      return row ? [{ ...row, featured: true }] : [];
+    });
+    const featuredIds = new Set(leading.map(row => row.id));
+    return json({ opportunities: [...leading, ...(data ?? []).filter(row => !featuredIds.has(row.id)).map(row => ({ ...row, featured: false }))].slice(0, 50) });
   } catch (e) { return failure(e); }
 }
 export async function POST(request: Request) {

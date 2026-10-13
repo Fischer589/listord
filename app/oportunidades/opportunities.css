@@ -12,6 +12,8 @@
 .opportunity-empty { padding: 2rem; border: 1px solid var(--border-mid); border-radius: var(--r-lg); background: var(--surface-pure); }
 .opportunity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; align-items: stretch; }
 .opportunity-card { display: flex; flex-direction: column; gap: .75rem; min-width: 0; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--border-mid); border-radius: var(--r-xl); background: var(--surface-pure); box-shadow: var(--shadow-sm); overflow-wrap: anywhere; }
+.opportunity-card--featured { border-color: var(--green-dark); background: #f6f7ef; box-shadow: 0 8px 26px rgba(26,61,43,.13); }
+.opportunity-card--featured .opportunity-card__badge { background: var(--green-dark); color: #fffdf3; }
 .opportunity-card__top, .opportunity-card__bottom { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .opportunity-card__top { color: rgba(26,61,43,.75); font-size: .8rem; font-weight: 700; }
 .opportunity-card__badge { padding: .3rem .65rem; border-radius: var(--r-full); background: var(--green-bg); color: var(--green-dark); }

@@ -3,6 +3,8 @@ import Stripe from "stripe";
 import { recordExpressPayment } from "@/lib/express-server";
 import { recordWorkspacePayment, revokeWorkspacePayment } from "@/lib/employer-workspace-payment";
 import { WORKSPACE_PURPOSE } from "@/lib/employer-workspace";
+import { FEATURED_PURPOSE } from "@/lib/marketplace-featured";
+import { recordFeaturedPayment, revokeFeaturedPayment } from "@/lib/marketplace-featured-payment";
 import { readBoundedText } from "@/lib/http-json";
 import {
   getPaidAccessUntil,
@@ -72,7 +74,13 @@ export async function POST(request: Request) {
 
   if (event.type === "charge.refunded" &&
       (event.data.object as Stripe.Charge).payment_intent) {
+    const featured = await revokeFeaturedPayment(event, stripe);
+    if (featured) return featured;
     return revokeWorkspacePayment(event, stripe);
+  }
+  if (["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired"].includes(event.type) &&
+      (event.data.object as Stripe.Checkout.Session).metadata?.purpose === FEATURED_PURPOSE) {
+    return recordFeaturedPayment(event);
   }
   if (["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired"].includes(event.type) &&
       (event.data.object as Stripe.Checkout.Session).metadata?.purpose === WORKSPACE_PURPOSE) {

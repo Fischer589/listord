@@ -10,6 +10,7 @@ type Opportunity = {
   id: string; category: string; city: string; scope: string; specification: RequestDraft;
   timing_note: string | null; duration_note: string | null; compensation_kind: string;
   compensation_min: number | null; compensation_unit: string | null; expires_at: string;
+  featured?: boolean;
 };
 type Worker = { id: string; full_name: string };
 type Decision = { opportunity_id: string; worker_id: string; decision: string; marketplace_opportunities?: Opportunity };
@@ -51,8 +52,8 @@ export function MarketplaceBoard() {
       <label>Ciudad<input maxLength={100} value={city} onChange={event => setCity(event.target.value)} placeholder="Todas las ciudades" /></label></div>
     <p role="status" className="opportunity-count">{notice}</p>
     {items.length > 0 && visible.length === 0 && <p className="opportunity-empty">No hay oportunidades con estos filtros.</p>}
-    <div className="opportunity-grid">{visible.map(o => <article key={o.id} className="opportunity-card">
-      <div className="opportunity-card__top"><span className="opportunity-card__badge">Oportunidad abierta</span><span>{o.city}</span></div>
+    <div className="opportunity-grid">{visible.map(o => <article key={o.id} className={o.featured ? "opportunity-card opportunity-card--featured" : "opportunity-card"}>
+      <div className="opportunity-card__top"><span className="opportunity-card__badge">{o.featured ? "Destacada" : "Oportunidad abierta"}</span><span>{o.city}</span></div>
       <h2>{CATEGORIES.find(c => c.searchKey === o.category)?.label ?? o.category}</h2>
       <p className="opportunity-card__pay">{compensation(o)}</p>
       {o.timing_note && <p><strong>Horario:</strong> {o.timing_note}</p>}

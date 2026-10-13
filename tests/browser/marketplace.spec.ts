@@ -39,6 +39,31 @@ test("public cards show real terms and filters before sign-in, without exposing 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test("featured opportunity is visibly labeled and ordinary worker interest stays free", async ({ page }) => {
+  await page.route("**/api/marketplace", route => route.fulfill({ json: { opportunities: [
+    { ...opportunity, id: workerId, featured: true }, { ...opportunity, featured: false }
+  ] } }));
+  await page.goto("/oportunidades");
+  const cards = page.locator(".opportunity-card");
+  await expect(cards).toHaveCount(2);
+  await expect(cards.first().getByText("Destacada", { exact: true })).toBeVisible();
+  await expect(cards.last().getByText("Oportunidad abierta", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Explora gratis y confirma los términos/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("only approved active employer listings show the one-time featured purchase control", async ({ page }) => {
+  await page.route("**/api/employer-workspace", route => route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } }));
+  await page.route("**/api/marketplace**", route => route.fulfill({ json: {
+    owned: [
+      { opportunity_id: id, marketplace_opportunities: opportunity },
+      { opportunity_id: workerId, marketplace_opportunities: { ...opportunity, id: workerId, status: "draft", moderation_status: "pending" } }
+    ], workers: [], decisions: [], applicants: [], featured: [], featuredCheckoutAvailable: true
+  } }));
+  await page.goto("/empleadores/mi-cuenta"); await login(page);
+  await expect(page.getByRole("button", { name: "Destacar 7 días · RD$149" })).toHaveCount(1);
+});
+
 test("verified worker responds, withdraws, and controls Express consent without paying", async ({ page }) => {
   let decision = "";
   await page.route("**/api/marketplace**", route => {
