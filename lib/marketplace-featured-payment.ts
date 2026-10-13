@@ -41,10 +41,17 @@ export async function recordFeaturedPayment(event: Stripe.Event) {
 
 /** Returns null when the charge belongs to another existing payment product. */
 export async function revokeFeaturedPayment(event: Stripe.Event, stripe: Stripe): Promise<NextResponse | null> {
-  if (!featuredReadEnabled()) return null;
   const charge = event.data.object as Stripe.Charge;
   const intent = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
   if (!intent) return null;
+  // A payment gate may be closed after a purchase. Refunds must still revoke
+  // its placement, while unrelated refunds must not depend on Featured schema.
+  if (!featuredReadEnabled()) {
+    try {
+      const related = (await stripe.checkout.sessions.list({ payment_intent: intent, limit: 1 })).data[0];
+      if (related?.metadata?.purpose !== FEATURED_PURPOSE) return null;
+    } catch { return null; }
+  }
   const db = getSupabaseAdminClient();
   if (!db) return retry();
   const { data: bound, error } = await db.from("marketplace_featured_orders")

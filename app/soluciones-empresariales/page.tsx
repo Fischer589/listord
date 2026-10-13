@@ -60,7 +60,7 @@ const IDEAL_FOR = [
 
 const HOW_IT_WORKS = [
   { n: "1", text: "Cuéntanos qué tipo de personal necesitas." },
-  { n: "2", text: "Revisaremos nuestra red de trabajadores disponibles." },
+  { n: "2", text: "Revisaremos los perfiles publicados; la disponibilidad se confirma con cada persona." },
   { n: "3", text: "Te ayudaremos a identificar candidatos relevantes." },
   { n: "4", text: "Coordinaremos los próximos pasos contigo." },
 ];
@@ -79,13 +79,14 @@ export default function SolucionesEmpresarialesPage() {
             <h1 className="t-headline mb-5">¿Necesitas personal?</h1>
             <p className="t-body mb-3" style={{ fontSize: "1.1rem" }}>
               ListoRD ayuda a empresas, hoteles, restaurantes y negocios a encontrar
-              trabajadores disponibles dentro de nuestra red.
+              perfiles de trabajadores publicados dentro de nuestra red.
             </p>
             <p className="t-body mb-8">
               Ya sea una contratación individual o múltiples trabajadores, podemos
               ayudarte a identificar candidatos para distintas posiciones.
             </p>
             <WhatsAppButton size="large" />
+            <p className="t-body mt-5">¿Prefieres organizar tu búsqueda? <a className="font-bold underline" href="/empleadores">Explora las herramientas para empleadores</a>.</p>
           </div>
         </section>
 

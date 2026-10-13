@@ -62,8 +62,8 @@ export async function POST(request: Request) {
         product_data: { name: "Oportunidad destacada ListoRD · 7 días", description: "Pago único. Sin renovación automática." } }, quantity: 1 }],
       client_reference_id: ownerId,
       metadata: { purpose: FEATURED_PURPOSE, order_id: order.id, owner_user_id: ownerId, opportunity_id: opportunityId },
-      success_url: `${origin}/empleadores/mi-cuenta?featured=return`,
-      cancel_url: `${origin}/empleadores/mi-cuenta?featured=cancel`
+      success_url: `${origin}/empleadores/mi-cuenta?featured=return&featured_opportunity=${opportunityId}`,
+      cancel_url: `${origin}/empleadores/mi-cuenta?featured=cancel&featured_opportunity=${opportunityId}`
     }, { idempotencyKey: `featured:${order.id}` });
     if (!session.id || !session.url?.startsWith("https://checkout.stripe.com/")) throw new Error("INVALID_SESSION");
     const { data: bound, error } = await db.from("marketplace_featured_orders")

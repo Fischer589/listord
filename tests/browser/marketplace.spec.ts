@@ -64,6 +64,23 @@ test("only approved active employer listings show the one-time featured purchase
   await expect(page.getByRole("button", { name: "Destacar 7 días · RD$149" })).toHaveCount(1);
 });
 
+test("featured return waits for server confirmation and then shows the paid placement", async ({ page }) => {
+  let paid = false;
+  await page.route("**/api/employer-workspace", route => route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } }));
+  await page.route("**/api/marketplace**", route => route.fulfill({ json: {
+    owned: [{ opportunity_id: id, marketplace_opportunities: opportunity }],
+    workers: [], decisions: [], applicants: [], featuredCheckoutAvailable: true,
+    featured: [{ opportunity_id: id, status: paid ? "paid" : "pending", featured_until: paid ? "2099-10-20T12:00:00Z" : null }]
+  } }));
+  await page.goto(`/empleadores/mi-cuenta?featured=return&featured_opportunity=${id}`);
+  await login(page);
+  await expect(page.getByText(/Esperando la confirmación firmada del pago destacado/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continuar pago destacado" })).toHaveCount(0);
+  paid = true;
+  await expect(page.getByText(/Pago confirmado. Tu oportunidad está destacada hasta/)).toBeVisible({ timeout: 12000 });
+  await expect(page.getByRole("button", { name: "Destacar 7 días · RD$149" })).toHaveCount(0);
+});
+
 test("verified worker responds, withdraws, and controls Express consent without paying", async ({ page }) => {
   let decision = "";
   await page.route("**/api/marketplace**", route => {

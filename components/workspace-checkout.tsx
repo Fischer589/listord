@@ -6,7 +6,7 @@ import type { StripeEmbeddedCheckout } from "@stripe/stripe-js";
 import { bindWorkspaceCheckoutReturn, clearWorkspaceCheckoutReturn, prepareWorkspaceCheckoutReturn } from "@/lib/marketplace-browser";
 import { MarketplaceSession } from "./marketplace-session";
 
-type Phase = "loading" | "embedded" | "fallback" | "verifying" | "confirmed";
+type Phase = "loading" | "active" | "unavailable" | "embedded" | "fallback" | "verifying" | "confirmed";
 type CheckoutResult = { mode?: string; sessionId?: string; clientSecret?: string; url?: string; error?: string };
 
 async function createCheckout(token: string, mode: "embedded" | "hosted", replaceEmbedded = false): Promise<CheckoutResult> {
@@ -40,11 +40,23 @@ function WorkspaceCheckout({ token, publishableKey }: { token: string; publishab
     let disposed = false;
     let checkout: StripeEmbeddedCheckout | null = null;
     async function start() {
-      if (!/^pk_(?:test|live)_[A-Za-z0-9]+$/.test(publishableKey)) {
-        setPhase("fallback");
+      let access: { active?: boolean };
+      try {
+        const accessResponse = await fetch("/api/employer-workspace", { cache: "no-store",
+          headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000) });
+        if (!accessResponse.ok) throw new Error();
+        access = await accessResponse.json() as { active?: boolean };
+      } catch {
+        if (!disposed) { setError("No pudimos verificar tu pase. Intenta de nuevo desde tu cuenta."); setPhase("unavailable"); }
         return;
       }
+      if (disposed) return;
+      if (access.active) { setPhase("active"); return; }
       try {
+        if (!/^pk_(?:test|live)_[A-Za-z0-9]+$/.test(publishableKey)) {
+          setPhase("fallback");
+          return;
+        }
         const stripe = await loadStripe(publishableKey);
         if (!stripe || disposed) throw new Error("No se pudo cargar el formulario seguro.");
         if (!await prepareWorkspaceCheckoutReturn()) throw new Error("Tu navegador no pudo conservar la sesión para volver del pago.");
@@ -124,6 +136,8 @@ function WorkspaceCheckout({ token, publishableKey }: { token: string; publishab
     <h2>Confirma tu pase</h2>
     <p className="payment-flow__line">RD$299 · 30 días · Pago único · Sin renovación automática</p>
     {phase === "loading" && <p role="status" className="payment-flow__status">Preparando tu formulario de pago seguro...</p>}
+    {phase === "active" && <p role="status" className="payment-flow__success">Tu Pase de Empleador ya está activo. <a href="/empleadores/mi-cuenta">Abrir mi espacio</a></p>}
+    {phase === "unavailable" && <a className="btn-secondary" href="/empleadores/mi-cuenta">Volver a mi cuenta</a>}
     <div ref={mount} className="payment-flow__stripe" hidden={phase !== "loading" && phase !== "embedded"} />
     {phase === "embedded" && <button type="button" className="btn-secondary" onClick={() => { clearWorkspaceCheckoutReturn(); window.location.assign("/empleadores/mi-cuenta?checkout=cancel"); }}>Cancelar y volver a mi cuenta</button>}
     {phase === "fallback" && <div className="payment-flow__fallback"><p role="status">Puedes completar el pago en la página segura de Stripe.</p>

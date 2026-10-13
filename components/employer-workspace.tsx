@@ -142,9 +142,9 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
   </section>;
 }
 
-export function EmployerWorkspace({ selectedWorkerId, returned, canceled, opportunitiesEnabled = false, expressAvailable = false }: { selectedWorkerId: string | null; returned: boolean; canceled: boolean; opportunitiesEnabled?: boolean; expressAvailable?: boolean }) {
+export function EmployerWorkspace({ selectedWorkerId, returned, canceled, featuredReturn = false, featuredCanceled = false, featuredOpportunityId = null, opportunitiesEnabled = false, expressAvailable = false }: { selectedWorkerId: string | null; returned: boolean; canceled: boolean; featuredReturn?: boolean; featuredCanceled?: boolean; featuredOpportunityId?: string | null; opportunitiesEnabled?: boolean; expressAvailable?: boolean }) {
   return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar y usar tu espacio privado de empleador. La exploración y el contacto directo son gratis.">
     {token => <><WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} canceled={canceled} />
-      {opportunitiesEnabled && <EmployerOpportunities token={token} expressAvailable={expressAvailable} />}</>}
+      {opportunitiesEnabled && <EmployerOpportunities token={token} featuredReturn={featuredReturn} featuredCanceled={featuredCanceled} featuredOpportunityId={featuredOpportunityId} expressAvailable={expressAvailable} />}</>}
   </MarketplaceSession>;
 }

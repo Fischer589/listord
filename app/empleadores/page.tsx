@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
+import { workspaceEnabled } from "@/lib/employer-workspace";
+
+export const dynamic = "force-dynamic";
 
 export default function EmployersPage() {
   return (
@@ -46,7 +49,7 @@ export default function EmployersPage() {
                 Así funciona
               </p>
               <HowStep number={1} text="Busca por ciudad y tipo de trabajo" />
-              <HowStep number={2} text="Revisa perfiles verificados reales" />
+              <HowStep number={2} text="Revisa perfiles publicados tras revisión" />
               <HowStep
                 number={3}
                 text="Contacta directo por WhatsApp — gratis"
@@ -60,6 +63,16 @@ export default function EmployersPage() {
             <Link href="/solicitar" className="tap-target mt-5 flex items-center justify-center rounded-xl bg-hoja px-4 py-4 font-black text-white">Preparar mi solicitud</Link>
           </div>
         </section>
+
+        {workspaceEnabled() && (
+          <section className="mt-10 rounded-2xl border border-hoja/30 bg-white p-6 shadow-soft" aria-labelledby="employer-pass-title">
+            <p className="text-sm font-black uppercase tracking-wide text-hoja">Pase de Empleador</p>
+            <h2 id="employer-pass-title" className="mt-2 text-2xl font-black text-ink">Organiza tu búsqueda durante 30 días</h2>
+            <p className="mt-3 max-w-2xl leading-7 text-ink/70">Guarda candidatos, ordena solicitudes privadas y registra intentos de contacto. Explorar perfiles, publicar oportunidades y contactar por WhatsApp sigue siendo gratis.</p>
+            <p className="mt-3 font-black text-ink">RD$299 · pago único · sin renovación automática</p>
+            <Link href="/empleadores/mi-cuenta" className="tap-target mt-5 inline-flex items-center justify-center rounded-xl bg-hoja px-6 py-3 font-black text-white">Ver el pase y mi cuenta →</Link>
+          </section>
+        )}
 
         {/* ── TRUST CARDS ── */}
         <section className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -75,7 +88,7 @@ export default function EmployersPage() {
           />
           <TrustCard
             icon="✅"
-            title="Perfiles verificados"
+            title="Perfiles revisados"
             text="La aprobación del perfil no confirma disponibilidad, cualificaciones ni interés en tu solicitud."
           />
         </section>

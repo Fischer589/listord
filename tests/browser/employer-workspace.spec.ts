@@ -3,6 +3,34 @@ import { expect, test } from "@playwright/test";
 const workerId = "22222222-2222-4222-8222-222222222222";
 const requestId = "33333333-3333-4333-8333-333333333333";
 
+test("public employer page explains the optional paid pass and keeps free access clear", async ({ page }) => {
+  await page.goto("/empleadores");
+  const offer = page.getByRole("region", { name: "Organiza tu búsqueda durante 30 días" });
+  await expect(offer).toContainText("RD$299 · pago único · sin renovación automática");
+  await expect(offer).toContainText("sigue siendo gratis");
+  await expect(offer.getByRole("link", { name: "Ver el pase y mi cuenta" })).toHaveAttribute("href", "/empleadores/mi-cuenta");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("active employer opening payment page is sent to the existing pass without checkout", async ({ page }) => {
+  const token = "fixture_active_pass_not_live_123456789";
+  const user = { id: "11111111-1111-4111-8111-111111111111", aud: "authenticated", email: "employer@example.test", email_confirmed_at: "2026-01-01T00:00:00Z" };
+  let checkoutRequests = 0;
+  await page.route("**/auth/v1/**", route => route.fulfill({ json: route.request().url().includes("/verify")
+    ? { access_token: token, refresh_token: "fixture_active_refresh_not_live", expires_in: 3600, token_type: "bearer", user }
+    : { user } }));
+  await page.route("**/api/employer-workspace", route => route.fulfill({ json: { active: true, accessUntil: "2099-01-01T00:00:00Z", candidates: [], requests: [], contacts: [] } }));
+  await page.route("**/api/stripe/workspace-checkout", route => { checkoutRequests++; return route.fulfill({ status: 409, json: { error: "Tu espacio ya está activo." } }); });
+  await page.goto("/empleadores/pago");
+  await page.getByLabel("Correo electrónico").fill("employer@example.test");
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  await page.getByLabel("Código de verificación").fill("123456");
+  await page.getByRole("button", { name: "Verificar código" }).click();
+  await expect(page.getByText("Tu Pase de Empleador ya está activo.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Abrir mi espacio" })).toHaveAttribute("href", "/empleadores/mi-cuenta");
+  expect(checkoutRequests).toBe(0);
+});
+
 test("email button explains invalid input and sends an OTP request for a valid address", async ({ page }) => {
   let requests = 0;
   let fail = true;

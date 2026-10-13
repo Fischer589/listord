@@ -79,7 +79,8 @@ test("featured checkout authorizes the owner, fixes one-time RD$149 terms, and s
     assert.equal((params.line_items as Array<{price_data:{unit_amount:number;currency:string}}>)[0].price_data.currency, "dop");
     assert.equal((params.metadata as Record<string,string>).opportunity_id, opportunity);
     assert.equal(options.idempotencyKey, `featured:${orderId}`);
-    assert.match(String(params.success_url), /featured=return$/);
+    assert.match(String(params.success_url), new RegExp(`featured=return&featured_opportunity=${opportunity}$`));
+    assert.match(String(params.cancel_url), new RegExp(`featured=cancel&featured_opportunity=${opportunity}$`));
     assert.doesNotMatch(JSON.stringify(params), /subscription|recurring/);
     return { id: sessionId, url: `https://checkout.stripe.com/c/pay/${sessionId}` };
   };
@@ -116,7 +117,9 @@ test("featured checkout authorizes the owner, fixes one-time RD$149 terms, and s
     assert.equal(granted, 1);
     assert.equal((await deliver("checkout.session.expired", { ...session, payment_status: "unpaid" })).status, 200);
     assert.equal(status, "paid");
+    process.env.FEATURED_OPPORTUNITIES_ENABLED = "false";
     assert.equal((await deliver("charge.refunded", { payment_intent: intent }, "evt_refund")).status, 200);
+    process.env.FEATURED_OPPORTUNITIES_ENABLED = "true";
     assert.equal(status, "refunded");
     assert.equal((await deliver("checkout.session.completed")).status, 200);
     assert.equal(status, "refunded"); assert.equal(granted, 1);

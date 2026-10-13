@@ -9,10 +9,11 @@ import { expressEnabled } from "@/lib/express";
 import { unstable_noStore as noStore } from "next/cache";
 import "./workspace.css";
 
-export default async function EmployerAccountPage({ searchParams }: { searchParams: Promise<{ worker?: string; checkout?: string }> }) {
+export default async function EmployerAccountPage({ searchParams }: { searchParams: Promise<{ worker?: string; checkout?: string; featured?: string; featured_opportunity?: string }> }) {
   noStore();
   const query = await searchParams;
   const selectedWorkerId = isUuid(query.worker) ? query.worker : null;
+  const featuredOpportunityId = isUuid(query.featured_opportunity) ? query.featured_opportunity : null;
   return <><AppHeader /><main className="container employer-account">
     <header className="employer-account__intro">
       <div>
@@ -23,8 +24,8 @@ export default async function EmployerAccountPage({ searchParams }: { searchPara
       <Link className="btn-secondary" href="/solicitar">Buscar trabajadores gratis</Link>
     </header>
     <p className="employer-account__legacy-note">Conservamos los registros de pagos y accesos anteriores. Su revisión requiere verificar al titular; no vuelvas a pagar para recuperar un acceso.</p>
-    {workspaceEnabled() ? <EmployerWorkspace selectedWorkerId={selectedWorkerId} returned={query.checkout === "return"} canceled={query.checkout === "cancel"} opportunitiesEnabled={marketplaceEnabled()} expressAvailable={expressEnabled()} /> :
-      marketplaceEnabled() ? <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta">{token => <EmployerOpportunities token={token} expressAvailable={expressEnabled()} />}</MarketplaceSession> :
+    {workspaceEnabled() ? <EmployerWorkspace selectedWorkerId={selectedWorkerId} returned={query.checkout === "return"} canceled={query.checkout === "cancel"} featuredReturn={query.featured === "return"} featuredCanceled={query.featured === "cancel"} featuredOpportunityId={featuredOpportunityId} opportunitiesEnabled={marketplaceEnabled()} expressAvailable={expressEnabled()} /> :
+      marketplaceEnabled() ? <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta">{token => <EmployerOpportunities token={token} featuredReturn={query.featured === "return"} featuredCanceled={query.featured === "cancel"} featuredOpportunityId={featuredOpportunityId} expressAvailable={expressEnabled()} />}</MarketplaceSession> :
       <p className="workspace-panel">El espacio de empleador estará disponible después de completar la verificación de pagos.</p>}
   </main></>;
 }

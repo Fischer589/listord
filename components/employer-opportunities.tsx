@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/lib/categories";
@@ -20,21 +20,22 @@ function label(o: Opportunity) {
   return ({ open: "Publicada", closed: "Cerrada", filled: "Cubierta", expired: "Vencida" } as Record<string, string>)[o.status] ?? "No disponible";
 }
 
-export function EmployerOpportunities({ token, expressAvailable = false }: { token: string; expressAvailable?: boolean }) {
+export function EmployerOpportunities({ token, expressAvailable = false, featuredReturn = false, featuredCanceled = false, featuredOpportunityId = null }: { token: string; expressAvailable?: boolean; featuredReturn?: boolean; featuredCanceled?: boolean; featuredOpportunityId?: string | null }) {
   const router = useRouter();
   const [owned, setOwned] = useState<Opportunity[]>([]);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [featured, setFeatured] = useState<Featured[]>([]);
   const [featuredCheckoutAvailable, setFeaturedCheckoutAvailable] = useState(false);
+  const [featuredReturnTimedOut, setFeaturedReturnTimedOut] = useState(false);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  async function load() {
+  const load = useCallback(async () => {
     const data = await marketplaceRequest(token);
     setOwned((data.owned as Owned[]).map(row => row.marketplace_opportunities));
     setApplicants(data.applicants ?? []);
     setFeatured(data.featured ?? []);
     setFeaturedCheckoutAvailable(data.featuredCheckoutAvailable === true);
-  }
+  }, [token]);
   useEffect(() => {
     let alive = true;
     marketplaceRequest(token).then(data => {
@@ -42,6 +43,13 @@ export function EmployerOpportunities({ token, expressAvailable = false }: { tok
     }).catch(error => { if (alive) setNotice(error.message); });
     return () => { alive = false; };
   }, [token]);
+  const returnedFeatured = featured.find(order => order.opportunity_id === featuredOpportunityId && order.status === "paid" && order.featured_until && Date.parse(order.featured_until) > Date.now());
+  useEffect(() => {
+    if (!featuredReturn || !featuredOpportunityId || returnedFeatured) return;
+    const interval = window.setInterval(() => { void load().catch(() => {}); }, 4000);
+    const stop = window.setTimeout(() => { window.clearInterval(interval); setFeaturedReturnTimedOut(true); }, 60_000);
+    return () => { window.clearInterval(interval); window.clearTimeout(stop); };
+  }, [featuredReturn, featuredOpportunityId, returnedFeatured, load]);
   async function close(o: Opportunity) {
     setBusy(true); setNotice("");
     try { await marketplaceRequest(token, { action: "transition", id: o.id, status: "closed" }); await load(); setNotice("Oportunidad retirada. Ya no acepta respuestas."); }
@@ -85,6 +93,11 @@ export function EmployerOpportunities({ token, expressAvailable = false }: { tok
   return <><section className="workspace-panel employer-opportunities" aria-labelledby="employer-opportunities-title">
     <div className="workspace-panel__head"><div><p className="workspace-eyebrow">Marketplace gratuito</p><h2 id="employer-opportunities-title">Mis oportunidades</h2></div><span className="workspace-count">{owned.length}</span></div>
     <p className="workspace-panel__intro">Publicar y revisar respuestas es gratis. Tus solicitudes privadas y notas del espacio de empleador nunca se publican automáticamente.</p>
+    {featuredReturn && <p role="status" className="workspace-feedback">{returnedFeatured
+      ? `Pago confirmado. Tu oportunidad está destacada hasta ${new Date(returnedFeatured.featured_until!).toLocaleDateString("es-DO")}.`
+      : featuredReturnTimedOut ? "La confirmación sigue pendiente. Revisa el estado más tarde; no vuelvas a pagar mientras Stripe procesa el cobro."
+      : "Esperando la confirmación firmada del pago destacado. El regreso desde Stripe no activa la ubicación destacada."}</p>}
+    {featuredCanceled && <p role="status" className="workspace-feedback">Volviste de Stripe. La oportunidad solo se destaca si Stripe confirma el cobro; puedes revisar su estado aquí.</p>}
     <Link className="workspace-text-link" href="/solicitar">Crear oportunidad</Link>
     {owned.length === 0 && <p className="workspace-empty">Aún no has enviado oportunidades a revisión.</p>}
     <div className="workspace-stack">{owned.map(o => {
@@ -96,7 +109,7 @@ export function EmployerOpportunities({ token, expressAvailable = false }: { tok
         <p className="workspace-item__details">{requestSummary(o.specification)}</p>
         <p>{interested.length} {interested.length === 1 ? "trabajador interesado" : "trabajadores interesados"}. Una respuesta no confirma disponibilidad ni contratación.</p>
         {activeFeatured && <p className="employer-opportunities__featured">Destacada hasta {new Date(activeFeatured.featured_until!).toLocaleDateString("es-DO")}</p>}
-        {featuredCheckoutAvailable && o.status === "open" && o.moderation_status === "approved" && Date.parse(o.expires_at) > Date.now() && !activeFeatured &&
+        {featuredCheckoutAvailable && o.status === "open" && o.moderation_status === "approved" && Date.parse(o.expires_at) > Date.now() && !activeFeatured && !(featuredReturn && featuredOpportunityId === o.id && pendingFeatured) &&
           <button type="button" className="btn-secondary" disabled={busy} onClick={() => void purchaseFeatured(o)}>{pendingFeatured ? "Continuar pago destacado" : "Destacar 7 días · RD$149"}</button>}
         {interested.length > 0 && <ul className="employer-opportunities__applicants">{interested.map(applicant => <li key={applicant.worker_id}>
           <div><strong>{applicant.full_name}</strong><span>{applicant.city || "República Dominicana"}{applicant.skills?.length ? ` · ${applicant.skills.slice(0, 3).join(", ")}` : ""}</span></div>
