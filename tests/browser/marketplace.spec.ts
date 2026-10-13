@@ -157,6 +157,7 @@ test("publication previews public terms and sends them only after explicit conse
   await page.getByLabel(/Autorizo enviar estos términos públicos/).check();
   await page.getByRole("button", { name: "Enviar a revisión" }).click();
   await expect(page.getByText("Solicitud guardada para revisión. Aún no está publicada.")).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem("listord-pending-publication-draft-v1"))).toBeNull();
   expect(submissions).toBe(1);
 });
 

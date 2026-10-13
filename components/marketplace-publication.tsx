@@ -3,13 +3,14 @@ import { FormEvent, useRef, useState } from "react";
 import Link from "next/link";
 import { requestSummary, type RequestDraft } from "@/lib/request-specification";
 import { MarketplaceSession, marketplaceRequest } from "./marketplace-session";
+import { clearPendingPublicationDraft, savePendingPublicationDraft } from "@/lib/pending-publication-draft";
 
 export function MarketplacePublication({ draft }: { draft: RequestDraft }) {
   return <section className="publication-panel"><p className="t-eyebrow">Opcional · gratis</p><h2>Publicar oportunidad</h2>
     <p>Tu solicitud sigue privada hasta que elijas publicarla y un administrador la apruebe. Revisa exactamente lo que podrán ver los trabajadores:</p>
     <div className="request-preview" aria-label="Vista previa pública"><p>{requestSummary(draft)}</p></div>
     <p>Solo se publicarán estos términos. Tu nombre y WhatsApp se guardan aparte y no aparecen en la oportunidad pública.</p>
-    <MarketplaceSession emailRedirectPath="/solicitar">{token => <PublicationForm token={token} draft={draft} />}</MarketplaceSession></section>;
+    <MarketplaceSession emailRedirectPath="/solicitar" beforeSendEmail={() => { savePendingPublicationDraft(draft); }}>{token => <PublicationForm token={token} draft={draft} />}</MarketplaceSession></section>;
 }
 function PublicationForm({ token, draft }: { token: string; draft: RequestDraft }) {
   const key = useRef<string | null>(null);
@@ -19,6 +20,7 @@ function PublicationForm({ token, draft }: { token: string; draft: RequestDraft 
     key.current ??= crypto.randomUUID();
     try {
       await marketplaceRequest(token, { action: "create", draft, key: key.current, name: form.get("name"), phone: form.get("phone"), consent: form.get("consent") === "on" });
+      clearPendingPublicationDraft();
       setSaved(true); setNotice("Solicitud guardada para revisión. Aún no está publicada.");
     } catch (e) { setNotice(e instanceof Error ? e.message : "No se confirmó el guardado."); }
     finally { setBusy(false); }

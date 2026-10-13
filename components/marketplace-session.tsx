@@ -1,9 +1,10 @@
 "use client";
 import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { clearWorkspaceCheckoutReturn, getMarketplaceBrowserClient } from "@/lib/marketplace-browser";
+import { marketplaceAuthCallbackUrl, type MarketplaceAuthIntent } from "@/lib/marketplace-auth-redirect";
 
 /** Tab-scoped session; magic-link fragments are consumed and cleared on return. */
-export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.", emailRedirectPath }: { children: (token: string) => ReactNode; description?: string; emailRedirectPath?: "/empleadores/mi-cuenta" | "/solicitar" | "/oportunidades" }) {
+export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.", emailRedirectPath, beforeSendEmail }: { children: (token: string) => ReactNode; description?: string; emailRedirectPath: "/empleadores/mi-cuenta" | "/solicitar" | "/oportunidades"; beforeSendEmail?: () => void }) {
   const [client, setClient] = useState<ReturnType<typeof getMarketplaceBrowserClient>>(null);
   const [account, setAccount] = useState("");
   const [token, setToken] = useState("");
@@ -23,10 +24,11 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
     const subscription = client.auth.onAuthStateChange((_event, session) => {
       setToken(session?.access_token ?? ""); setAccount(session?.user.id ?? "");
     });
+    const linkError = hasAuthError();
     void client.auth.initialize().then(({ error }) => {
       clearAuthFragment();
       clearCheckoutReturnBridge();
-      if (mounted && error) setNotice("No se pudo verificar el enlace. Solicita uno nuevo.");
+      if (mounted && (error || linkError)) setNotice("El enlace de verificación venció o no es válido. Solicita un nuevo código.");
     });
     return () => { mounted = false; subscription.data.subscription.unsubscribe(); };
   }, [client]);
@@ -35,9 +37,11 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
     try {
       if (!client) throw new Error();
       if (!sent) {
+        beforeSendEmail?.();
+        const intent: MarketplaceAuthIntent = emailRedirectPath === "/solicitar" ? "publish" : emailRedirectPath === "/oportunidades" ? "apply" : "account";
         const { error } = await client.auth.signInWithOtp({
           email: email.trim(),
-          ...(emailRedirectPath ? { options: { emailRedirectTo: new URL(emailRedirectPath, window.location.origin).href } } : {}),
+          options: { emailRedirectTo: marketplaceAuthCallbackUrl(intent, window.location.origin) },
         });
         if (error) throw error;
         setSent(true); setNotice("Revisa tu correo para obtener el código. No lo compartas.");
@@ -68,9 +72,18 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
 
 function clearAuthFragment() {
   const fragment = new URLSearchParams(window.location.hash.slice(1));
-  if (fragment.has("access_token") || fragment.has("refresh_token") || fragment.has("error") || window.location.href.endsWith("#")) {
-    window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+  const query = new URLSearchParams(window.location.search);
+  const authQuery = ["error", "error_code", "error_description"].some(key => query.has(key));
+  if (authQuery) for (const key of ["error", "error_code", "error_description"]) query.delete(key);
+  if (fragment.has("access_token") || fragment.has("refresh_token") || fragment.has("error") || fragment.has("error_code") || window.location.href.endsWith("#") || authQuery) {
+    window.history.replaceState(window.history.state, "", window.location.pathname + (query.size ? `?${query}` : ""));
   }
+}
+
+function hasAuthError() {
+  const fragment = new URLSearchParams(window.location.hash.slice(1));
+  const query = new URLSearchParams(window.location.search);
+  return fragment.has("error") || fragment.has("error_code") || query.has("error") || query.has("error_code");
 }
 
 function clearCheckoutReturnBridge() {

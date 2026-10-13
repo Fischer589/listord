@@ -9,7 +9,7 @@ test("email button explains invalid input and sends an OTP request for a valid a
   await page.route("**/auth/v1/otp**", route => {
     requests++;
     expect(route.request().method()).toBe("POST");
-    expect(new URL(route.request().url()).searchParams.get("redirect_to")).toBe("http://127.0.0.1:3188/empleadores/mi-cuenta");
+    expect(new URL(route.request().url()).searchParams.get("redirect_to")).toBe("http://127.0.0.1:3188/auth/callback/account");
     return route.fulfill(fail
       ? { status: 400, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Expose-Headers": "X-Supabase-Api-Version", "X-Supabase-Api-Version": "2024-01-01" }, json: { code: "email_address_not_authorized", msg: "Email address not authorized" } }
       : { json: {} });
@@ -70,7 +70,7 @@ test("failed magic-link validation clears sensitive URL tokens and offers a fres
   await page.goto("/empleadores/mi-cuenta#access_token=fixture_invalid_magic_token&refresh_token=fixture_invalid_refresh&expires_in=3600&token_type=bearer&type=magiclink");
   await expect(page).toHaveURL("http://127.0.0.1:3188/empleadores/mi-cuenta");
   await expect(page.getByRole("button", { name: "Enviar código" })).toBeVisible();
-  await expect(page.getByRole("status")).toHaveText("No se pudo verificar el enlace. Solicita uno nuevo.");
+  await expect(page.getByRole("status")).toHaveText("El enlace de verificación venció o no es válido. Solicita un nuevo código.");
   expect(await page.evaluate(() => sessionStorage.getItem("listord-marketplace-session-v1"))).toBeNull();
 });
 
@@ -141,6 +141,7 @@ test("unpaid employer cannot use workspace; verified paid state enables saved ca
   let active = false;
   let saved = false;
   let requestTitle = "";
+  await page.route("**/api/marketplace?mine=true", route => route.fulfill({ json: { owned: [], workers: [], decisions: [], applicants: [], featured: [] } }));
   await page.route("**/auth/v1/**", route => route.fulfill({ json: route.request().url().includes("/verify")
     ? { access_token: "fixture_access_token_not_live_123456789", refresh_token: "fixture_refresh_not_live", expires_in: 3600, token_type: "bearer", user: { id: "11111111-1111-4111-8111-111111111111", aud: "authenticated", email: "employer@example.test", email_confirmed_at: "2026-01-01T00:00:00Z" } }
     : {} }));

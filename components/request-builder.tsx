@@ -10,6 +10,7 @@ import { parseMatchRequest } from "@/lib/request-matching";
 import { CATEGORIES } from "@/lib/categories";
 import { CITIES } from "@/lib/cities";
 import { changeCategory, COMPENSATION_UNITS, emptyRequest, REQUEST_SCHEMAS, RequestDraft, RequestErrors, requestSummary, validateRequest } from "@/lib/request-specification";
+import { takePendingPublicationDraft } from "@/lib/pending-publication-draft";
 
 const STEPS = ["Servicio y lugar", "Alcance", "Fecha y pago", "Tu solicitud"];
 
@@ -31,9 +32,8 @@ export function RequestBuilder({ publicationEnabled = false }: { publicationEnab
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem("listord-reuse-request-v1");
-      if (!saved) return;
-      const reusable = parseMatchRequest(JSON.parse(saved));
-      sessionStorage.removeItem("listord-reuse-request-v1");
+      const reusable = saved ? parseMatchRequest(JSON.parse(saved)) : takePendingPublicationDraft();
+      if (saved) sessionStorage.removeItem("listord-reuse-request-v1");
       if (reusable) { setDraft(reusable); setStep(3); }
     } catch { /* A blocked store never prevents anonymous intake. */ }
   }, []);
@@ -103,6 +103,6 @@ export function RequestBuilder({ publicationEnabled = false }: { publicationEnab
       {publicationEnabled && <MarketplacePublication draft={draft} />}
       <p>Explorar perfiles filtra por servicio y ciudad. No confirma disponibilidad ni interés en esta solicitud.</p>
     </>}
-    <p className="request-footnote">El borrador se conserva mientras permanezcas en esta página. Copia el resumen antes de salir.</p>
+    <p className="request-footnote">Intentaremos conservar el borrador en esta pestaña mientras verificas tu correo. Copia el resumen si usarás otro dispositivo.</p>
   </div>;
 }
