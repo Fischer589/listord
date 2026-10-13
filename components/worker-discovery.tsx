@@ -14,43 +14,50 @@ interface WorkerDiscoveryProps {
 export function WorkerDiscovery({ workers, categoryLabel }: WorkerDiscoveryProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [canGoPrevious, setCanGoPrevious] = useState(false);
+  const [canGoNext, setCanGoNext] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [requestDraft, setRequestDraft] = useState<RequestDraft | null>(null);
   useEffect(() => { setRequestDraft(takeDiscoveryRequest()); }, []);
 
-  // Track which slide is most visible via IntersectionObserver
+  const updatePosition = useCallback(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+    const maxScroll = Math.max(0, carousel.scrollWidth - carousel.clientWidth);
+    setCanGoPrevious(carousel.scrollLeft > 2);
+    setCanGoNext(carousel.scrollLeft < maxScroll - 2);
+    const viewport = carousel.getBoundingClientRect();
+    const slides = carousel.querySelectorAll<HTMLElement>(".discovery-slide");
+    let bestIndex = 0;
+    let bestVisible = 0;
+    slides.forEach((slide, index) => {
+      const rect = slide.getBoundingClientRect();
+      const visible = Math.max(0, Math.min(rect.right, viewport.right) - Math.max(rect.left, viewport.left)) / rect.width;
+      if (visible > bestVisible + 0.001) { bestVisible = visible; bestIndex = index; }
+    });
+    setActiveIndex(bestIndex);
+  }, []);
+
   useEffect(() => {
     const carousel = carouselRef.current;
-    if (!carousel || workers.length === 0) return;
-
-    const slides = Array.from(
-      carousel.querySelectorAll<HTMLElement>(".discovery-slide")
-    );
-
-    const obs = new IntersectionObserver(
-      (entries) => {
-        let best = -1;
-        let bestRatio = 0;
-        entries.forEach((entry) => {
-          if (entry.intersectionRatio > bestRatio) {
-            bestRatio = entry.intersectionRatio;
-            best = slides.indexOf(entry.target as HTMLElement);
-          }
-        });
-        if (best !== -1 && bestRatio > 0.4) {
-          setActiveIndex(best);
-        }
-      },
-      { root: carousel, threshold: [0, 0.25, 0.5, 0.75, 1] }
-    );
-
-    slides.forEach((slide) => obs.observe(slide));
-    return () => obs.disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workers.length]);
+    if (!carousel) return;
+    const observer = new ResizeObserver(updatePosition);
+    observer.observe(carousel);
+    updatePosition();
+    return () => observer.disconnect();
+  }, [updatePosition, workers.length]);
 
   const handleScroll = useCallback(() => {
     setHasScrolled(true);
+    updatePosition();
+  }, [updatePosition]);
+
+  const move = useCallback((direction: -1 | 1) => {
+    const carousel = carouselRef.current;
+    const first = carousel?.querySelector<HTMLElement>(".discovery-slide");
+    if (!carousel || !first) return;
+    const gap = Number.parseFloat(getComputedStyle(carousel).columnGap) || 0;
+    carousel.scrollBy({ left: direction * (first.getBoundingClientRect().width + gap), behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }, []);
 
   // Scroll carousel to a specific index using getBoundingClientRect for accuracy
@@ -63,7 +70,7 @@ export function WorkerDiscovery({ workers, categoryLabel }: WorkerDiscoveryProps
     const carouselRect = carousel.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
     const offset = targetRect.left - carouselRect.left + carousel.scrollLeft;
-    carousel.scrollTo({ left: offset, behavior: "smooth" });
+    carousel.scrollTo({ left: offset, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }, []);
 
   if (workers.length === 0) return null;
@@ -93,12 +100,18 @@ export function WorkerDiscovery({ workers, categoryLabel }: WorkerDiscoveryProps
         </span>
       </div>
 
-      {/* ── Snap carousel ── */}
+      {/* ── Snap carousel and controls ── */}
+      <div className="discovery-carousel-frame">
+      <button type="button" className="discovery-arrow discovery-arrow--previous" aria-label="Perfil anterior" aria-controls="worker-discovery-carousel" disabled={!canGoPrevious} onClick={() => move(-1)}>
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+      </button>
       <div
+        id="worker-discovery-carousel"
         ref={carouselRef}
         className="discovery-carousel"
         onScroll={handleScroll}
         role="region"
+        tabIndex={0}
         aria-label={
           categoryLabel
             ? `Trabajadores de ${categoryLabel}`
@@ -115,6 +128,10 @@ export function WorkerDiscovery({ workers, categoryLabel }: WorkerDiscoveryProps
             <WorkerCard worker={worker} requestDraft={requestDraft} />
           </div>
         ))}
+      </div>
+      <button type="button" className="discovery-arrow discovery-arrow--next" aria-label="Perfil siguiente" aria-controls="worker-discovery-carousel" disabled={!canGoNext} onClick={() => move(1)}>
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+      </button>
       </div>
 
       {/* ── Progress rail ── */}
