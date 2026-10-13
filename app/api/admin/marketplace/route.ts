@@ -7,11 +7,21 @@ export async function GET() {
   await requireAdmin();
   if (!marketplaceEnabled()) return NextResponse.json({ error: "Deshabilitado." }, { status: 503, headers });
   try {
-    const { data, error } = await marketplaceAdmin().from("marketplace_opportunities").select("id,category,scope,city,specification,timing_note,duration_note,compensation_kind,compensation_min,compensation_unit,expires_at").eq("status", "draft").eq("moderation_status", "pending").order("created_at").limit(50).abortSignal(AbortSignal.timeout(8000));
-    if (error) throw error;
-    const reports = await marketplaceAdmin().from("marketplace_reports").select("id,opportunity_id,reason,created_at").eq("status", "pending").order("created_at").limit(100).abortSignal(AbortSignal.timeout(8000));
+    const admin = marketplaceAdmin();
+    const columns = "id,category,scope,city,specification,starts_at,timing_note,duration_minutes,duration_note,compensation_kind,compensation_min,compensation_max,compensation_unit,created_at,expires_at,status,moderation_status";
+    const [pending, approved, rejected, reports] = await Promise.all([
+      admin.from("marketplace_opportunities").select(columns, { count: "exact" }).eq("status", "draft").eq("moderation_status", "pending").order("created_at", { ascending: true }).limit(50).abortSignal(AbortSignal.timeout(8000)),
+      admin.from("marketplace_opportunities").select(columns, { count: "exact" }).eq("moderation_status", "approved").order("created_at", { ascending: false }).limit(50).abortSignal(AbortSignal.timeout(8000)),
+      admin.from("marketplace_opportunities").select(columns, { count: "exact" }).eq("moderation_status", "rejected").order("created_at", { ascending: false }).limit(50).abortSignal(AbortSignal.timeout(8000)),
+      admin.from("marketplace_reports").select("id,opportunity_id,reason,created_at").eq("status", "pending").order("created_at").limit(100).abortSignal(AbortSignal.timeout(8000))
+    ]);
+    if (pending.error || approved.error || rejected.error) throw new Error("Opportunity review unavailable");
     if (reports.error) throw reports.error;
-    return NextResponse.json({ opportunities: data, reports: reports.data }, { headers });
+    return NextResponse.json({
+      opportunities: [...(pending.data ?? []), ...(approved.data ?? []), ...(rejected.data ?? [])],
+      counts: { pending: pending.count ?? 0, approved: approved.count ?? 0, rejected: rejected.count ?? 0 },
+      reports: reports.data
+    }, { headers });
   } catch { return NextResponse.json({ error: "No se pudo cargar la revisión." }, { status: 503, headers }); }
 }
 export async function POST(request: Request) {
