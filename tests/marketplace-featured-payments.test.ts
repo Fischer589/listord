@@ -34,9 +34,11 @@ test("featured checkout authorizes the owner, fixes one-time RD$149 terms, and s
   let granted = 0;
   let created = 0;
   let authorized = owner;
+  let opportunityExpiresAt = "2099-01-01T00:00:00Z";
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
     if (url.pathname === "/auth/v1/user") return Response.json({ id: authorized, email_confirmed_at: "2026-01-01T00:00:00Z", aud: "authenticated", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" });
+    if (url.pathname === "/rest/v1/marketplace_opportunities") return Response.json({ expires_at: opportunityExpiresAt, status: "open", moderation_status: "approved" });
     if (url.pathname === "/rest/v1/rpc/marketplace_featured_reserve") {
       return authorized === owner ? Response.json(orderId) : Response.json({ message: "NOT_ELIGIBLE", code: "P0001" }, { status: 400 });
     }
@@ -100,6 +102,11 @@ test("featured checkout authorizes the owner, fixes one-time RD$149 terms, and s
     assert.equal((await buy()).status, 403);
     assert.equal(created, 0);
     authorized = owner;
+    opportunityExpiresAt = new Date(Date.now() + 7 * 86400_000 + 31 * 60_000).toISOString();
+    assert.equal((await buy()).status, 409);
+    assert.equal(created, 0);
+    status = "pending";
+    opportunityExpiresAt = "2099-01-01T00:00:00Z";
     const response = await buy();
     assert.equal(response.status, 200);
     assert.match((await response.json()).url, /^https:\/\/checkout\.stripe\.com\//);

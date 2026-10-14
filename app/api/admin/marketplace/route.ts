@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { readJsonBody } from "@/lib/http-json";
 import { MARKETPLACE_HEADERS as headers, marketplaceEnabled, object, uuid } from "@/lib/marketplace";
 import { marketplaceAdmin, rpcFailure } from "@/lib/marketplace-server";
+import { featuredReadEnabled } from "@/lib/marketplace-featured";
 export async function GET() {
   await requireAdmin();
   if (!marketplaceEnabled()) return NextResponse.json({ error: "Deshabilitado." }, { status: 503, headers });
@@ -17,10 +18,23 @@ export async function GET() {
     ]);
     if (pending.error || approved.error || rejected.error) throw new Error("Opportunity review unavailable");
     if (reports.error) throw reports.error;
+    const featured = featuredReadEnabled() ? await admin.from("marketplace_featured_orders")
+      .select("id,opportunity_id,paid_at,featured_until,marketplace_opportunities(status,moderation_status,expires_at)")
+      .eq("status", "paid").gt("featured_until", new Date().toISOString())
+      .order("paid_at", { ascending: false }).limit(100).abortSignal(AbortSignal.timeout(8000)) : { data: [], error: null };
+    if (featured.error) throw featured.error;
+    const earlyClosures = (featured.data ?? []).filter(order => {
+      const related = order.marketplace_opportunities;
+      const opportunity = (Array.isArray(related) ? related[0] : related) as
+        { status: string; moderation_status: string; expires_at: string } | null | undefined;
+      return !opportunity || opportunity.status !== "open" || opportunity.moderation_status !== "approved" ||
+        Date.parse(opportunity.expires_at) <= Date.now();
+    }).map(order => ({ id: order.id, opportunity_id: order.opportunity_id,
+      paid_at: order.paid_at, featured_until: order.featured_until }));
     return NextResponse.json({
       opportunities: [...(pending.data ?? []), ...(approved.data ?? []), ...(rejected.data ?? [])],
       counts: { pending: pending.count ?? 0, approved: approved.count ?? 0, rejected: rejected.count ?? 0 },
-      reports: reports.data
+      reports: reports.data, earlyClosures
     }, { headers });
   } catch { return NextResponse.json({ error: "No se pudo cargar la revisión." }, { status: 503, headers }); }
 }

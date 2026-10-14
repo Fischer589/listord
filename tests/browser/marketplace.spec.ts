@@ -61,7 +61,19 @@ test("only approved active employer listings show the one-time featured purchase
     ], workers: [], decisions: [], applicants: [], featured: [], featuredCheckoutAvailable: true
   } }));
   await page.goto("/empleadores/mi-cuenta"); await login(page);
-  await expect(page.getByRole("button", { name: "Destacar 7 días · RD$149" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Destacar por RD$149 · 7 días" })).toHaveCount(1);
+});
+
+test("a listing too close to expiry cannot offer an incomplete featured term", async ({ page }) => {
+  const expiresSoon = new Date(Date.now() + 7 * 86400_000 + 31 * 60_000).toISOString();
+  await page.route("**/api/employer-workspace", route => route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } }));
+  await page.route("**/api/marketplace**", route => route.fulfill({ json: {
+    owned: [{ opportunity_id: id, marketplace_opportunities: { ...opportunity, expires_at: expiresSoon } }],
+    workers: [], decisions: [], applicants: [], featured: [], featuredCheckoutAvailable: true
+  } }));
+  await page.goto("/empleadores/mi-cuenta"); await login(page);
+  await expect(page.getByText("Esta publicación vence demasiado pronto para ofrecer siete días destacados completos.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Destacar por RD$149 · 7 días" })).toHaveCount(0);
 });
 
 test("featured return waits for server confirmation and then shows the paid placement", async ({ page }) => {
@@ -78,7 +90,7 @@ test("featured return waits for server confirmation and then shows the paid plac
   await expect(page.getByRole("button", { name: "Continuar pago destacado" })).toHaveCount(0);
   paid = true;
   await expect(page.getByText(/Pago confirmado. Tu oportunidad está destacada hasta/)).toBeVisible({ timeout: 12000 });
-  await expect(page.getByRole("button", { name: "Destacar 7 días · RD$149" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Destacar por RD$149 · 7 días" })).toHaveCount(0);
 });
 
 test("verified worker responds, withdraws, and controls Express consent without paying", async ({ page }) => {

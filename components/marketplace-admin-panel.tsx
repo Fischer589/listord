@@ -26,6 +26,7 @@ function answers(spec: unknown, category: string) {
   return fields;
 }
 type Order = { id: string; status: string; channel: string; amount: number; reference: string };
+type EarlyClosure = { id: string; opportunity_id: string; paid_at: string; featured_until: string };
 async function adminRequest(path: string, body?: unknown) {
   const r = await fetch(`/api/admin/${path}`, { method: body ? "POST" : "GET", cache: "no-store", headers: body ? { "Content-Type": "application/json" } : {}, ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(15000) });
   if (r.redirected) throw new Error("Inicia sesión de nuevo.");
@@ -33,13 +34,14 @@ async function adminRequest(path: string, body?: unknown) {
 }
 export function MarketplaceAdminPanel({ expressAvailable }: { expressAvailable: boolean }) {
   const [reports, setReports] = useState<{ id: string; opportunity_id: string; reason: string; created_at: string }[]>([]);
+  const [earlyClosures, setEarlyClosures] = useState<EarlyClosure[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]); const [orders, setOrders] = useState<Order[]>([]); const [busy, setBusy] = useState(false); const [notice, setNotice] = useState(""); const [error, setError] = useState(false);
   const [counts, setCounts] = useState<Record<Status, number>>({ pending: 0, approved: 0, rejected: 0 });
   const [filter, setFilter] = useState<Status>("pending");
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [confirm, setConfirm] = useState<{ id: string; approve: boolean } | null>(null);
   const load = useCallback(async () => {
-    const a = await adminRequest("marketplace"); setReports(a.reports ?? []); setReviews(a.opportunities ?? []); setCounts(a.counts ?? { pending: 0, approved: 0, rejected: 0 });
+    const a = await adminRequest("marketplace"); setReports(a.reports ?? []); setEarlyClosures(a.earlyClosures ?? []); setReviews(a.opportunities ?? []); setCounts(a.counts ?? { pending: 0, approved: 0, rejected: 0 });
     if (expressAvailable) setOrders((await adminRequest("express")).orders ?? []);
   }, [expressAvailable]);
   useEffect(() => { void load().catch(e => { setError(true); setNotice(e instanceof Error ? e.message : "No se pudieron cargar los registros."); }); }, [load]);
@@ -71,6 +73,7 @@ export function MarketplaceAdminPanel({ expressAvailable }: { expressAvailable: 
   const visible = reviews.filter(r => r.moderation_status === filter && (filter !== "pending" || r.status === "draft"));
   return <div className="moderation-dashboard"><div className="moderation-toolbar"><p>Revisión manual de publicaciones y cuentas. Ninguna oportunidad se publica sin aprobación.</p><button type="button" className="btn-secondary" disabled={busy} onClick={() => void refresh()}>Actualizar registros</button></div>
     {notice && <p className={"moderation-notice" + (error ? " moderation-notice--error" : "")} role={error ? "alert" : "status"}>{notice}</p>}
+    {earlyClosures.length > 0 && <section className="moderation-section" aria-labelledby="featured-closures-title"><div className="moderation-section__heading"><div><p className="moderation-eyebrow">Pago destacado</p><h2 id="featured-closures-title">Cierres anticipados para revisión</h2></div><span>{earlyClosures.length} pendientes</span></div><p>Estas oportunidades ya no aparecen públicamente. Revisa cada cobro y su entrega en Stripe; no se emite un reembolso automático.</p><div className="moderation-list">{earlyClosures.map(order => <article className="moderation-report" key={order.id}><div><strong>Oportunidad #{order.opportunity_id.slice(0, 8)}</strong><span>Pago registrado el {date(order.paid_at)} · vigencia prevista hasta {date(order.featured_until)}</span><span>Orden #{order.id}</span></div></article>)}</div></section>}
     <section className="moderation-section" aria-labelledby="moderation-title"><div className="moderation-section__heading"><div><p className="moderation-eyebrow">01 / Publicaciones</p><h2 id="moderation-title">Moderación de oportunidades</h2></div><p>Revisa el alcance y la privacidad antes de publicar.</p></div>
       <div className="moderation-filters" role="group" aria-label="Filtrar por estado">{(["pending", "approved", "rejected"] as const).map(status => <button key={status} type="button" className={"moderation-filter" + (filter === status ? " moderation-filter--active" : "")} aria-pressed={filter === status} onClick={() => setFilter(status)}><span>{labels[status]}</span><strong>{counts[status]}</strong></button>)}</div>
       {visible.length === 0 ? <div className="moderation-empty">No hay oportunidades {labels[filter].toLowerCase()} en esta vista.</div> : <div className="moderation-list">{visible.map(r => <article className="moderation-card" key={r.id}>

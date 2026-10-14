@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/lib/categories";
 import { requestSummary, type RequestDraft } from "@/lib/request-specification";
 import { isValidWhatsAppUrl } from "@/lib/whatsapp";
+import { featuredSessionExpiresAt } from "@/lib/marketplace-featured";
 import { marketplaceRequest } from "./marketplace-session";
 import { ExpressOrders } from "./express-orders";
 
@@ -109,8 +110,9 @@ export function EmployerOpportunities({ token, expressAvailable = false, feature
         <p className="workspace-item__details">{requestSummary(o.specification)}</p>
         <p>{interested.length} {interested.length === 1 ? "trabajador interesado" : "trabajadores interesados"}. Una respuesta no confirma disponibilidad ni contratación.</p>
         {activeFeatured && <p className="employer-opportunities__featured">Destacada hasta {new Date(activeFeatured.featured_until!).toLocaleDateString("es-DO")}</p>}
-        {featuredCheckoutAvailable && o.status === "open" && o.moderation_status === "approved" && Date.parse(o.expires_at) > Date.now() && !activeFeatured && !(featuredReturn && featuredOpportunityId === o.id && pendingFeatured) &&
-          <button type="button" className="btn-secondary" disabled={busy} onClick={() => void purchaseFeatured(o)}>{pendingFeatured ? "Continuar pago destacado" : "Destacar 7 días · RD$149"}</button>}
+        {featuredCheckoutAvailable && o.status === "open" && o.moderation_status === "approved" && !activeFeatured && !featuredSessionExpiresAt(o.expires_at) && <p className="employer-opportunities__note">Esta publicación vence demasiado pronto para ofrecer siete días destacados completos.</p>}
+        {featuredCheckoutAvailable && o.status === "open" && o.moderation_status === "approved" && !!featuredSessionExpiresAt(o.expires_at) && !activeFeatured && !(featuredReturn && featuredOpportunityId === o.id && pendingFeatured) &&
+          <button type="button" className="btn-secondary" disabled={busy} onClick={() => void purchaseFeatured(o)}>{pendingFeatured ? "Continuar pago destacado" : "Destacar por RD$149 · 7 días"}</button>}
         {interested.length > 0 && <ul className="employer-opportunities__applicants">{interested.map(applicant => <li key={applicant.worker_id}>
           <div><strong>{applicant.full_name}</strong><span>{applicant.city || "República Dominicana"}{applicant.skills?.length ? ` · ${applicant.skills.slice(0, 3).join(", ")}` : ""}</span></div>
           {o.status === "open" && Date.parse(o.expires_at) > Date.now() && <button type="button" className="btn-secondary" disabled={busy} onClick={() => void contact(o, applicant)}>Elegir y contactar</button>}

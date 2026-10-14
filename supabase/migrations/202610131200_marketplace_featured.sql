@@ -40,7 +40,8 @@ begin
     join public.marketplace_opportunity_owners owner on owner.opportunity_id = o.id
     where o.id = p_opportunity and owner.owner_user_id = p_actor
       and owner.publication_consent_at is not null
-      and o.status = 'open' and o.moderation_status = 'approved' and o.expires_at > now()
+      and o.status = 'open' and o.moderation_status = 'approved'
+      and o.expires_at > now() + interval '7 days'
     for update of o;
   if not found then raise exception 'NOT_ELIGIBLE'; end if;
   if exists(select 1 from public.marketplace_featured_orders

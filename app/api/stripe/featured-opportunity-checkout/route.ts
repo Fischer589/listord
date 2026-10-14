@@ -4,7 +4,7 @@ import { readJsonBody } from "@/lib/http-json";
 import { verifiedMarketplaceUser } from "@/lib/marketplace-server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { uuid } from "@/lib/marketplace";
-import { FEATURED_AMOUNT_CENTS, FEATURED_CURRENCY, FEATURED_PURPOSE, featuredCheckoutReady } from "@/lib/marketplace-featured";
+import { FEATURED_AMOUNT_CENTS, FEATURED_CURRENCY, FEATURED_PURPOSE, featuredCheckoutReady, featuredSessionExpiresAt } from "@/lib/marketplace-featured";
 import { workspaceOrigin } from "@/lib/employer-workspace";
 
 export const runtime = "nodejs";
@@ -32,6 +32,10 @@ export async function POST(request: Request) {
     .select("id,owner_user_id,opportunity_id,status,stripe_session_id,created_at")
     .eq("id", orderId).eq("owner_user_id", ownerId).eq("opportunity_id", opportunityId).maybeSingle();
   if (orderError || !order || order.status !== "pending") return reply("Pago no disponible.", 503);
+  const { data: opportunity, error: opportunityError } = await db.from("marketplace_opportunities")
+    .select("expires_at,status,moderation_status").eq("id", opportunityId).maybeSingle();
+  if (opportunityError || !opportunity) return reply("Pago no disponible.", 503);
+  if (opportunity.status !== "open" || opportunity.moderation_status !== "approved") return reply("La oportunidad ya no está publicada.", 409);
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!.trim());
   if (order.stripe_session_id) {
     try {
@@ -49,6 +53,11 @@ export async function POST(request: Request) {
     if (error) return reply("Pago no disponible.", 503);
     return reply("La sesión venció. Vuelve a intentarlo.", 409);
   }
+  const sessionExpiresAt = featuredSessionExpiresAt(opportunity.expires_at);
+  if (!sessionExpiresAt) {
+    const { error } = await db.rpc("marketplace_featured_fail", { p_order: order.id, p_session: null });
+    return reply(error ? "Pago no disponible." : "Esta oportunidad vence antes de completar siete días destacados.", error ? 503 : 409);
+  }
   if (new Date(order.created_at).getTime() < Date.now() - 46 * 60_000) {
     const { error } = await db.rpc("marketplace_featured_fail", { p_order: order.id, p_session: null });
     return reply(error ? "Pago no disponible." : "Vuelve a intentarlo.", error ? 503 : 409);
@@ -57,7 +66,7 @@ export async function POST(request: Request) {
     const origin = workspaceOrigin();
     const session = await stripe.checkout.sessions.create({
       ui_mode: "hosted_page", mode: "payment", payment_method_types: ["card"], locale: "es",
-      expires_at: Math.floor(Date.now() / 1000) + 45 * 60,
+      expires_at: sessionExpiresAt,
       line_items: [{ price_data: { currency: FEATURED_CURRENCY, unit_amount: FEATURED_AMOUNT_CENTS,
         product_data: { name: "Oportunidad destacada ListoRD · 7 días", description: "Pago único. Sin renovación automática." } }, quantity: 1 }],
       client_reference_id: ownerId,

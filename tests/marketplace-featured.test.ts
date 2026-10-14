@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { PGlite } from "@electric-sql/pglite";
-import { FEATURED_AMOUNT_CENTS, featuredCheckoutReady } from "../lib/marketplace-featured";
+import { FEATURED_AMOUNT_CENTS, featuredCheckoutReady, featuredSessionExpiresAt } from "../lib/marketplace-featured";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const stranger = "22222222-2222-4222-8222-222222222222";
@@ -54,7 +54,19 @@ test("featured migration keeps orders private; only eligible owner can reserve; 
     assert.equal((await db.query<{marketplace_featured_paid: string}>("select marketplace_featured_paid($1,$2,$3,$4,$5)", [order, session, intent, "evt_late", paidAt])).rows[0].marketplace_featured_paid, "refunded");
     await db.query("update marketplace_opportunities set status='closed' where id=$1", [id]);
     await assert.rejects(db.query("select marketplace_featured_reserve($1,$2)", [owner, id]), /NOT_ELIGIBLE/);
+    await db.query("update marketplace_opportunities set status='open', expires_at=now()+interval '6 days' where id=$1", [id]);
+    await assert.rejects(db.query("select marketplace_featured_reserve($1,$2)", [owner, id]), /NOT_ELIGIBLE/);
   } finally { await db.close(); }
+});
+
+test("featured Checkout closes before the listing can no longer deliver seven days", () => {
+  const now = Date.parse("2026-10-13T12:00:00Z");
+  const future = (minutes: number) => new Date(now + 7 * 86400_000 + minutes * 60_000).toISOString();
+  assert.equal(featuredSessionExpiresAt(future(31), now), null);
+  assert.equal(featuredSessionExpiresAt(future(32), now), null);
+  assert.equal(featuredSessionExpiresAt(future(33), now), Math.floor(now / 1000) + 31 * 60);
+  assert.equal(featuredSessionExpiresAt(future(40), now), Math.floor(now / 1000) + 38 * 60);
+  assert.equal(featuredSessionExpiresAt(future(120), now), Math.floor(now / 1000) + 45 * 60);
 });
 
 test("featured checkout stays off without an explicit gate and rejects test keys on the production host", () => {
