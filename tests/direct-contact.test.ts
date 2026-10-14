@@ -11,6 +11,7 @@ import { POST as matchContact } from "../app/api/requests/contact/route";
 import { POST as applicantContact } from "../app/api/marketplace/contacts/route";
 import { GET as contactStatus } from "../app/api/contact-access/route";
 import { emptyRequest } from "../lib/request-specification";
+import { directContactCheckoutReady } from "../lib/direct-contact";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const other = "33333333-3333-4333-8333-333333333333";
@@ -155,6 +156,13 @@ test("direct checkout rejects missing gates, forged requests, unverified employe
     assert.equal(created, 1);
     process.env.APP_ORIGIN = "https://listordapp.com";
     assert.equal((await checkout(req({ workerId: worker }))).status, 503, "test key cannot open live checkout");
+    process.env.STRIPE_SECRET_KEY = "sk_live_fixture";
+    process.env.DIRECT_CONTACT_LIVE_PAYMENTS_ENABLED = "true";
+    assert.equal(directContactCheckoutReady("https://6acff705--listord-2.netlify.app/api/stripe/direct-contact-checkout"), true,
+      "a production function may receive Netlify's deployment host");
+    process.env.STRIPE_SECRET_KEY = "sk_test_fixture";
+    assert.equal(directContactCheckoutReady("https://6acff705--listord-2.netlify.app/api/stripe/direct-contact-checkout"), false,
+      "a test key cannot use the production return origin");
   } finally {
     prices.retrieve = priceBefore; sessions.create = createBefore; globalThis.fetch = fetchBefore;
     names.forEach((name, i) => { if (before[i] === undefined) delete process.env[name]; else process.env[name] = before[i]; });

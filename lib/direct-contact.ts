@@ -16,10 +16,12 @@ export function directContactCheckoutReady(requestUrl: string) {
   try {
     const origin = new URL(workspaceOrigin());
     const requestHost = new URL(requestUrl).hostname;
-    if (origin.hostname !== requestHost && !([origin.hostname, requestHost].every(host => host === "listordapp.com" || host === "www.listordapp.com"))) return false;
-    const production = [origin.hostname, requestHost].some(host => host === "listordapp.com" || host === "www.listordapp.com");
+    const productionOrigin = origin.hostname === "listordapp.com" || origin.hostname === "www.listordapp.com";
+    const productionRequest = requestHost === "listordapp.com" || requestHost === "www.listordapp.com";
+    // Netlify can forward a request to a function under its deployment host.
+    // The fixed return origin, live key, and explicit gate determine live safety.
     return key.startsWith("sk_live_")
-      ? process.env.DIRECT_CONTACT_LIVE_PAYMENTS_ENABLED === "true"
-      : key.startsWith("sk_test_") && !production;
+      ? productionOrigin && process.env.DIRECT_CONTACT_LIVE_PAYMENTS_ENABLED === "true"
+      : key.startsWith("sk_test_") && !productionOrigin && !productionRequest;
   } catch { return false; }
 }
