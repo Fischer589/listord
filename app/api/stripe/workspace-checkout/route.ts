@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { verifiedMarketplaceUser } from "@/lib/marketplace-server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
-import { WORKSPACE_AMOUNT_CENTS, WORKSPACE_CURRENCY, WORKSPACE_PURPOSE, isUuid, workspaceEnabled, workspaceOrigin, workspaceStripeReady } from "@/lib/employer-workspace";
+import { WORKSPACE_AMOUNT_CENTS, WORKSPACE_CURRENCY, WORKSPACE_PURPOSE, isUuid, workspaceEnabled, workspaceOrigin, workspaceSessionPattern, workspaceSessionPrefix, workspaceStripeReady } from "@/lib/employer-workspace";
 import { readJsonBody } from "@/lib/http-json";
 
 export const runtime = "nodejs";
@@ -10,7 +10,8 @@ const headers = { "Cache-Control": "private, no-store" };
 const unavailable = () => NextResponse.json({ error: "No pudimos iniciar el pago. Intenta más tarde." }, { status: 503, headers });
 
 export async function POST(request: Request) {
-  if (!workspaceEnabled() || !workspaceStripeReady(request.url)) return unavailable();
+  const sessionPrefix = workspaceSessionPrefix();
+  if (!workspaceEnabled() || !workspaceStripeReady(request.url) || !sessionPrefix) return unavailable();
   let body: { mode?: unknown; replaceEmbedded?: unknown; workerId?: unknown } = {};
   if (request.body) {
     try {
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
   if (!db) return unavailable();
   const { data: active, error: activeError } = await db.from("employer_workspace_orders")
     .select("id").eq("owner_user_id", ownerId).eq("status", "paid")
-    .gt("access_until", new Date().toISOString()).limit(1);
+    .gt("access_until", new Date().toISOString()).like("stripe_session_id", workspaceSessionPattern(sessionPrefix)).limit(1);
   if (activeError) return unavailable();
   if (active?.length) return NextResponse.json({ error: "Tu espacio ya está activo." }, { status: 409, headers });
 

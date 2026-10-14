@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getSupabaseAdminClient } from "./supabase-admin";
-import { WORKSPACE_AMOUNT_CENTS, WORKSPACE_CURRENCY, WORKSPACE_PURPOSE, workspaceAccessUntil } from "./employer-workspace";
+import { WORKSPACE_AMOUNT_CENTS, WORKSPACE_CURRENCY, WORKSPACE_PURPOSE, workspaceAccessUntil, workspaceSessionPrefix } from "./employer-workspace";
 
 const headers = { "Cache-Control": "private, no-store" };
 const retry = () => NextResponse.json({ error: "El pago requiere reconciliación." }, { status: 503, headers });
@@ -12,7 +12,8 @@ export async function recordWorkspacePayment(event: Stripe.Event) {
   const ownerId = session.metadata?.owner_user_id;
   const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
   if (session.metadata?.purpose !== WORKSPACE_PURPOSE || !orderId || !ownerId ||
-      session.client_reference_id !== ownerId || !session.id || session.mode !== "payment") return retry();
+      session.client_reference_id !== ownerId || !session.id || session.mode !== "payment" ||
+      !session.id.startsWith(workspaceSessionPrefix() ?? "invalid_session_prefix")) return retry();
   const db = getSupabaseAdminClient();
   if (!db) return retry();
   const { data: order, error } = await db.from("employer_workspace_orders")

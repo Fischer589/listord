@@ -13,13 +13,14 @@ const opportunity = "44444444-4444-4444-8444-444444444444";
 const draft = { ...emptyRequest(), category: "limpieza", city: "Puerto Plata", timing: "Fecha flexible", duration: "4 horas", amount: "1500", unit: "por día", answers: { property: "Casa", tasks: "Pisos y baños", supplies: "Los pongo yo" } };
 
 test("all contact endpoints deny anonymous, unpaid, mismatched, expired and refunded accounts before returning a phone", async () => {
-  const names = ["MARKETPLACE_ENABLED", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"] as const;
+  const names = ["MARKETPLACE_ENABLED", "STRIPE_SECRET_KEY", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"] as const;
   const old = names.map(name => process.env[name]);
   const fetchBefore = globalThis.fetch;
-  Object.assign(process.env, { MARKETPLACE_ENABLED: "true", NEXT_PUBLIC_SUPABASE_URL: "https://contact-fixture.example.test",
+  Object.assign(process.env, { MARKETPLACE_ENABLED: "true", STRIPE_SECRET_KEY: "sk_live_fixture", NEXT_PUBLIC_SUPABASE_URL: "https://contact-fixture.example.test",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_anon", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
   let status: "unpaid" | "paid" | "expired" | "refunded" = "unpaid";
   let linkedOwner = employer;
+  let paidSessionMode: "live" | "test" = "live";
   let contactReads = 0;
   globalThis.fetch = async input => {
     const url = new URL(String(input));
@@ -27,7 +28,8 @@ test("all contact endpoints deny anonymous, unpaid, mismatched, expired and refu
     if (url.pathname === "/rest/v1/employer_workspace_orders") {
       assert.equal(url.searchParams.get("owner_user_id"), `eq.${employer}`);
       assert.equal(url.searchParams.get("status"), "eq.paid");
-      return Response.json(status === "paid" && linkedOwner === employer ? [{ id: "paid-order" }] : []);
+      assert.equal(url.searchParams.get("stripe_session_id"), "like.cs\\_live\\_%");
+      return Response.json(status === "paid" && linkedOwner === employer && paidSessionMode === "live" ? [{ id: "paid-order" }] : []);
     }
     contactReads++;
     if (url.pathname === "/rest/v1/workers") return Response.json({ id: worker, full_name: "Ana", city: "Puerto Plata", skills: ["Limpieza"],
@@ -59,6 +61,9 @@ test("all contact endpoints deny anonymous, unpaid, mismatched, expired and refu
     status = "paid"; linkedOwner = other;
     assert.equal((await directoryContact(request("/api/workers/contact", { workerId: worker }))).status, 402);
     linkedOwner = employer;
+    paidSessionMode = "test";
+    assert.equal((await directoryContact(request("/api/workers/contact", { workerId: worker }))).status, 402);
+    paidSessionMode = "live";
     for (const [handler, path, body] of cases) {
       const allowed = await handler(request(path, body));
       assert.equal(allowed.status, 200, path);

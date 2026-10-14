@@ -6,9 +6,9 @@ import { POST as contacts } from "../app/api/marketplace/contacts/route";
 const actor = "11111111-1111-4111-8111-111111111111";
 const id = "22222222-2222-4222-8222-222222222222";
 test("marketplace HTTP verifies Auth identity, binds RPC actor, protects contact and hides database errors", async () => {
-  const names = ["MARKETPLACE_ENABLED", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+  const names = ["MARKETPLACE_ENABLED", "STRIPE_SECRET_KEY", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
   const before = names.map(n => process.env[n]); const original = globalThis.fetch;
-  Object.assign(process.env, { MARKETPLACE_ENABLED: "true", NEXT_PUBLIC_SUPABASE_URL: "https://marketplace-fixture.example.test", NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_public", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
+  Object.assign(process.env, { MARKETPLACE_ENABLED: "true", STRIPE_SECRET_KEY: "sk_test_fixture", NEXT_PUBLIC_SUPABASE_URL: "https://marketplace-fixture.example.test", NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_public", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
   let confirmed = true; let fail = false; let owns = true; let calls = 0;
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));

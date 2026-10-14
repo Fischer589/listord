@@ -6,7 +6,7 @@ import Stripe from "stripe";
 import { POST as webhook } from "../app/api/stripe/webhook/route";
 import { POST as checkout } from "../app/api/stripe/workspace-checkout/route";
 import { GET as workspaceGet, POST as workspacePost } from "../app/api/employer-workspace/route";
-import { WORKSPACE_AMOUNT_CENTS, workspaceAccessUntil } from "../lib/employer-workspace";
+import { WORKSPACE_AMOUNT_CENTS, workspaceAccessUntil, workspaceSessionPattern } from "../lib/employer-workspace";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const worker = "22222222-2222-4222-8222-222222222222";
@@ -36,6 +36,16 @@ test("workspace migration is additive, leaves worker data intact, and keeps priv
     await assert.rejects(db.query("select * from public.employer_workspace_candidates"), /permission denied/);
     await db.exec("reset role; set role service_role");
     assert.equal((await db.query("select id from public.employer_workspace_orders")).rows.length, 1);
+  } finally { await db.close(); }
+});
+
+test("workspace session mode filter treats underscores literally", async () => {
+  const db = new PGlite();
+  try {
+    const result = await db.query<{ valid: boolean; test: boolean; lookalike: boolean }>(
+      "select 'cs_live_valid' like $1 as valid, 'cs_test_invalid' like $1 as test, 'csXliveXinvalid' like $1 as lookalike",
+      [workspaceSessionPattern("cs_live_")]);
+    assert.deepEqual(result.rows, [{ valid: true, test: false, lookalike: false }]);
   } finally { await db.close(); }
 });
 
@@ -110,6 +120,7 @@ test("signed workspace events grant exactly once after a confirmed ledger update
   }
   try {
     assert.equal((await deliver("checkout.session.completed", {}, "wrong_secret")).status, 400);
+    assert.equal((await deliver("checkout.session.completed", { id: "cs_live_wrong_mode" })).status, 503);
     assert.equal((await deliver("checkout.session.completed", { payment_status: "unpaid" })).status, 200);
     assert.equal((await deliver("checkout.session.completed", { amount_total: WORKSPACE_AMOUNT_CENTS + 1 })).status, 503);
     assert.equal((await deliver("checkout.session.completed", { client_reference_id: "another-owner" })).status, 503);
@@ -146,10 +157,10 @@ test("signed workspace events grant exactly once after a confirmed ledger update
 });
 
 test("workspace API requires a verified employer and a current paid order before any private write", async () => {
-  const names = ["EMPLOYER_WORKSPACE_ENABLED", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+  const names = ["EMPLOYER_WORKSPACE_ENABLED", "STRIPE_SECRET_KEY", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
   const old = names.map(name => process.env[name]);
   const oldFetch = globalThis.fetch;
-  Object.assign(process.env, { EMPLOYER_WORKSPACE_ENABLED: "true", NEXT_PUBLIC_SUPABASE_URL: "https://workspace-fixture.example.test",
+  Object.assign(process.env, { EMPLOYER_WORKSPACE_ENABLED: "true", STRIPE_SECRET_KEY: "sk_test_fixture", NEXT_PUBLIC_SUPABASE_URL: "https://workspace-fixture.example.test",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_anon", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
   let active = false;
   let writes = 0;
@@ -180,10 +191,10 @@ test("workspace API requires a verified employer and a current paid order before
 });
 
 test("paid contact tracking stores a private handoff with the selected worker and staffing request context", async () => {
-  const names = ["EMPLOYER_WORKSPACE_ENABLED", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+  const names = ["EMPLOYER_WORKSPACE_ENABLED", "STRIPE_SECRET_KEY", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
   const old = names.map(name => process.env[name]);
   const oldFetch = globalThis.fetch;
-  Object.assign(process.env, { EMPLOYER_WORKSPACE_ENABLED: "true", NEXT_PUBLIC_SUPABASE_URL: "https://workspace-fixture.example.test",
+  Object.assign(process.env, { EMPLOYER_WORKSPACE_ENABLED: "true", STRIPE_SECRET_KEY: "sk_test_fixture", NEXT_PUBLIC_SUPABASE_URL: "https://workspace-fixture.example.test",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_anon", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
   let inserted: Record<string, unknown> | null = null;
   globalThis.fetch = async (input, init) => {
@@ -191,6 +202,7 @@ test("paid contact tracking stores a private handoff with the selected worker an
     if (url.pathname === "/auth/v1/user") return Response.json({ id: owner, email_confirmed_at: "2026-01-01T00:00:00Z", aud: "authenticated", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" });
     if (url.pathname === "/rest/v1/employer_workspace_orders") {
       assert.match(url.searchParams.get("access_until") ?? "", /^gt\./);
+      assert.equal(url.searchParams.get("stripe_session_id"), "like.cs\\_test\\_%");
       return Response.json([{ access_until: "2099-01-01T00:00:00Z" }]);
     }
     if (url.pathname === "/rest/v1/workers") {
@@ -241,6 +253,7 @@ test("checkout keeps one-time RD$299 terms, per-session Blackthorne branding, an
   let expectedMode: "hosted" | "embedded" = "hosted";
   let retrievedMode: "hosted" | "embedded" = "hosted";
   let acknowledgeBinding = true;
+  let activePaidMode: "none" | "test" | "live" = "none";
   let pendingRow: { id: string; stripe_session_id: string; created_at: string } | null = null;
   sessionsPrototype.retrieve = async (id: string) => {
     assert.equal(id, "cs_test_workspace_fixture");
@@ -277,7 +290,13 @@ test("checkout keeps one-time RD$299 terms, per-session Blackthorne branding, an
     if (url.pathname === "/auth/v1/user") return Response.json({ id: owner, email_confirmed_at: "2026-01-01T00:00:00Z",
       aud: "authenticated", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" });
     assert.equal(url.pathname, "/rest/v1/employer_workspace_orders");
-    if (init?.method === "GET") return Response.json(url.searchParams.get("status") === "eq.pending" ? pendingRow : []);
+    if (init?.method === "GET") {
+      if (url.searchParams.get("status") === "eq.pending") return Response.json(pendingRow);
+      assert.equal(url.searchParams.get("status"), "eq.paid");
+      assert.equal(url.searchParams.get("stripe_session_id"), "like.cs\\_test\\_%");
+      assert.match(url.searchParams.get("access_until") ?? "", /^gt\./);
+      return Response.json(activePaidMode === "test" ? [{ id: "existing-paid-order" }] : []);
+    }
     if (init?.method === "POST") return Response.json({ id: orderId });
     assert.equal(init?.method, "PATCH");
     const body = JSON.parse(String(init.body));
@@ -288,6 +307,9 @@ test("checkout keeps one-time RD$299 terms, per-session Blackthorne branding, an
     method: "POST", headers: { Authorization: "Bearer fixture_token_12345678901234567890", ...(body ? { "Content-Type": "application/json" } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}) });
   try {
+    activePaidMode = "test";
+    assert.equal((await checkout(makeRequest())).status, 409, "a current paid order cannot be charged again");
+    activePaidMode = "live";
     const success = await checkout(makeRequest());
     assert.equal(success.status, 200);
     assert.deepEqual(await success.json(), { mode: "hosted", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });

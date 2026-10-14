@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifiedMarketplaceUser } from "@/lib/marketplace-server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
-import { isUuid, workspaceEnabled } from "@/lib/employer-workspace";
+import { isUuid, workspaceEnabled, workspaceSessionPattern, workspaceSessionPrefix } from "@/lib/employer-workspace";
 import { readJsonBody } from "@/lib/http-json";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
@@ -13,10 +13,12 @@ async function context(request: Request) {
   if (!workspaceEnabled()) throw { status: 503 };
   const ownerId = await verifiedMarketplaceUser(request);
   const db = getSupabaseAdminClient();
-  if (!db) throw { status: 503 };
+  const sessionPrefix = workspaceSessionPrefix();
+  if (!db || !sessionPrefix) throw { status: 503 };
   const { data: orders, error } = await db.from("employer_workspace_orders")
     .select("access_until").eq("owner_user_id", ownerId).eq("status", "paid")
-    .gt("access_until", new Date().toISOString()).order("access_until", { ascending: false }).limit(1);
+    .gt("access_until", new Date().toISOString()).like("stripe_session_id", workspaceSessionPattern(sessionPrefix))
+    .order("access_until", { ascending: false }).limit(1);
   if (error) throw { status: 503 };
   return { ownerId, db, accessUntil: orders?.[0]?.access_until ?? null };
 }

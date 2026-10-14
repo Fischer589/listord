@@ -3,6 +3,18 @@ export const WORKSPACE_CURRENCY = "dop";
 export const WORKSPACE_DAYS = 30;
 export const WORKSPACE_PURPOSE = "employer_workspace_30d";
 
+/** Keep test Checkout orders from authorizing contact in a live deployment. */
+export function workspaceSessionPrefix() {
+  const key = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
+  if (key.startsWith("sk_live_")) return "cs_live_";
+  if (key.startsWith("sk_test_")) return "cs_test_";
+  return null;
+}
+
+export function workspaceSessionPattern(prefix: string) {
+  return `${prefix.replaceAll("_", "\\_")}%`;
+}
+
 export function workspaceEnabled() {
   return process.env.EMPLOYER_WORKSPACE_ENABLED === "true";
 }
