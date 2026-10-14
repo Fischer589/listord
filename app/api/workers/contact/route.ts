@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   }
   const draft = body.draft === undefined ? null : parseMatchRequest(body.draft);
   if (body.draft !== undefined && !draft) return NextResponse.json({ error: "Revisa los detalles de tu solicitud." }, { status: 400, headers });
-  try { await requireWorkspaceContact(request); }
+  try { await requireWorkspaceContact(request, body.workerId); }
   catch (error) { return contactAccessResponse(error, headers); }
   try {
     const supabase = getSupabaseAdminClient();

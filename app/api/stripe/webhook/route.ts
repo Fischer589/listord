@@ -5,6 +5,8 @@ import { recordWorkspacePayment, revokeWorkspacePayment } from "@/lib/employer-w
 import { WORKSPACE_PURPOSE } from "@/lib/employer-workspace";
 import { FEATURED_PURPOSE } from "@/lib/marketplace-featured";
 import { recordFeaturedPayment, revokeFeaturedPayment } from "@/lib/marketplace-featured-payment";
+import { DIRECT_CONTACT_PURPOSE } from "@/lib/direct-contact";
+import { recordDirectContactPayment, revokeDirectContactPayment } from "@/lib/direct-contact-payment";
 import { readBoundedText } from "@/lib/http-json";
 import {
   getPaidAccessUntil,
@@ -72,8 +74,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (event.type === "charge.dispute.created") {
+    return (await revokeDirectContactPayment(event, stripe)) ?? NextResponse.json({ received: true });
+  }
   if (event.type === "charge.refunded" &&
       (event.data.object as Stripe.Charge).payment_intent) {
+    const direct = await revokeDirectContactPayment(event, stripe);
+    if (direct) return direct;
     const featured = await revokeFeaturedPayment(event, stripe);
     if (featured) return featured;
     return revokeWorkspacePayment(event, stripe);
@@ -85,6 +92,10 @@ export async function POST(request: Request) {
   if (["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired"].includes(event.type) &&
       (event.data.object as Stripe.Checkout.Session).metadata?.purpose === WORKSPACE_PURPOSE) {
     return recordWorkspacePayment(event);
+  }
+  if (["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired"].includes(event.type) &&
+      (event.data.object as Stripe.Checkout.Session).metadata?.purpose === DIRECT_CONTACT_PURPOSE) {
+    return recordDirectContactPayment(event);
   }
 
   if ((event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") && (event.data.object as Stripe.Checkout.Session).metadata?.purpose === "listord_express") {

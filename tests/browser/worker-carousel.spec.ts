@@ -67,17 +67,26 @@ test("profile arrows are visible, keyboard operable, bounded, and keep mobile sw
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("anonymous directory contact opens the RD$299 gate and carries the selected worker", async ({ page }) => {
+test("anonymous directory contact offers both products and carries the selected worker", async ({ page }) => {
   await page.goto("/");
   const firstCard = page.locator(".wc").first();
   await firstCard.getByRole("button", { name: "Contactar trabajador" }).click();
-  const paywall = page.getByRole("dialog", { name: "¿Encontraste a la persona indicada?" });
+  const paywall = page.getByRole("dialog", { name: "¿Ya encontraste a quien necesitas?" });
   await expect(paywall).toBeVisible();
   await expect(paywall.getByText("Perfil seleccionado: Limpieza · Santiago")).toBeVisible();
-  await expect(paywall.getByText("Desbloquea el contacto directo con los trabajadores que te interesan y encuentra a quien necesitas.")).toBeVisible();
-  await expect(paywall.getByText("Un solo pago. Acceso a contactos durante 30 días.")).toBeVisible();
-  await expect(page.getByText("RD$299 / 30 días")).toBeVisible();
-  const cta = paywall.getByRole("link", { name: "Desbloquear contactos — RD$299" });
+  await expect(paywall.getByText("Elige cómo quieres conectar con los trabajadores de ListoRD.")).toBeVisible();
+  await expect(paywall.getByText("RD$89", { exact: true })).toBeVisible();
+  await expect(paywall.getByText("RD$299 / 30 días")).toBeVisible();
+  await expect(paywall.getByText("4 contactos individuales = RD$356.")).toBeVisible();
+  const direct = paywall.getByRole("link", { name: "Contactar por RD$89" });
+  await expect(direct).toHaveAttribute("href", "/empleadores/contacto?worker=00000000-0000-4000-8000-000000000001");
+  const cta = paywall.getByRole("link", { name: "Desbloquear 30 días — RD$299" });
+  const [directBox, workspaceBox] = await Promise.all([
+    paywall.locator(".contact-paywall__offer").first().boundingBox(),
+    paywall.locator(".contact-paywall__offer").last().boundingBox(),
+  ]);
+  if (page.viewportSize()!.width < 640) expect(workspaceBox!.y).toBeGreaterThan(directBox!.y + directBox!.height);
+  else expect(workspaceBox!.x).toBeGreaterThan(directBox!.x + directBox!.width);
   const ctaBox = await cta.boundingBox();
   expect(ctaBox && ctaBox.height >= 44).toBeTruthy();
   await expect(cta).toHaveAttribute("href", "/empleadores/pago?worker=00000000-0000-4000-8000-000000000001");
@@ -85,6 +94,27 @@ test("anonymous directory contact opens the RD$299 gate and carries the selected
   await expect(page).toHaveURL(/\/empleadores\/pago\?worker=00000000-0000-4000-8000-000000000001$/);
   await expect(page.getByRole("heading", { name: "¿Encontraste a la persona indicada?" })).toBeVisible();
   await expect(page.getByText("Un solo pago. Acceso a contactos durante 30 días. Sin renovación automática.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Verifica tu correo" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("RD$89 selection retains the worker through employer verification without opening checkout", async ({ page }) => {
+  await page.goto("/");
+  await page.locator(".wc").first().getByRole("button", { name: "Contactar trabajador" }).click();
+  const direct = page.getByRole("dialog", { name: "¿Ya encontraste a quien necesitas?" })
+    .getByRole("link", { name: "Contactar por RD$89" });
+  await direct.scrollIntoViewIfNeeded();
+  const hit = await direct.evaluate(element => {
+    const box = element.getBoundingClientRect();
+    const atPoint = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+    return { direct: atPoint === element, tag: atPoint?.tagName, text: atPoint?.textContent?.slice(0, 90), x: box.x, y: box.y };
+  });
+  expect(hit, JSON.stringify(hit)).toMatchObject({ direct: true });
+  await direct.click();
+  await expect(page).toHaveURL(/\/empleadores\/contacto\?worker=00000000-0000-4000-8000-000000000001$/);
+  await expect(page.getByRole("heading", { name: "¿Ya encontraste a quien necesitas?" })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Resumen del contacto directo" }).getByText("RD$89")).toBeVisible();
+  await expect(page.getByText("Un pago. Un contacto. Sin renovación automática.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Verifica tu correo" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

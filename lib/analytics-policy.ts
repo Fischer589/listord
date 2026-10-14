@@ -36,7 +36,8 @@ export function sanitizeAnalytics(body: unknown) {
     else if (/^\/categorias\/[^/]+(?:\/[^/]+)?$/.test(path)) metadata.path = "/categorias/[slug]";
     else if (/^\/resultados\/(empleador|trabajador)\/[^/]+$/.test(path)) metadata.path = "/resultados/[audience]/[requestId]";
   }
-  if (source.plan === "weekly" || source.plan === "monthly") metadata.plan = source.plan;
+  if (["weekly", "monthly", "direct", "workspace"].includes(String(source.plan))) metadata.plan = String(source.plan);
+  if (input.event_name === "checkout_start" && (source.stage === "selected" || source.stage === "initiated")) metadata.stage = source.stage;
   if (source.source === "business") metadata.source = "business";
   if (source.page === "soluciones-empresariales") metadata.page = "soluciones-empresariales";
   if (source.reason === "paywall_required") metadata.reason = "paywall_required";

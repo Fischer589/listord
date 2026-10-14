@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { isUuid, workspaceEnabled, workspaceSessionPattern, workspaceSessionPrefix } from "@/lib/employer-workspace";
 import { readJsonBody } from "@/lib/http-json";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { contactAccessResponse, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 
 export const runtime = "nodejs";
 const headers = { "Cache-Control": "private, no-store" };
@@ -60,12 +61,16 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { ownerId, db, accessUntil } = await context(request);
-    if (!accessUntil) return failure(403, "Activa tu espacio de empleador para guardar información.");
     const body = await readJsonBody(request, 4096).catch(() => null) as Record<string, unknown> | null;
     if (!body || typeof body.action !== "string") return failure(400, "Solicitud no válida.");
+    if (!accessUntil && body.action !== "prepare_contact") return failure(403, "Activa tu espacio de empleador para guardar información.");
     if (body.action === "save_candidate" || body.action === "remove_candidate" || body.action === "prepare_contact") {
       if (!isUuid(body.workerId)) return failure(400, "Trabajador no válido.");
       const workerId = body.workerId;
+      if (body.action === "prepare_contact") {
+        try { await requireWorkspaceContact(request, workerId); }
+        catch (error) { return contactAccessResponse(error, headers); }
+      }
       if (body.action === "remove_candidate") {
         const { error } = await db.from("employer_workspace_candidates").delete()
           .eq("owner_user_id", ownerId).eq("worker_id", workerId);

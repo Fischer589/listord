@@ -1483,3 +1483,17 @@ h1, h2 {
 .contact-paywall .contact-paywall__terms { margin-top: 0; font-size: .9rem; }
 .contact-paywall__actions { display: grid; gap: .65rem; margin-top: 1.25rem; }
 .contact-paywall__actions a, .contact-paywall__actions button { min-height: 48px; display: flex; align-items: center; justify-content: center; text-align: center; }
+.contact-paywall--two-tier { width: min(100%, 760px); }
+.contact-paywall__offers { display: grid; gap: .8rem; margin-top: 1rem; }
+.contact-paywall__offer { display: flex; flex-direction: column; gap: .55rem; padding: 1.1rem; border: 1px solid #c9dccb; border-radius: 14px; background: #fff; }
+.contact-paywall__offer h3 { font-size: 1.05rem; line-height: 1.25; font-weight: 800; }
+.contact-paywall__offer p { margin: 0; }
+.contact-paywall__offer .contact-paywall__label { color: #17613c; font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.contact-paywall__offer .contact-paywall__price { margin: 0; }
+.contact-paywall__offer .contact-paywall__terms { margin-top: auto; font-weight: 700; }
+.contact-paywall__offer a { display: flex; align-items: center; justify-content: center; min-height: 48px; margin-top: .45rem; text-align: center; }
+.contact-paywall .contact-paywall__comparison { display: flex; flex-wrap: wrap; gap: .35rem 1rem; margin: 1rem 0 .35rem; font-size: .9rem; }
+.contact-paywall__comparison span { font-weight: 800; }
+.contact-paywall .contact-paywall__value { margin: 0; font-size: .85rem; }
+.contact-paywall--two-tier .contact-paywall__actions { margin-top: .8rem; }
+@media (min-width: 640px) { .contact-paywall__offers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

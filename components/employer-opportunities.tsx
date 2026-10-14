@@ -11,6 +11,7 @@ import { marketplaceRequest } from "./marketplace-session";
 import { ExpressOrders } from "./express-orders";
 import { ContactPaywall } from "./contact-paywall";
 import { rememberSelectedWorker } from "@/lib/free-contact";
+import { trackEvent } from "@/lib/analytics";
 
 type Opportunity = { id: string; category: string; city: string; specification: RequestDraft; status: string; moderation_status: string; expires_at: string };
 type Applicant = { opportunity_id: string; worker_id: string; full_name: string; city: string | null; skills: string[] | null; created_at: string };
@@ -89,6 +90,7 @@ export function EmployerOpportunities({ token, expressAvailable = false, feature
       if (!response.ok) throw new Error(data.error ?? "No se confirmó el contacto autorizado.");
       const result = data.contacts?.find((candidate: { workerId: string }) => candidate.workerId === applicant.worker_id);
       if (!result?.url || !isValidWhatsAppUrl(result.url)) throw new Error("No se confirmó el contacto autorizado.");
+      trackEvent("contact_click");
       window.location.assign(result.url);
     } catch (error) { setNotice(error instanceof Error ? error.message : "No se pudo preparar el contacto."); }
     finally { setBusy(false); }

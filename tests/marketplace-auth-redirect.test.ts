@@ -6,7 +6,7 @@ import { emptyRequest } from "../lib/request-specification";
 
 test("all ListoRD email intents use fixed local callback paths and never generate DefenderDesk links", () => {
   const origins = ["https://listordapp.com", "https://www.listordapp.com", "https://release-candidate--listord-2.netlify.app", "http://127.0.0.1:3188"];
-  const intents = { publish: "/solicitar", apply: "/oportunidades", account: "/empleadores/mi-cuenta" } as const;
+  const intents = { publish: "/solicitar", apply: "/oportunidades", account: "/empleadores/mi-cuenta", direct: "/empleadores/contacto" } as const;
   for (const origin of origins) for (const [intent, destination] of Object.entries(intents)) {
     const url = marketplaceAuthCallbackUrl(intent as keyof typeof intents, origin);
     assert.equal(url, `${origin}/auth/callback/${intent}`);

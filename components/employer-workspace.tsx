@@ -6,6 +6,7 @@ import { MarketplaceSession } from "./marketplace-session";
 import { isValidWhatsAppUrl } from "@/lib/whatsapp";
 import { EmployerOpportunities } from "./employer-opportunities";
 import { selectedWorker } from "@/lib/free-contact";
+import { trackEvent } from "@/lib/analytics";
 
 type Candidate = { id: string; full_name: string; city: string | null; skills: string[] | null; savedAt: string };
 type StaffingRequest = { id: string; title: string; details: string; status: "open" | "closed"; created_at: string };
@@ -21,7 +22,7 @@ async function api(token: string, body?: Record<string, unknown>, path = "/api/e
   return data;
 }
 
-function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { token: string; selectedWorkerId: string | null; returned: boolean; canceled: boolean }) {
+function WorkspaceAccount({ token, selectedWorkerId, returned, directReturn, canceled, directCanceled }: { token: string; selectedWorkerId: string | null; returned: boolean; directReturn: boolean; canceled: boolean; directCanceled: boolean }) {
   const [data, setData] = useState<Workspace | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -30,6 +31,7 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
   const [details, setDetails] = useState("");
   const [requestId, setRequestId] = useState("");
   const [workerToSave, setWorkerToSave] = useState(selectedWorkerId);
+  const [directTimedOut, setDirectTimedOut] = useState(false);
   useEffect(() => {
     try {
       if (selectedWorkerId) sessionStorage.setItem("listord-workspace-selected-worker", selectedWorkerId);
@@ -51,6 +53,23 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
     if (!returned || !data?.active || !selectedWorkerId) return;
     window.location.assign(`/trabajador/${encodeURIComponent(selectedWorkerId)}`);
   }, [returned, data?.active, selectedWorkerId]);
+  useEffect(() => {
+    if (!directReturn || !selectedWorkerId) return;
+    let stopped = false;
+    const check = async () => {
+      try {
+        const response = await fetch(`/api/contact-access?worker=${encodeURIComponent(selectedWorkerId)}`, { cache: "no-store",
+          headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000) });
+        if (!response.ok) return;
+        const state = await response.json() as { active?: boolean };
+        if (!stopped && state.active) window.location.assign(`/trabajador/${encodeURIComponent(selectedWorkerId)}`);
+      } catch { /* Wait for signed webhook confirmation. */ }
+    };
+    void check();
+    const poll = window.setInterval(() => { void check(); }, 4000);
+    const stop = window.setTimeout(() => { window.clearInterval(poll); setDirectTimedOut(true); }, 60_000);
+    return () => { stopped = true; window.clearInterval(poll); window.clearTimeout(stop); };
+  }, [directReturn, selectedWorkerId, token]);
   async function act(body: Record<string, unknown>, message: string) {
     setBusy(true); setError(""); setNotice("");
     try { await api(token, body); await load(); setNotice(message); return true; }
@@ -63,6 +82,7 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
       const result = await api(token, { action: "prepare_contact", workerId, requestId: requestId || null });
       if (typeof result.url !== "string" || !isValidWhatsAppUrl(result.url)) throw new Error("No se pudo preparar WhatsApp.");
       await load();
+      trackEvent("contact_click");
       window.location.assign(result.url);
     } catch (e) { setError(e instanceof Error ? e.message : "No se pudo abrir WhatsApp."); }
     finally { setBusy(false); }
@@ -89,7 +109,9 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
         <button type="button" className="btn-secondary" onClick={() => void load()}>Actualizar estado</button>
       </div>
       {returned && <p role="status" className="workspace-feedback">Esperando confirmación del pago por Stripe. El regreso desde Checkout no activa el acceso.</p>}
-      {canceled && <p role="status" className="workspace-feedback">Volviste del pago. Tu pase solo se activa cuando Stripe confirme el cobro.</p>}
+      {directReturn && <p role="status" className="workspace-feedback">{directTimedOut ? "La confirmación del contacto sigue pendiente. Revisa el perfil más tarde; no vuelvas a pagar mientras Stripe procesa el cobro." : "Esperando la confirmación firmada del contacto directo. El regreso desde Stripe no activa el acceso."}</p>}
+      {directCanceled && workerToSave && <p role="status" className="workspace-feedback">El contacto directo no se activó. <Link href={`/empleadores/contacto?worker=${encodeURIComponent(workerToSave)}`}>Volver a RD$89</Link></p>}
+      {canceled && !directCanceled && <p role="status" className="workspace-feedback">Volviste del pago. Tu pase solo se activa cuando Stripe confirme el cobro.</p>}
       {error && <p role="alert" className="workspace-feedback workspace-feedback--error">{error}</p>}
     </div>
   </section>;
@@ -148,9 +170,9 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
   </section>;
 }
 
-export function EmployerWorkspace({ selectedWorkerId, returned, canceled, featuredReturn = false, featuredCanceled = false, featuredOpportunityId = null, opportunitiesEnabled = false, expressAvailable = false }: { selectedWorkerId: string | null; returned: boolean; canceled: boolean; featuredReturn?: boolean; featuredCanceled?: boolean; featuredOpportunityId?: string | null; opportunitiesEnabled?: boolean; expressAvailable?: boolean }) {
+export function EmployerWorkspace({ selectedWorkerId, returned, directReturn = false, canceled, directCanceled = false, featuredReturn = false, featuredCanceled = false, featuredOpportunityId = null, opportunitiesEnabled = false, expressAvailable = false }: { selectedWorkerId: string | null; returned: boolean; directReturn?: boolean; canceled: boolean; directCanceled?: boolean; featuredReturn?: boolean; featuredCanceled?: boolean; featuredOpportunityId?: string | null; opportunitiesEnabled?: boolean; expressAvailable?: boolean }) {
   return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar y usar tu espacio privado de empleador. La exploración es gratis; el contacto requiere el pase.">
-    {token => <><WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} canceled={canceled} />
+    {token => <><WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} directReturn={directReturn} canceled={canceled} directCanceled={directCanceled} />
       {opportunitiesEnabled && <EmployerOpportunities token={token} featuredReturn={featuredReturn} featuredCanceled={featuredCanceled} featuredOpportunityId={featuredOpportunityId} expressAvailable={expressAvailable} />}</>}
   </MarketplaceSession>;
 }

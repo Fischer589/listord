@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   if (!uuid(b?.id) || !uuid(b.workerId)) return NextResponse.json({ error: "Selecciona un trabajador válido." }, { status: 400, headers });
   try {
     let actor: string;
-    try { actor = (await requireWorkspaceContact(request)).ownerId; }
+    try { actor = (await requireWorkspaceContact(request, b.workerId)).ownerId; }
     catch (error) { return contactAccessResponse(error, headers); }
     const admin = marketplaceAdmin();
     const listing = await admin.from("marketplace_opportunities").select("id")

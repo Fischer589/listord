@@ -6,6 +6,7 @@ import type { StripeEmbeddedCheckout } from "@stripe/stripe-js";
 import { bindWorkspaceCheckoutReturn, clearWorkspaceCheckoutReturn, prepareWorkspaceCheckoutReturn } from "@/lib/marketplace-browser";
 import { MarketplaceSession } from "./marketplace-session";
 import { rememberSelectedWorker, selectedWorker } from "@/lib/free-contact";
+import { trackEvent } from "@/lib/analytics";
 
 type Phase = "loading" | "active" | "unavailable" | "embedded" | "fallback" | "verifying" | "confirmed";
 type CheckoutResult = { mode?: string; sessionId?: string; clientSecret?: string; url?: string; error?: string };
@@ -66,6 +67,7 @@ function WorkspaceCheckout({ token, publishableKey, workerId }: { token: string;
         if (disposed) return;
         const id = checkoutSessionId(result);
         if (!bindWorkspaceCheckoutReturn(id)) throw new Error("No pudimos conservar tu sesión para volver del pago.");
+        trackEvent("checkout_start", { plan: "workspace", stage: "initiated" });
         if (result.mode === "hosted" && result.url?.startsWith("https://checkout.stripe.com/")) {
           window.location.assign(result.url);
           return;
@@ -126,6 +128,7 @@ function WorkspaceCheckout({ token, publishableKey, workerId }: { token: string;
       const id = checkoutSessionId(result);
       if (result.mode !== "hosted" || !result.url?.startsWith("https://checkout.stripe.com/") ||
           !bindWorkspaceCheckoutReturn(id)) throw new Error("No se confirmó la página de pago.");
+      trackEvent("checkout_start", { plan: "workspace", stage: "initiated" });
       window.location.assign(result.url);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No pudimos abrir el pago seguro.");

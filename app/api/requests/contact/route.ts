@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const id = body?.workerId;
   const reply = (error: string, status: number) => NextResponse.json({ error }, { status, headers: MATCH_HEADERS });
   if (!draft || typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return reply("Revisa tu solicitud y el perfil elegido.", 400);
-  try { await requireWorkspaceContact(request); }
+  try { await requireWorkspaceContact(request, id); }
   catch (error) { return contactAccessResponse(error, MATCH_HEADERS); }
   try {
     const client = getSupabaseAdminClient();

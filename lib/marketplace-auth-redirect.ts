@@ -1,9 +1,10 @@
-export type MarketplaceAuthIntent = "publish" | "apply" | "account";
+export type MarketplaceAuthIntent = "publish" | "apply" | "account" | "direct";
 
 const destinations: Record<MarketplaceAuthIntent, string> = {
   publish: "/solicitar",
   apply: "/oportunidades",
   account: "/empleadores/mi-cuenta",
+  direct: "/empleadores/contacto",
 };
 
 export function marketplaceAuthDestination(intent: string) {
