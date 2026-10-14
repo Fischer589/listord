@@ -80,8 +80,12 @@ export async function POST(request: Request) {
   const body = input as Record<string, unknown>;
   const accessToken = body.access_token;
   const refreshToken = body.refresh_token;
+  // Supabase Auth also issues 12-character legacy refresh tokens. Their format
+  // is validated here; the access token and account are verified with Auth below.
+  const refreshTokenFormatValid = typeof refreshToken === "string" &&
+    (/^[a-z0-9]{12}$/.test(refreshToken) || /^[A-Za-z0-9._-]{20,1024}$/.test(refreshToken));
   if (typeof accessToken !== "string" || !/^[A-Za-z0-9._-]{20,4096}$/.test(accessToken) ||
-      typeof refreshToken !== "string" || !/^[A-Za-z0-9._-]{20,1024}$/.test(refreshToken)) {
+      !refreshTokenFormatValid) {
     return NextResponse.json({ error: "Sesión inválida." }, { status: 400, headers });
   }
   const auth = getSupabaseClient(8000);

@@ -17,6 +17,7 @@ export function DirectContactSession({ workerId }: { workerId: string | null }) 
 function DirectContactCheckout({ token, workerId }: { token: string; workerId: string | null }) {
   const [error, setError] = useState("");
   const [active, setActive] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const selectedId = workerId || selectedWorker();
   useEffect(() => {
     let disposed = false;
@@ -48,13 +49,14 @@ function DirectContactCheckout({ token, workerId }: { token: string; workerId: s
     }
     void start();
     return () => { disposed = true; };
-  }, [token, selectedId]);
+  }, [token, selectedId, attempt]);
   return <div className="payment-flow">
     <p className="workspace-eyebrow">Pago seguro · Stripe</p>
     <h2>Contacto directo · RD$89</h2>
     <p className="payment-flow__line">Un pago · Un trabajador · Sin renovación automática</p>
     {active ? <p role="status" className="payment-flow__success">Ya puedes contactar a esta persona. <Link href={`/trabajador/${encodeURIComponent(selectedId!)}`}>Volver al perfil</Link></p> :
       <p role="status" className="payment-flow__status">{error || "Verificando acceso y preparando el pago seguro..."}</p>}
-    {error && <Link className="btn-secondary" href={selectedId ? `/trabajador/${encodeURIComponent(selectedId)}` : "/"}>Seguir explorando</Link>}
+    {error && <><button type="button" className="btn-primary" onClick={() => { setError(""); setAttempt(value => value + 1); }}>Reintentar con esta sesión</button>
+      <Link className="btn-secondary" href={selectedId ? `/trabajador/${encodeURIComponent(selectedId)}` : "/"}>Seguir explorando</Link></>}
   </div>;
 }

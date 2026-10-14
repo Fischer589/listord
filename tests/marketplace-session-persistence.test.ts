@@ -7,7 +7,7 @@ import { prepareDirectContactReturn, restoreMarketplaceSession } from "../lib/ma
 
 const actor = "11111111-1111-4111-8111-111111111111";
 const access = "fixture_access_token_verified_123456789";
-const refresh = "fixture_refresh_token_verified_123456789";
+const refresh = "abc123def456"; // Supabase Auth's 12-character refresh-token format.
 const endpoint = "https://listord.example/api/marketplace-session";
 
 test("verified employer session survives a new tab, expires, and logout removes the HttpOnly cookie", async () => {
@@ -30,6 +30,9 @@ test("verified employer session survives a new tab, expires, and logout removes 
   try {
     const saved = await POST(posted);
     assert.equal(saved.status, 204);
+    const malformedRefresh = await POST(new Request(endpoint, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: access, refresh_token: "ABC123DEF456", expires_at: Math.floor(now / 1000) + 3600 }) }));
+    assert.equal(malformedRefresh.status, 400);
     const setCookie = saved.headers.get("set-cookie")!;
     assert.match(setCookie, /__Host-listord-marketplace-session=/);
     assert.match(setCookie, /HttpOnly/i);
