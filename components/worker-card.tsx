@@ -201,7 +201,7 @@ export function WorkerCard({ worker, requestDraft = null }: { worker: Worker; re
         {contactError && (
           <p className="wc-error">{contactError}</p>
         )}
-        {paywall && <ContactPaywall workerId={worker.id} onClose={() => setPaywall(false)} />}
+        {paywall && <ContactPaywall workerId={worker.id} occupation={skills[0]} city={worker.city} onClose={() => setPaywall(false)} />}
 
 
       </div>

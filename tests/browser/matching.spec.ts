@@ -38,7 +38,9 @@ test("free matching shows the RD$299 gate on contact and editing resets matches"
   await expect(page.getByRole("button", { name: "ENCONTRAR PERSONAL AHORA" })).toBeDisabled();
   await expect(page.getByText(/No han confirmado interés/)).toBeVisible();
   await page.getByRole("button", { name: "Contactar trabajador" }).first().click();
-  await expect(page.getByRole("dialog", { name: "Desbloquea el contacto con trabajadores" })).toBeVisible();
+  const paywall = page.getByRole("dialog", { name: "¿Encontraste a la persona indicada?" });
+  await expect(paywall).toBeVisible();
+  await expect(paywall.getByText("Perfil seleccionado: Puerto Plata")).toBeVisible();
   await expect(page.getByRole("link", { name: "Desbloquear contactos — RD$299" })).toHaveAttribute("href", `/empleadores/pago?worker=${fixture.workers[0].id}`);
   expect(contacts).toBe(0); expect(searches).toBe(1);
   await page.getByRole("button", { name: "Seguir explorando" }).click();

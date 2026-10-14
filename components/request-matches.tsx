@@ -90,6 +90,6 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
       </>}
     </div>
     {contactError && <p role="alert">{contactError}</p>}
-    {paywallWorker && <ContactPaywall workerId={paywallWorker} onClose={() => setPaywallWorker(null)} />}
+    {paywallWorker && <ContactPaywall workerId={paywallWorker} city={result?.workers.find(worker => worker.id === paywallWorker)?.city} onClose={() => setPaywallWorker(null)} />}
   </section>;
 }

@@ -1475,9 +1475,11 @@ h1, h2 {
   .worker-cta-inner { padding: 1.75rem; }
 }
 .contact-paywall-backdrop { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; padding: 1rem; background: #102a1dcc; }
-.contact-paywall { width: min(100%, 480px); padding: 2rem; border-radius: 18px; background: #fffdf5; box-shadow: 0 24px 60px #0004; color: #1a3d2b; }
-.contact-paywall h2 { font-size: 1.5rem; font-weight: 800; }
-.contact-paywall p { margin: 1rem 0; }
-.contact-paywall__price { font-size: 1.4rem; font-weight: 800; }
-.contact-paywall__actions { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
-.contact-paywall__actions a, .contact-paywall__actions button { min-height: 44px; }
+.contact-paywall { width: min(100%, 480px); max-height: calc(100dvh - 2rem); overflow-y: auto; padding: clamp(1.25rem, 4vw, 2rem); border-radius: 18px; background: #fffdf5; box-shadow: 0 24px 60px #0004; color: #1a3d2b; }
+.contact-paywall h2 { font-size: clamp(1.4rem, 5vw, 1.75rem); line-height: 1.2; font-weight: 800; }
+.contact-paywall p { margin: .8rem 0; }
+.contact-paywall .contact-paywall__selection { color: #17613c; font-size: .85rem; font-weight: 800; }
+.contact-paywall .contact-paywall__price { margin-bottom: .25rem; font-size: 1.5rem; font-weight: 800; }
+.contact-paywall .contact-paywall__terms { margin-top: 0; font-size: .9rem; }
+.contact-paywall__actions { display: grid; gap: .65rem; margin-top: 1.25rem; }
+.contact-paywall__actions a, .contact-paywall__actions button { min-height: 48px; display: flex; align-items: center; justify-content: center; text-align: center; }

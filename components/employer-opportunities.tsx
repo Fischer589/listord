@@ -101,6 +101,7 @@ export function EmployerOpportunities({ token, expressAvailable = false, feature
       window.location.assign(data.url);
     } catch (error) { setNotice(error instanceof Error ? error.message : "No se pudo iniciar el pago."); setBusy(false); }
   }
+  const selectedApplicant = applicants.find(applicant => applicant.worker_id === paywallWorker);
   return <><section className="workspace-panel employer-opportunities" aria-labelledby="employer-opportunities-title">
     <div className="workspace-panel__head"><div><p className="workspace-eyebrow">Marketplace gratuito</p><h2 id="employer-opportunities-title">Mis oportunidades</h2></div><span className="workspace-count">{owned.length}</span></div>
     <p className="workspace-panel__intro">Publicar y revisar respuestas es gratis. Tus solicitudes privadas y notas del espacio de empleador nunca se publican automáticamente.</p>
@@ -134,5 +135,5 @@ export function EmployerOpportunities({ token, expressAvailable = false, feature
       </article>;
     })}</div>
     {notice && <p role="status" className="workspace-feedback">{notice}</p>}
-  </section>{expressAvailable && <div className="workspace-panel"><ExpressOrders token={token} opportunities={owned} /></div>}{paywallWorker && <ContactPaywall workerId={paywallWorker} onClose={() => setPaywallWorker(null)} />}</>;
+  </section>{expressAvailable && <div className="workspace-panel"><ExpressOrders token={token} opportunities={owned} /></div>}{paywallWorker && <ContactPaywall workerId={paywallWorker} occupation={selectedApplicant?.skills?.[0]} city={selectedApplicant?.city} onClose={() => setPaywallWorker(null)} />}</>;
 }

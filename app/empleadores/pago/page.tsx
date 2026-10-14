@@ -15,15 +15,15 @@ export default async function EmployerPaymentPage({ searchParams }: { searchPara
     <div className="payment-page__top"><Link href="/empleadores/mi-cuenta">← Volver a mi cuenta</Link><span>A BLACKTHORNE BRAND</span></div>
     <header className="payment-page__header">
       <p className="workspace-eyebrow">BLACKTHORNE INDUSTRIES · ListoRD</p>
-      <h1>Tu espacio, listo para organizar</h1>
-      <p>Confirma el Pase de Empleador y mantén candidatos, solicitudes privadas e intentos de contacto en un solo lugar.</p>
+      <h1>¿Encontraste a la persona indicada?</h1>
+      <p>Desbloquea el contacto directo con los trabajadores que te interesan y encuentra a quien necesitas.</p>
     </header>
     <div className="payment-page__grid">
       <aside className="payment-page__summary" aria-label="Resumen del pase">
         <p className="workspace-eyebrow">Pase de Empleador</p>
-        <h2>30 días de orden para contratar</h2>
-        <p className="payment-page__price">RD$299</p>
-        <p className="payment-page__terms">30 días · Pago único · Sin renovación automática</p>
+        <h2>Conecta con los trabajadores que te interesan</h2>
+        <p className="payment-page__price">RD$299 <span>/ 30 días</span></p>
+        <p className="payment-page__terms">Un solo pago. Acceso a contactos durante 30 días. Sin renovación automática.</p>
         <ul><li>Candidatos guardados</li><li>Solicitudes privadas organizadas</li><li>Registro de intentos de contacto</li></ul>
         <p className="payment-page__free">Explorar trabajadores es gratis. El pase desbloquea el contacto durante 30 días. La disponibilidad y respuesta se confirman con cada persona.</p>
       </aside>

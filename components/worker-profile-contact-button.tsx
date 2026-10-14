@@ -5,7 +5,7 @@ import { openFreeWorkerContact } from "@/lib/free-contact";
 import { ContactPaywall } from "@/components/contact-paywall";
 import type { RequestDraft } from "@/lib/request-specification";
 
-export function WorkerProfileContactButton({ workerId, workerName, primarySkill }: { workerId: string; workerName: string; primarySkill: string }) {
+export function WorkerProfileContactButton({ workerId, workerName, primarySkill, city }: { workerId: string; workerName: string; primarySkill: string; city?: string | null }) {
   const [contactError, setContactError] = useState("");
   const [loading, setLoading] = useState(false);
   const [paywall, setPaywall] = useState(false);
@@ -43,7 +43,7 @@ export function WorkerProfileContactButton({ workerId, workerName, primarySkill 
           {contactError}
         </p>
       )}
-      {paywall && <ContactPaywall workerId={workerId} onClose={() => setPaywall(false)} />}
+      {paywall && <ContactPaywall workerId={workerId} occupation={primarySkill === "Perfil de trabajador" ? null : primarySkill} city={city} onClose={() => setPaywall(false)} />}
 
     </div>
   );
