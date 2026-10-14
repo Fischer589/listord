@@ -48,6 +48,29 @@ export async function clearPersistedMarketplaceSession() {
   } catch { return false; }
 }
 
+/** Checkout can return in a new tab after external navigation. Confirm that the
+ * existing HttpOnly session cookie is actually usable before leaving the site. */
+export async function prepareDirectContactReturn(browserClient = getMarketplaceBrowserClient()) {
+  if (!browserClient) return false;
+  const { data, error } = await browserClient.auth.getSession();
+  if (error || !data.session) return false;
+  try {
+    const check = async () => {
+      const response = await fetch("/api/marketplace-session", {
+      credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) return false;
+      const saved = await response.json() as { access_token?: string };
+      if (!saved.access_token) return false;
+      const verified = await browserClient.auth.getUser(saved.access_token);
+      return !verified.error && verified.data.user?.id === data.session!.user.id;
+    };
+    if (await check()) return true;
+    if (!await persistMarketplaceSession(data.session)) return false;
+    return await check();
+  } catch { return false; }
+}
+
 function readCheckoutBridge() {
   const value = document.cookie.split("; ").find(part => part.startsWith(`${checkoutBridgeCookie}=`))?.slice(checkoutBridgeCookie.length + 1);
   if (!value) return null;

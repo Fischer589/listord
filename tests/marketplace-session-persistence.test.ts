@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GET, POST, DELETE } from "../app/api/marketplace-session/route";
-import { restoreMarketplaceSession } from "../lib/marketplace-browser";
+import { prepareDirectContactReturn, restoreMarketplaceSession } from "../lib/marketplace-browser";
 
 const actor = "11111111-1111-4111-8111-111111111111";
 const access = "fixture_access_token_verified_123456789";
@@ -68,4 +68,49 @@ test("verified employer session survives a new tab, expires, and logout removes 
     globalThis.fetch = fetchBefore;
     names.forEach((name, i) => { if (old[i] === undefined) delete process.env[name]; else process.env[name] = old[i]; });
   }
+});
+
+test("direct checkout uses the existing same-account HttpOnly session and needs no temporary browser storage", async () => {
+  const fetchBefore = globalThis.fetch;
+  let reads = 0;
+  let writes = 0;
+  const browser = { auth: {
+    getSession: async () => ({ error: null, data: { session: { access_token: access, refresh_token: refresh, user: { id: actor } } } }),
+    getUser: async (token: string) => ({ error: null, data: { user: { id: token === access ? actor : "other-account" } } }),
+  } } as unknown as SupabaseClient;
+  try {
+    globalThis.fetch = async (input, init) => {
+      assert.equal(String(input), "/api/marketplace-session");
+      if (init?.method === "POST") { writes++; return new Response(null, { status: 204 }); }
+      reads++;
+      return Response.json({ access_token: access, refresh_token: refresh });
+    };
+    assert.equal(await prepareDirectContactReturn(browser), true);
+    assert.equal(reads, 1);
+    assert.equal(writes, 0);
+  } finally { globalThis.fetch = fetchBefore; }
+});
+
+test("direct checkout restores a missing cookie and rejects a mismatched or unavailable session", async () => {
+  const fetchBefore = globalThis.fetch;
+  let hasCookie = false;
+  let saved = 0;
+  const browser = { auth: {
+    getSession: async () => ({ error: null, data: { session: { access_token: access, refresh_token: refresh, expires_at: 1_800_000_000, user: { id: actor } } } }),
+    getUser: async (token: string) => ({ error: null, data: { user: { id: token === access ? actor : "other-account" } } }),
+  } } as unknown as SupabaseClient;
+  try {
+    globalThis.fetch = async (_input, init) => {
+      if (init?.method === "POST") { saved++; hasCookie = true; return new Response(null, { status: 204 }); }
+      return hasCookie ? Response.json({ access_token: access }) : Response.json({}, { status: 401 });
+    };
+    assert.equal(await prepareDirectContactReturn(browser), true);
+    assert.equal(saved, 1);
+    hasCookie = false;
+    globalThis.fetch = async (_input, init) => init?.method === "POST"
+      ? new Response(null, { status: 204 }) : Response.json({ access_token: "wrong-account-token" });
+    assert.equal(await prepareDirectContactReturn(browser), false);
+    globalThis.fetch = async () => Response.json({}, { status: 401 });
+    assert.equal(await prepareDirectContactReturn(browser), false);
+  } finally { globalThis.fetch = fetchBefore; }
 });

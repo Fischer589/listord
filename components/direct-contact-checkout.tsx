@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MarketplaceSession } from "./marketplace-session";
-import { bindWorkspaceCheckoutReturn, prepareWorkspaceCheckoutReturn } from "@/lib/marketplace-browser";
+import { prepareDirectContactReturn } from "@/lib/marketplace-browser";
 import { rememberSelectedWorker, selectedWorker } from "@/lib/free-contact";
 import { trackEvent } from "@/lib/analytics";
 
@@ -30,7 +30,7 @@ function DirectContactCheckout({ token, workerId }: { token: string; workerId: s
         const access = await status.json() as { active?: boolean };
         if (disposed) return;
         if (access.active) { setActive(true); return; }
-        if (!await prepareWorkspaceCheckoutReturn()) throw new Error("Tu navegador no pudo conservar la sesión para volver del pago.");
+        if (!await prepareDirectContactReturn()) throw new Error("No pudimos conservar tu sesión para volver del pago. Intenta de nuevo.");
         const response = await fetch("/api/stripe/direct-contact-checkout", { method: "POST", cache: "no-store",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           body: JSON.stringify({ workerId: selectedId }), signal: AbortSignal.timeout(20000) });
@@ -39,7 +39,7 @@ function DirectContactCheckout({ token, workerId }: { token: string; workerId: s
         if (disposed) return;
         if (result.alreadyActive) { setActive(true); return; }
         if (!/^cs_(?:test|live)_[A-Za-z0-9_]+$/.test(result.sessionId ?? "") ||
-            !result.url?.startsWith("https://checkout.stripe.com/") || !bindWorkspaceCheckoutReturn(result.sessionId!)) {
+            !result.url?.startsWith("https://checkout.stripe.com/")) {
           throw new Error("No se confirmó la página de pago.");
         }
         trackEvent("checkout_start", { plan: "direct", stage: "initiated" });

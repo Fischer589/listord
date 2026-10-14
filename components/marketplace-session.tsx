@@ -52,7 +52,8 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
         const intent: MarketplaceAuthIntent = emailRedirectPath === "/solicitar" ? "publish" : emailRedirectPath === "/oportunidades" ? "apply" : emailRedirectPath === "/empleadores/contacto" ? "direct" : "account";
         const { error } = await client.auth.signInWithOtp({
           email: email.trim(),
-          options: { emailRedirectTo: marketplaceAuthCallbackUrl(intent, window.location.origin) },
+          options: { emailRedirectTo: marketplaceAuthCallbackUrl(intent, window.location.origin,
+            intent === "direct" ? new URLSearchParams(window.location.search).get("worker") : null) },
         });
         if (error) throw error;
         setSent(true); setNotice("Revisa tu correo para obtener el código. No lo compartas.");

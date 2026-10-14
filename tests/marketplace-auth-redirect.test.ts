@@ -16,6 +16,12 @@ test("all ListoRD email intents use fixed local callback paths and never generat
   assert.equal(marketplaceAuthCallbackUrl("publish", "https://defenderdesk-web.vercel.app"), "https://listordapp.com/auth/callback/publish");
   assert.equal(marketplaceAuthCallbackUrl("apply", "javascript:alert(1)"), "https://listordapp.com/auth/callback/apply");
   assert.equal(marketplaceAuthDestination("https://evil.example"), null);
+  const worker = "11111111-1111-4111-8111-111111111111";
+  assert.equal(marketplaceAuthCallbackUrl("direct", "https://listordapp.com", worker),
+    `https://listordapp.com/auth/callback/direct?worker=${worker}`);
+  assert.equal(marketplaceAuthDestination("direct", worker), `/empleadores/contacto?worker=${worker}`);
+  assert.equal(marketplaceAuthDestination("direct", "https://evil.example"), "/empleadores/contacto");
+  assert.equal(marketplaceAuthCallbackUrl("account", "https://listordapp.com", worker), "https://listordapp.com/auth/callback/account");
 });
 
 test("pending opportunity draft is tab-scoped, validated, time-limited and consumed once", () => {
