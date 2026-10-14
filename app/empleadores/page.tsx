@@ -38,8 +38,8 @@ export default function EmployersPage() {
               Consigue trabajadores más rápido
             </h1>
             <p className="mt-4 max-w-xl leading-7 text-ink/70">
-              Describe el servicio que necesitas, revisa perfiles compatibles y
-              contacta gratis por WhatsApp. Confirma directamente la disponibilidad
+              Describe el servicio que necesitas y revisa perfiles compatibles gratis.
+              El pase de RD$299 desbloquea el contacto por 30 días. Confirma directamente la disponibilidad
               y los requisitos con cada persona.
             </p>
 
@@ -52,7 +52,7 @@ export default function EmployersPage() {
               <HowStep number={2} text="Revisa perfiles publicados tras revisión" />
               <HowStep
                 number={3}
-                text="Contacta directo por WhatsApp — gratis"
+                text="Desbloquea el contacto por RD$299 / 30 días"
               />
             </div>
           </div>
@@ -68,7 +68,7 @@ export default function EmployersPage() {
           <section className="mt-10 rounded-2xl border border-hoja/30 bg-white p-6 shadow-soft" aria-labelledby="employer-pass-title">
             <p className="text-sm font-black uppercase tracking-wide text-hoja">Pase de Empleador</p>
             <h2 id="employer-pass-title" className="mt-2 text-2xl font-black text-ink">Organiza tu búsqueda durante 30 días</h2>
-            <p className="mt-3 max-w-2xl leading-7 text-ink/70">Guarda candidatos, ordena solicitudes privadas y registra intentos de contacto. Explorar perfiles, publicar oportunidades y contactar por WhatsApp sigue siendo gratis.</p>
+            <p className="mt-3 max-w-2xl leading-7 text-ink/70">Guarda candidatos, ordena solicitudes privadas y contacta trabajadores durante 30 días. Explorar perfiles y publicar oportunidades sigue siendo gratis.</p>
             <p className="mt-3 font-black text-ink">RD$299 · pago único · sin renovación automática</p>
             <Link href="/empleadores/mi-cuenta" className="tap-target mt-5 inline-flex items-center justify-center rounded-xl bg-hoja px-6 py-3 font-black text-white">Ver el pase y mi cuenta →</Link>
           </section>
@@ -78,13 +78,13 @@ export default function EmployersPage() {
         <section className="mt-10 grid gap-4 sm:grid-cols-3">
           <TrustCard
             icon="🚫"
-            title="No bloqueamos el empleo"
-            text="Puedes descubrir perfiles y abrir el contacto sin pagar."
+            title="Exploración gratuita"
+            text="Puedes descubrir perfiles y revisar coincidencias sin pagar."
           />
           <TrustCard
             icon="🎁"
-            title="Contacto gratuito"
-            text="Habla directamente y acuerda las condiciones con cada trabajador."
+            title="Contacto con pase"
+            text="Un pase de RD$299 te permite contactar trabajadores durante 30 días."
           />
           <TrustCard
             icon="✅"

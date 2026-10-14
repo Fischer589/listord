@@ -2,16 +2,18 @@
 import { useEffect, useState } from "react";
 import { takeProfileRequest } from "@/lib/contact-context";
 import { openFreeWorkerContact } from "@/lib/free-contact";
+import { ContactPaywall } from "@/components/contact-paywall";
 import type { RequestDraft } from "@/lib/request-specification";
 
 export function WorkerProfileContactButton({ workerId, workerName, primarySkill }: { workerId: string; workerName: string; primarySkill: string }) {
   const [contactError, setContactError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [paywall, setPaywall] = useState(false);
   const [requestDraft, setRequestDraft] = useState<RequestDraft | null>(null);
   useEffect(() => { setRequestDraft(takeProfileRequest(workerId)); }, [workerId]);
   async function handleContact() {
     setLoading(true); setContactError("");
-    try { await openFreeWorkerContact(workerId, workerName, primarySkill, requestDraft); }
+    try { if (await openFreeWorkerContact(workerId, workerName, primarySkill, requestDraft) === "paywall") setPaywall(true); }
     catch { setContactError("No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo."); }
     finally { setLoading(false); }
   }
@@ -21,7 +23,7 @@ export function WorkerProfileContactButton({ workerId, workerName, primarySkill 
         Contactar
       </p>
       <p className="mt-2 text-sm font-bold text-ink/65">
-        El contacto es gratis. Habla directo por WhatsApp.
+        Explora perfiles gratis. El contacto se desbloquea con el pase de empleador.
       </p>
 
       <button
@@ -31,7 +33,7 @@ export function WorkerProfileContactButton({ workerId, workerName, primarySkill 
         className="tap-target mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1f7a4c] px-4 py-4 text-lg font-black text-white shadow-[0_16px_34px_rgba(31,122,76,0.2)] hover:bg-[#17613c] disabled:opacity-70"
       >
         <WhatsAppIcon />
-        {loading ? "Conectando..." : "Contactar por WhatsApp"}
+        {loading ? "Verificando acceso..." : "Contactar trabajador"}
       </button>
       <p className="mt-2 text-center text-xs font-bold text-ink/50">
         Mensaje directo — sin intermediarios
@@ -41,6 +43,7 @@ export function WorkerProfileContactButton({ workerId, workerName, primarySkill 
           {contactError}
         </p>
       )}
+      {paywall && <ContactPaywall workerId={workerId} onClose={() => setPaywall(false)} />}
 
     </div>
   );

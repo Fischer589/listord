@@ -4,7 +4,6 @@ import { sanitizeAnalytics } from "../lib/analytics-policy";
 import { readJsonBody } from "../lib/http-json";
 import { submitHiringOutcome } from "../app/resultados/actions";
 import { upsertEmployerSession } from "../lib/employer-sessions";
-import { emptyRequest } from "../lib/request-specification";
 
 const url = "https://listord.example/api/analytics/events";
 const request = (body: string, headers = {}) => new Request(url, {
@@ -130,49 +129,23 @@ test("default-off legacy gates reject sales and exposed edit capabilities withou
   }
 });
 
-test("directory contact is a bounded read-only approved-worker handoff, independent of payments", async () => {
+test("directory contact cannot disclose a phone to an anonymous caller", async () => {
   const oldFetch = globalThis.fetch;
   const oldUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const oldKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://contact-fixture.example";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "fixture-only";
   let calls = 0;
-  let missing = false;
-  globalThis.fetch = async (input, init) => {
-    calls++;
-    const target = new URL(String(input));
-    assert.equal(target.origin, "https://contact-fixture.example");
-    assert.equal(target.pathname, "/rest/v1/workers");
-    assert.equal(init?.method, "GET");
-    assert.equal(target.searchParams.get("is_verified"), "eq.true");
-    return new Response(JSON.stringify(missing ? [] : [{ full_name: "Fixture Worker", whatsapp_number: "+18095550100" }]), { headers: { "content-type": "application/json" } });
-  };
+  globalThis.fetch = async () => { calls++; throw new Error("anonymous contact reached the database"); };
   try {
     const { POST } = await import("../app/api/workers/contact/route");
     assert.equal((await POST(request('{"workerId":{}}'))).status, 400);
     assert.equal(calls, 0);
     const response = await POST(request('{"workerId":"22222222-2222-4222-8222-222222222222"}'));
-    assert.equal(response.status, 200);
+    assert.equal(response.status, 401);
     assert.equal(response.headers.get("cache-control"), "private, no-store");
-    const result = await response.json();
-    assert.equal(new URL(result.url).origin, "https://wa.me");
-    assert.match(new URL(result.url).searchParams.get("text")!, /Fixture Worker/);
-    assert.match(new URL(result.url).searchParams.get("text")!, /22222222-2222-4222-8222-222222222222/);
-    assert.equal(result.reason, "free_contact");
-    const draft = { ...emptyRequest(), category: "limpieza", city: "Puerto Plata", answers: {
-      property: "Casa", tasks: "Pisos y baños", supplies: "Los pongo yo"
-    }, timing: "15 de octubre, 9:00 a. m.", duration: "4 horas", amount: "1500", exclusions: "Cocinar" };
-    const contextual = await POST(request(JSON.stringify({ workerId: "22222222-2222-4222-8222-222222222222", draft })));
-    assert.equal(contextual.status, 200);
-    const message = new URL((await contextual.json()).url).searchParams.get("text")!;
-    for (const detail of ["Fixture Worker", "LIMPIEZA", "Puerto Plata", "Pisos y baños", "15 de octubre, 9:00 a. m.", "4 horas", "RD$1,500", "No incluye: Cocinar"]) {
-      assert.ok(message.includes(detail), detail);
-    }
-    assert.match(message, /confirmar tu disponibilidad/);
-    assert.doesNotMatch(message, /disponibilidad confirmada|aceptaste|garantiz/i);
-    assert.equal((await POST(request(JSON.stringify({ workerId: "22222222-2222-4222-8222-222222222222", draft: { ...draft, answers: { ...draft.answers, private: "no" } } })))).status, 400);
-    assert.equal(calls, 2);
-    missing = true; assert.equal((await POST(request('{"workerId":"22222222-2222-4222-8222-222222222222"}'))).status, 404);
+    assert.doesNotMatch(await response.text(), /18095550100|wa\.me/);
+    assert.equal(calls, 0);
   } finally {
     globalThis.fetch = oldFetch;
     if (oldUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = oldUrl;

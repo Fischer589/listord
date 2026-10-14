@@ -13,6 +13,8 @@ test("marketplace HTTP verifies Auth identity, binds RPC actor, protects contact
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
     if (url.pathname === "/auth/v1/user") return Response.json({ id: actor, email_confirmed_at: confirmed ? "2026-01-01T00:00:00Z" : null });
+    if (url.pathname.endsWith("/employer_workspace_orders")) return Response.json([{ id: "paid-fixture" }]);
+    if (url.pathname.endsWith("/marketplace_opportunities")) return Response.json({ id });
     if (url.pathname.endsWith("/marketplace_opportunity_owners")) return Response.json(owns ? { opportunity_id: id } : null);
     calls++;
     assert.equal(init?.method, "POST");

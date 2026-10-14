@@ -19,7 +19,7 @@ function getStripeErrorMessage(error: unknown) {
 }
 
 export async function POST(request: Request) {
-  if (!employerDepositEnabled()) return NextResponse.json({ error: "Los depósitos están temporalmente deshabilitados. El contacto con trabajadores es gratis." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  if (!employerDepositEnabled()) return NextResponse.json({ error: "Los depósitos están temporalmente deshabilitados." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
   const supabase = getSupabaseAdminClient();
 

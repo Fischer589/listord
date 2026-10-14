@@ -31,11 +31,16 @@ test("moderation cards, filters, confirmations and feedback work on desktop and 
   const base = { category: "limpieza", city: "Santiago", scope: "Limpieza de cocina y baños.", specification: { answers: { property: "Casa", tasks: "Cocina y baños" }, requirements: "Traer guantes" }, timing_note: "Sábado por la mañana", duration_note: "4 horas", compensation_kind: "budget", compensation_min: 1500, compensation_max: null, compensation_unit: "task", created_at: now, expires_at: "2026-11-13T12:00:00Z", starts_at: null, duration_minutes: null };
   const rows = [{ ...base, id: first, status: "draft", moderation_status: "pending" }, { ...base, id: second, status: "draft", moderation_status: "pending" }];
   let fail = true;
-  const posts: { id: string; approve: boolean; privacyReviewed?: boolean }[] = [];
+  const posts: { id: string; approve?: boolean; privacyReviewed?: boolean; action?: string; confirmId?: string }[] = [];
   await page.route("**/api/admin/marketplace", route => {
     if (route.request().method() === "GET") return route.fulfill({ json: { opportunities: rows, counts: { pending: rows.filter(r => r.moderation_status === "pending").length, approved: rows.filter(r => r.moderation_status === "approved").length, rejected: rows.filter(r => r.moderation_status === "rejected").length }, reports: [] } });
     const body = route.request().postDataJSON();
     posts.push(body);
+    if (body.action === "delete") {
+      expect(body.confirmId).toBe(body.id);
+      rows.splice(rows.findIndex(row => row.id === body.id), 1);
+      return route.fulfill({ json: { saved: true } });
+    }
     if (fail) { fail = false; return route.fulfill({ status: 409, json: { error: "No se confirmó la revisión. Recarga antes de reintentar." } }); }
     const row = rows.find(r => r.id === body.id)!;
     row.moderation_status = body.approve ? "approved" : "rejected";
@@ -76,6 +81,14 @@ test("moderation cards, filters, confirmations and feedback work on desktop and 
   await expect(page.locator(".moderation-card")).toHaveCount(1);
   await page.getByRole("button", { name: /Rechazadas 1/ }).click();
   await expect(page.locator(".moderation-card")).toHaveCount(1);
+  await page.locator(".moderation-card").getByRole("button", { name: `Eliminar oportunidad ${second}` }).click();
+  await expect(page.getByRole("dialog")).toContainText(second);
+  await page.getByRole("button", { name: "Cancelar" }).click();
+  await expect(page.locator(".moderation-card")).toHaveCount(1);
+  await page.locator(".moderation-card").getByRole("button", { name: `Eliminar oportunidad ${second}` }).click();
+  await page.getByRole("button", { name: "Sí, eliminar" }).click();
+  await expect(page.locator(".moderation-card")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Rechazadas 0/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Verificación de cuentas" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Reportes" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

@@ -1,6 +1,7 @@
 import { isFreshAvailability } from "./availability";
 import { CATEGORIES } from "./categories";
 import { normalizeText } from "./search";
+import { publicWorkerText } from "./public-worker";
 import { emptyRequest, REQUEST_SCHEMAS, validateRequest, type RequestDraft } from "./request-specification";
 
 export const MATCH_WINDOW_DAYS = 30;
@@ -71,9 +72,9 @@ export function matchWorker(row: MatchRow, draft: RequestDraft, now: Date, fresh
   // Exact skill phrases found in the scope are evidence, not an inference that
   // every requested task/qualification is supported. They never alter eligibility.
   const scope = ` ${normalizeText(Object.values(draft.answers).join(" "))} `;
-  const scopeEvidence = row.skills.filter(skill => normalizeText(skill).length >= 4 && scope.includes(` ${normalizeText(skill)} `));
+  const scopeEvidence = row.skills.filter(skill => publicWorkerText(skill) && normalizeText(skill).length >= 4 && scope.includes(` ${normalizeText(skill)} `));
   return {
-    id: row.id, name: row.full_name.trim(), city: row.city,
+    id: row.id, name: publicWorkerText(row.full_name) || "Trabajador ListoRD", city: publicWorkerText(row.city) || "República Dominicana",
     reasons: ["Oficio en su perfil", "Misma ciudad", "Disponibilidad declarada", ...(comparable ? ["Monto compatible en la misma unidad"] : [])],
     scopeEvidence: scopeEvidence.slice(0, 3),
   };

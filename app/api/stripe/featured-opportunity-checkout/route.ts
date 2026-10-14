@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     .eq("id", orderId).eq("owner_user_id", ownerId).eq("opportunity_id", opportunityId).maybeSingle();
   if (orderError || !order || order.status !== "pending") return reply("Pago no disponible.", 503);
   const { data: opportunity, error: opportunityError } = await db.from("marketplace_opportunities")
-    .select("expires_at,status,moderation_status").eq("id", opportunityId).maybeSingle();
+    .select("expires_at,status,moderation_status").eq("id", opportunityId).is("deleted_at", null).maybeSingle();
   if (opportunityError || !opportunity) return reply("Pago no disponible.", 503);
   if (opportunity.status !== "open" || opportunity.moderation_status !== "approved") return reply("La oportunidad ya no está publicada.", 409);
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!.trim());

@@ -9,6 +9,8 @@ import { isValidWhatsAppUrl } from "@/lib/whatsapp";
 import { featuredSessionExpiresAt } from "@/lib/marketplace-featured";
 import { marketplaceRequest } from "./marketplace-session";
 import { ExpressOrders } from "./express-orders";
+import { ContactPaywall } from "./contact-paywall";
+import { rememberSelectedWorker } from "@/lib/free-contact";
 
 type Opportunity = { id: string; category: string; city: string; specification: RequestDraft; status: string; moderation_status: string; expires_at: string };
 type Applicant = { opportunity_id: string; worker_id: string; full_name: string; city: string | null; skills: string[] | null; created_at: string };
@@ -30,6 +32,7 @@ export function EmployerOpportunities({ token, expressAvailable = false, feature
   const [featuredReturnTimedOut, setFeaturedReturnTimedOut] = useState(false);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [paywallWorker, setPaywallWorker] = useState<string | null>(null);
   const load = useCallback(async () => {
     const data = await marketplaceRequest(token);
     setOwned((data.owned as Owned[]).map(row => row.marketplace_opportunities));
@@ -75,13 +78,20 @@ export function EmployerOpportunities({ token, expressAvailable = false, feature
     }
   }
   async function contact(o: Opportunity, applicant: Applicant) {
+    rememberSelectedWorker(applicant.worker_id);
     setBusy(true); setNotice("");
     try {
-      const data = await marketplaceRequest(token, { id: o.id, workerId: applicant.worker_id }, "/api/marketplace/contacts");
+      const response = await fetch("/api/marketplace/contacts", { method: "POST", cache: "no-store",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ id: o.id, workerId: applicant.worker_id }), signal: AbortSignal.timeout(12000) });
+      if (response.status === 401 || response.status === 402) { setPaywallWorker(applicant.worker_id); return; }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "No se confirmó el contacto autorizado.");
       const result = data.contacts?.find((candidate: { workerId: string }) => candidate.workerId === applicant.worker_id);
       if (!result?.url || !isValidWhatsAppUrl(result.url)) throw new Error("No se confirmó el contacto autorizado.");
       window.location.assign(result.url);
-    } catch (error) { setNotice(error instanceof Error ? error.message : "No se pudo preparar el contacto."); setBusy(false); }
+    } catch (error) { setNotice(error instanceof Error ? error.message : "No se pudo preparar el contacto."); }
+    finally { setBusy(false); }
   }
   async function purchaseFeatured(o: Opportunity) {
     setBusy(true); setNotice("");
@@ -124,5 +134,5 @@ export function EmployerOpportunities({ token, expressAvailable = false, feature
       </article>;
     })}</div>
     {notice && <p role="status" className="workspace-feedback">{notice}</p>}
-  </section>{expressAvailable && <div className="workspace-panel"><ExpressOrders token={token} opportunities={owned} /></div>}</>;
+  </section>{expressAvailable && <div className="workspace-panel"><ExpressOrders token={token} opportunities={owned} /></div>}{paywallWorker && <ContactPaywall workerId={paywallWorker} onClose={() => setPaywallWorker(null)} />}</>;
 }

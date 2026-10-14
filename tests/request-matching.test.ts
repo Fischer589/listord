@@ -55,7 +55,7 @@ test("server parser rejects arbitrary JSON, incomplete answers and injected fiel
   }
 });
 
-test("HTTP handlers validate, use real Supabase query adapter, protect privacy and recheck free handoff", async () => {
+test("HTTP handlers keep matching free but reject anonymous contact before worker lookup", async () => {
   // Controlled transport fixture: executes production handlers/SDK, never production.
   const originalFetch = globalThis.fetch;
   const before = { ...process.env };
@@ -96,21 +96,15 @@ test("HTTP handlers validate, use real Supabase query adapter, protect privacy a
     assert.doesNotMatch(JSON.stringify(body), /18095550100|whatsapp|edit_token/);
     assert.equal(selected, MATCH_COLUMNS);
     const handoff = await contact(request({ draft, workerId: row.id }));
-    assert.equal(handoff.status, 200);
-    const url = new URL((await handoff.json()).url);
-    assert.equal(url.hostname, "wa.me"); assert.match(url.searchParams.get("text")!, /Pisos y baños/);
-    assert.ok(url.searchParams.get("text")!.includes(row.id));
-    assert.ok(url.searchParams.get("text")!.includes(row.full_name!));
-    process.env.WORKER_AVAILABILITY_RENEWAL_ENABLED = "true";
-    assert.equal((await contact(request({ draft, workerId: row.id }))).status, 409, "an unowned legacy profile cannot be a confirmed match");
-    process.env.WORKER_AVAILABILITY_RENEWAL_ENABLED = "false";
-    mode = "inactive"; assert.equal((await contact(request({ draft, workerId: row.id }))).status, 409);
+    assert.equal(handoff.status, 401);
+    assert.doesNotMatch(await handoff.text(), /18095550100|wa\.me/);
+    assert.equal(selected, MATCH_COLUMNS);
     mode = "empty"; assert.equal((await (await matches(request(draft))).json()).count, 0);
     for (mode of ["partial", "error"]) {
       const failed = await matches(request(draft)); assert.equal(failed.status, 503);
       assert.doesNotMatch(await failed.text(), /SECRET|count|workers/);
     }
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
     assert.equal((await matches(request(draft))).status, 503);
   } finally {
     globalThis.fetch = originalFetch;

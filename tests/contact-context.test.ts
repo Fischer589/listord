@@ -48,31 +48,27 @@ test("request context stays in the browser tab, follows only its intended destin
   }
 });
 
-test("direct browsing keeps its generic message while a request keeps the server-verified worker message", async () => {
+test("an anonymous contact attempt preserves the selected worker without requesting a phone", async () => {
   const oldWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
   const oldStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   const oldFetch = globalThis.fetch;
-  const payloads: unknown[] = [];
+  const entries = new Map<string, string>();
   const opened: string[] = [];
   Object.defineProperty(globalThis, "window", { configurable: true, value: { location: { assign: (url: string) => { opened.push(url); } } } });
-  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: () => "fixture-session" } });
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: (key: string) => entries.get(key) ?? null, setItem: (key: string, value: string) => { entries.set(key, value); } } });
   globalThis.fetch = async (input, init) => {
     if (String(input) === "/api/analytics/events") return Response.json({ ok: true });
-    assert.equal(String(input), "/api/workers/contact");
-    payloads.push(JSON.parse(String(init?.body)));
-    return Response.json({ url: "https://wa.me/18095550100?text=Hola%20Fixture%20Worker%2C%20mensaje%20verificado" });
+    assert.fail(`Anonymous contact reached ${String(input)} ${String(init?.method)}`);
   };
   try {
     const id = "22222222-2222-4222-8222-222222222222";
-    await openFreeWorkerContact(id, "Fixture Worker", "limpieza");
-    assert.deepEqual(payloads[0], { workerId: id });
-    assert.equal(new URL(opened[0]).searchParams.get("text"), "Hola Fixture, te encontré en ListoRD. Necesito un(a) limpieza. ¿Podemos confirmar tareas, horario y pago?");
+    assert.equal(await openFreeWorkerContact(id, "Fixture Worker", "limpieza"), "paywall");
+    assert.equal((JSON.parse(entries.get("listord-selected-worker-v1")!) as {id: string}).id, id);
     const draft = { ...emptyRequest(), category: "limpieza", city: "Puerto Plata", answers: {
       property: "Casa", tasks: "Pisos y baños", supplies: "Los pongo yo"
     }, timing: "15 de octubre", duration: "4 horas", amount: "1500" };
-    await openFreeWorkerContact(id, "Fixture Worker", "limpieza", draft);
-    assert.deepEqual(payloads[1], { workerId: id, draft });
-    assert.equal(new URL(opened[1]).searchParams.get("text"), "Hola Fixture Worker, mensaje verificado");
+    assert.equal(await openFreeWorkerContact(id, "Fixture Worker", "limpieza", draft), "paywall");
+    assert.equal(opened.length, 0);
   } finally {
     globalThis.fetch = oldFetch;
     if (oldWindow) Object.defineProperty(globalThis, "window", oldWindow);

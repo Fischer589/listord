@@ -1,7 +1,53 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type BrowserContext } from "@playwright/test";
 
 const workerId = "22222222-2222-4222-8222-222222222222";
 const requestId = "33333333-3333-4333-8333-333333333333";
+
+test("verified employer session restores in a new tab and browser context, then logout clears it", async ({ page, context, browser }) => {
+  const access = [Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url"),
+    Buffer.from(JSON.stringify({ sub: "11111111-1111-4111-8111-111111111111", role: "authenticated", exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url"),
+    "fixture_signature_not_live"].join(".");
+  const refresh = "fixture_persistent_refresh_not_live_123456789";
+  const user = { id: "11111111-1111-4111-8111-111111111111", aud: "authenticated", email: "employer@example.test", email_confirmed_at: "2026-01-01T00:00:00Z" };
+  const mock = async (target: BrowserContext) => {
+    await target.route("**/auth/v1/**", route => route.fulfill({ headers: { "Access-Control-Allow-Origin": "*" }, json: route.request().url().includes("/verify")
+      ? { access_token: access, refresh_token: refresh, expires_in: 3600, token_type: "bearer", user } : { user } }));
+    await target.route("**/api/employer-workspace", route => route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } }));
+    await target.route("**/api/marketplace?mine=true", route => route.fulfill({ json: { owned: [], workers: [], decisions: [], applicants: [], featured: [] } }));
+    await target.route("**/api/marketplace-session", route => {
+      const method = route.request().method();
+      const cookie = route.request().headers().cookie ?? "";
+      if (method === "GET") return route.fulfill(cookie.includes("listord-marketplace-session-dev=fixture")
+        ? { json: { access_token: access, refresh_token: refresh } } : { status: 401, json: { error: "Sin sesión" } });
+      if (method === "POST") return route.fulfill({ status: 204, body: "", headers: { "Set-Cookie": "listord-marketplace-session-dev=fixture; Path=/; HttpOnly; SameSite=Lax" } });
+      return route.fulfill({ status: 204, body: "", headers: { "Set-Cookie": "listord-marketplace-session-dev=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax" } });
+    });
+  };
+  await mock(context);
+  await page.goto("/empleadores/mi-cuenta");
+  await page.getByLabel("Correo electrónico").fill("employer@example.test");
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  await page.getByLabel("Código de verificación").fill("123456");
+  await page.getByRole("button", { name: "Verificar código" }).click();
+  await expect(page.getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
+  await expect.poll(async () => (await context.cookies()).some(cookie => cookie.name === "listord-marketplace-session-dev" && cookie.httpOnly)).toBe(true);
+  const newTab = await context.newPage();
+  await newTab.goto("/empleadores/mi-cuenta");
+  await expect(newTab.getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
+  await expect(newTab.getByRole("button", { name: "Enviar código" })).toHaveCount(0);
+  const restarted = await browser.newContext({ storageState: await context.storageState() });
+  try {
+    await mock(restarted);
+    const fresh = await restarted.newPage();
+    await fresh.goto("/empleadores/mi-cuenta");
+    await expect(fresh.getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
+    await fresh.getByRole("button", { name: "Cerrar sesión" }).click();
+    await expect(fresh.getByRole("button", { name: "Enviar código" })).toBeVisible();
+    const afterLogout = await restarted.newPage();
+    await afterLogout.goto("/empleadores/mi-cuenta");
+    await expect(afterLogout.getByRole("button", { name: "Enviar código" })).toBeVisible();
+  } finally { await restarted.close(); }
+});
 
 test("public employer page explains the optional paid pass and keeps free access clear", async ({ page }) => {
   await page.goto("/empleadores");
@@ -134,7 +180,7 @@ test("Checkout return in a new tab resumes auth once; payment and expiry still c
   const returned = await context.newPage();
   await returned.goto("https://checkout.stripe.com/test/cs_fixture");
   await returned.getByRole("link", { name: "Return" }).click();
-  await expect(returned.getByText("Sesión verificada en esta pestaña.")).toBeVisible();
+  await expect(returned.getByText("Sesión verificada.")).toBeVisible();
   await expect(returned.getByText("Esperando confirmación del pago por Stripe.", { exact: false })).toBeVisible();
   await expect(returned.getByRole("button", { name: "Guardar solicitud" })).toHaveCount(0);
   expect(await returned.evaluate(() => document.cookie.includes("listord_workspace_checkout_bridge_v1="))).toBe(false);

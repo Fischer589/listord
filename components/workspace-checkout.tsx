@@ -5,14 +5,15 @@ import { loadStripe } from "@stripe/stripe-js/pure";
 import type { StripeEmbeddedCheckout } from "@stripe/stripe-js";
 import { bindWorkspaceCheckoutReturn, clearWorkspaceCheckoutReturn, prepareWorkspaceCheckoutReturn } from "@/lib/marketplace-browser";
 import { MarketplaceSession } from "./marketplace-session";
+import { rememberSelectedWorker, selectedWorker } from "@/lib/free-contact";
 
 type Phase = "loading" | "active" | "unavailable" | "embedded" | "fallback" | "verifying" | "confirmed";
 type CheckoutResult = { mode?: string; sessionId?: string; clientSecret?: string; url?: string; error?: string };
 
-async function createCheckout(token: string, mode: "embedded" | "hosted", replaceEmbedded = false): Promise<CheckoutResult> {
+async function createCheckout(token: string, mode: "embedded" | "hosted", replaceEmbedded = false, workerId: string | null = null): Promise<CheckoutResult> {
   const response = await fetch("/api/stripe/workspace-checkout", { method: "POST", cache: "no-store",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ mode, replaceEmbedded }), signal: AbortSignal.timeout(20000) });
+    body: JSON.stringify({ mode, replaceEmbedded, ...(workerId ? { workerId } : {}) }), signal: AbortSignal.timeout(20000) });
   const result = await response.json() as CheckoutResult;
   if (!response.ok) throw new Error(result.error || "No pudimos preparar el pago. Intenta más tarde.");
   return result;
@@ -23,18 +24,19 @@ function checkoutSessionId(result: CheckoutResult) {
   return result.sessionId;
 }
 
-export function EmployerPaymentSession({ publishableKey }: { publishableKey: string }) {
-  return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar el pase. La exploración y el contacto directo siguen siendo gratis.">
-    {token => <WorkspaceCheckout token={token} publishableKey={publishableKey} />}
+export function EmployerPaymentSession({ publishableKey, workerId }: { publishableKey: string; workerId: string | null }) {
+  return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar el pase de contacto. La exploración sigue siendo gratis." beforeSendEmail={() => { if (workerId) rememberSelectedWorker(workerId); }}>
+    {token => <WorkspaceCheckout token={token} publishableKey={publishableKey} workerId={workerId} />}
   </MarketplaceSession>;
 }
 
-function WorkspaceCheckout({ token, publishableKey }: { token: string; publishableKey: string }) {
+function WorkspaceCheckout({ token, publishableKey, workerId }: { token: string; publishableKey: string; workerId: string | null }) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [busy, setBusy] = useState(false);
   const mount = useRef<HTMLDivElement>(null);
+  const returnWorkerId = workerId || selectedWorker();
 
   useEffect(() => {
     let disposed = false;
@@ -60,7 +62,7 @@ function WorkspaceCheckout({ token, publishableKey }: { token: string; publishab
         const stripe = await loadStripe(publishableKey);
         if (!stripe || disposed) throw new Error("No se pudo cargar el formulario seguro.");
         if (!await prepareWorkspaceCheckoutReturn()) throw new Error("Tu navegador no pudo conservar la sesión para volver del pago.");
-        const result = await createCheckout(token, "embedded");
+        const result = await createCheckout(token, "embedded", false, returnWorkerId);
         if (disposed) return;
         const id = checkoutSessionId(result);
         if (!bindWorkspaceCheckoutReturn(id)) throw new Error("No pudimos conservar tu sesión para volver del pago.");
@@ -88,7 +90,7 @@ function WorkspaceCheckout({ token, publishableKey }: { token: string; publishab
     }
     void start();
     return () => { disposed = true; checkout?.destroy(); };
-  }, [token, publishableKey]);
+  }, [token, publishableKey, returnWorkerId]);
 
   useEffect(() => {
     if (phase !== "verifying") return;
@@ -112,15 +114,15 @@ function WorkspaceCheckout({ token, publishableKey }: { token: string; publishab
 
   useEffect(() => {
     if (phase !== "confirmed") return;
-    const timeout = window.setTimeout(() => window.location.assign("/empleadores/mi-cuenta"), 1800);
+    const timeout = window.setTimeout(() => window.location.assign(returnWorkerId ? `/trabajador/${encodeURIComponent(returnWorkerId)}` : "/empleadores/mi-cuenta"), 1800);
     return () => window.clearTimeout(timeout);
-  }, [phase]);
+  }, [phase, returnWorkerId]);
 
   async function hostedFallback() {
     setBusy(true); setError("");
     try {
       if (!await prepareWorkspaceCheckoutReturn()) throw new Error("Tu navegador no pudo conservar la sesión para volver del pago.");
-      const result = await createCheckout(token, "hosted", true);
+      const result = await createCheckout(token, "hosted", true, returnWorkerId);
       const id = checkoutSessionId(result);
       if (result.mode !== "hosted" || !result.url?.startsWith("https://checkout.stripe.com/") ||
           !bindWorkspaceCheckoutReturn(id)) throw new Error("No se confirmó la página de pago.");

@@ -1,11 +1,52 @@
 "use client";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
 import { getPublicEnv } from "./env";
 
 let client: SupabaseClient | null = null;
 const sessionKey = "listord-marketplace-session-v1";
 const checkoutBridgeCookie = "listord_workspace_checkout_bridge_v1";
 const checkoutBridgeLifetimeMs = 50 * 60_000;
+
+/** Keep the durable copy in an encrypted HttpOnly cookie, never localStorage. */
+export async function persistMarketplaceSession(session: Session) {
+  try {
+    const response = await fetch("/api/marketplace-session", {
+      method: "POST", credentials: "same-origin", cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: session.access_token, refresh_token: session.refresh_token, expires_at: session.expires_at }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return response.ok;
+  } catch { return false; }
+}
+
+export async function restoreMarketplaceSession(browserClient: SupabaseClient) {
+  try {
+    const current = await browserClient.auth.getSession();
+    if (current.data.session) {
+      void persistMarketplaceSession(current.data.session);
+      return current.data.session;
+    }
+    const response = await fetch("/api/marketplace-session", {
+      credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) return null;
+    const credentials = await response.json() as { access_token?: string; refresh_token?: string };
+    if (!credentials.access_token || !credentials.refresh_token) return null;
+    const restored = await browserClient.auth.setSession({ access_token: credentials.access_token, refresh_token: credentials.refresh_token });
+    return restored.error ? null : restored.data.session;
+  } catch { return null; }
+}
+
+export async function clearPersistedMarketplaceSession() {
+  try {
+    const response = await fetch("/api/marketplace-session", {
+      method: "DELETE", credentials: "same-origin", cache: "no-store",
+      headers: { "Content-Type": "application/json" }, body: "{}", signal: AbortSignal.timeout(8000),
+    });
+    return response.ok;
+  } catch { return false; }
+}
 
 function readCheckoutBridge() {
   const value = document.cookie.split("; ").find(part => part.startsWith(`${checkoutBridgeCookie}=`))?.slice(checkoutBridgeCookie.length + 1);

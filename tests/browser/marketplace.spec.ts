@@ -54,7 +54,7 @@ test("featured opportunity is visibly labeled and ordinary worker interest stays
 
 test("only approved active employer listings show the one-time featured purchase control", async ({ page }) => {
   await page.route("**/api/employer-workspace", route => route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } }));
-  await page.route("**/api/marketplace**", route => route.fulfill({ json: {
+  await page.route(/\/api\/marketplace(?:\?.*)?$/, route => route.fulfill({ json: {
     owned: [
       { opportunity_id: id, marketplace_opportunities: opportunity },
       { opportunity_id: workerId, marketplace_opportunities: { ...opportunity, id: workerId, status: "draft", moderation_status: "pending" } }
@@ -67,7 +67,7 @@ test("only approved active employer listings show the one-time featured purchase
 test("a listing too close to expiry cannot offer an incomplete featured term", async ({ page }) => {
   const expiresSoon = new Date(Date.now() + 7 * 86400_000 + 31 * 60_000).toISOString();
   await page.route("**/api/employer-workspace", route => route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } }));
-  await page.route("**/api/marketplace**", route => route.fulfill({ json: {
+  await page.route(/\/api\/marketplace(?:\?.*)?$/, route => route.fulfill({ json: {
     owned: [{ opportunity_id: id, marketplace_opportunities: { ...opportunity, expires_at: expiresSoon } }],
     workers: [], decisions: [], applicants: [], featured: [], featuredCheckoutAvailable: true
   } }));
@@ -79,7 +79,7 @@ test("a listing too close to expiry cannot offer an incomplete featured term", a
 test("featured return waits for server confirmation and then shows the paid placement", async ({ page }) => {
   let paid = false;
   await page.route("**/api/employer-workspace", route => route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } }));
-  await page.route("**/api/marketplace**", route => route.fulfill({ json: {
+  await page.route(/\/api\/marketplace(?:\?.*)?$/, route => route.fulfill({ json: {
     owned: [{ opportunity_id: id, marketplace_opportunities: opportunity }],
     workers: [], decisions: [], applicants: [], featuredCheckoutAvailable: true,
     featured: [{ opportunity_id: id, status: paid ? "paid" : "pending", featured_until: paid ? "2099-10-20T12:00:00Z" : null }]
@@ -95,7 +95,7 @@ test("featured return waits for server confirmation and then shows the paid plac
 
 test("verified worker responds, withdraws, and controls Express consent without paying", async ({ page }) => {
   let decision = "";
-  await page.route("**/api/marketplace**", route => {
+  await page.route(/\/api\/marketplace(?:\?.*)?$/, route => {
     const request = route.request();
     if (request.method() === "POST") { decision = request.postDataJSON().decision; return route.fulfill({ json: { saved: true } }); }
     if (request.url().includes("mine=true")) return route.fulfill({ json: { owned: [], workers: [{ id: workerId, full_name: "Perfil fixture" }], decisions: decision ? [{ opportunity_id: id, worker_id: workerId, decision }] : [], applicants: [] } });
@@ -118,7 +118,7 @@ test("verified worker responds, withdraws, and controls Express consent without 
 });
 
 test("worker invitation accepts only a profile owned by the authenticated account", async ({ page }) => {
-  await page.route("**/api/marketplace**", route => route.fulfill({ json: route.request().url().includes("mine=true")
+  await page.route(/\/api\/marketplace(?:\?.*)?$/, route => route.fulfill({ json: route.request().url().includes("mine=true")
     ? { owned: [], workers: [{ id: workerId, full_name: "Perfil fixture" }], decisions: [], applicants: [] }
     : { opportunities: [opportunity] } }));
   await page.goto(`/oportunidades?id=${id}&worker=${workerId}`); await login(page);
@@ -130,7 +130,7 @@ test("worker invitation accepts only a profile owned by the authenticated accoun
 test("unpaid employer sees interested workers and can close a listing without workspace access", async ({ page }) => {
   let status = "open";
   await page.route("**/api/employer-workspace", route => route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } }));
-  await page.route("**/api/marketplace**", route => {
+  await page.route(/\/api\/marketplace(?:\?.*)?$/, route => {
     const request = route.request();
     if (request.method() === "POST") { status = request.postDataJSON().status; return route.fulfill({ json: { saved: true } }); }
     return route.fulfill({ json: { owned: [{ opportunity_id: id, marketplace_opportunities: { ...opportunity, status } }], workers: [], decisions: [],
@@ -149,7 +149,7 @@ test("unpaid employer sees interested workers and can close a listing without wo
 test("editing closes the old listing and opens a private structured copy for renewed consent", async ({ page }) => {
   await page.route("**/api/employer-workspace", route => route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } }));
   let closed = false; const actions: string[] = [];
-  await page.route("**/api/marketplace**", route => {
+  await page.route(/\/api\/marketplace(?:\?.*)?$/, route => {
     const request = route.request();
     if (request.method() === "POST") { const body = request.postDataJSON(); actions.push(body.action); closed = body.status === "closed"; return route.fulfill({ json: { saved: true } }); }
     return route.fulfill({ json: { owned: [{ opportunity_id: id, marketplace_opportunities: opportunity }], workers: [], decisions: [], applicants: [] } });

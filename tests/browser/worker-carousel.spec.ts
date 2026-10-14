@@ -66,3 +66,16 @@ test("profile arrows are visible, keyboard operable, bounded, and keep mobile sw
   await expect(next).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test("anonymous directory contact opens the RD$299 gate and carries the selected worker", async ({ page }) => {
+  await page.goto("/");
+  const firstCard = page.locator(".wc").first();
+  await firstCard.getByRole("button", { name: "Contactar trabajador" }).click();
+  await expect(page.getByRole("dialog", { name: "Desbloquea el contacto con trabajadores" })).toBeVisible();
+  await expect(page.getByText("RD$299 / 30 días")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Desbloquear contactos — RD$299" })).toHaveAttribute("href", "/empleadores/pago?worker=00000000-0000-4000-8000-000000000001");
+  await page.getByRole("link", { name: "Desbloquear contactos — RD$299" }).click();
+  await expect(page).toHaveURL(/\/empleadores\/pago\?worker=00000000-0000-4000-8000-000000000001$/);
+  await expect(page.getByRole("heading", { name: "Verifica tu correo" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

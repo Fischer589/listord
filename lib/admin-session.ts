@@ -31,7 +31,9 @@ export async function isAdminSession(value: string | undefined, secret: string |
   if (expires <= now || expires > now + ADMIN_SESSION_SECONDS + 60) return false;
   try {
     const payload = new TextEncoder().encode(parts.slice(0, 3).join('.'));
-    return await crypto.subtle.verify('HMAC', await signingKey(secret), decode(parts[3]), payload);
+    const signature = decode(parts[3]);
+    if (base64url(signature) !== parts[3]) return false;
+    return await crypto.subtle.verify('HMAC', await signingKey(secret), signature, payload);
   } catch {
     return false;
   }

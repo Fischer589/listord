@@ -19,7 +19,10 @@ export async function recordWorkspacePayment(event: Stripe.Event) {
     .select("id,owner_user_id,status,amount,currency,stripe_session_id,stripe_payment_intent_id")
     .eq("id", orderId).eq("owner_user_id", ownerId).eq("stripe_session_id", session.id).maybeSingle();
   if (error || !order || order.amount !== WORKSPACE_AMOUNT_CENTS || order.currency !== WORKSPACE_CURRENCY) return retry();
-  if (order.status === "paid") return NextResponse.json({ received: true, already_processed: true }, { headers });
+  if (event.type !== "checkout.session.expired" && event.type !== "checkout.session.async_payment_failed" &&
+      (session.amount_total !== WORKSPACE_AMOUNT_CENTS || session.currency?.toLowerCase() !== WORKSPACE_CURRENCY)) return retry();
+  if (order.status === "paid") return order.stripe_payment_intent_id === paymentIntent
+    ? NextResponse.json({ received: true, already_processed: true }, { headers }) : retry();
   if (order.status === "refunded") return NextResponse.json({ received: true }, { headers });
 
   if (event.type === "checkout.session.expired" || event.type === "checkout.session.async_payment_failed") {
@@ -28,7 +31,7 @@ export async function recordWorkspacePayment(event: Stripe.Event) {
     return failureError ? retry() : NextResponse.json({ received: true }, { headers });
   }
   if (session.payment_status !== "paid") return NextResponse.json({ received: true }, { headers });
-  if (session.amount_total !== WORKSPACE_AMOUNT_CENTS || session.currency?.toLowerCase() !== WORKSPACE_CURRENCY || !paymentIntent) return retry();
+  if (!paymentIntent) return retry();
   if (!Number.isSafeInteger(event.created) || event.created <= 0) return retry();
   const paidAt = new Date(event.created * 1000);
   const { data: updated, error: updateError } = await db.from("employer_workspace_orders")

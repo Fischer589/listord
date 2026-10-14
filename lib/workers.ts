@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { getSupabaseClient } from "./supabase";
+import { getSupabaseAdminClient } from "./supabase-admin";
+import { publicWorkerFields } from "./public-worker";
 import { workerMatchesCity, workerMatchesSkill } from "./search";
 import type { Worker } from "./types";
 
@@ -122,7 +123,7 @@ export async function getWorkersResult(
 ): Promise<WorkersResult> {
   noStore();
 
-  const supabase = getSupabaseClient(8000);
+  const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
     return {
@@ -153,7 +154,7 @@ export async function getWorkersResult(
 
     const rows = (data ?? []) as HomepageWorkerRow[];
     const allWorkers = rows.map((worker) => ({
-      ...worker,
+      ...publicWorkerFields(worker),
       // Legacy paid badges are absent from discovery; financial rows are retained.
       is_featured: false as const,
       is_pro: false as const,

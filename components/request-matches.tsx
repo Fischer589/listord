@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { trackEvent } from "@/lib/analytics";
 import { storeProfileRequest } from "@/lib/contact-context";
+import { getMarketplaceBrowserClient } from "@/lib/marketplace-browser";
+import { rememberSelectedWorker } from "@/lib/free-contact";
+import { ContactPaywall } from "@/components/contact-paywall";
 import type { MatchResult } from "@/lib/request-matching";
 import type { RequestDraft } from "@/lib/request-specification";
 
@@ -13,6 +16,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
   const [error, setError] = useState("");
   const [contacting, setContacting] = useState<string | null>(null);
   const [contactError, setContactError] = useState("");
+  const [paywallWorker, setPaywallWorker] = useState<string | null>(null);
   const [visible, setVisible] = useState(20);
   const enteredAt = useRef(Date.now());
   const controller = useRef<AbortController | null>(null);
@@ -36,14 +40,19 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
     } finally { if (!abort.signal.aborted) setLoading(false); }
   }
   async function contact(id: string) {
+    rememberSelectedWorker(id);
     const abort = new AbortController();
     controller.current = abort;
     setContacting(id); setContactError("");
     try {
+      const client = getMarketplaceBrowserClient();
+      const token = (await client?.auth.getSession())?.data.session?.access_token;
+      if (!token) { setPaywallWorker(id); return; }
       const response = await fetch("/api/requests/contact", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", cache: "no-store", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ draft, workerId: id }), signal: abort.signal,
       });
+      if (response.status === 401 || response.status === 402) { setPaywallWorker(id); return; }
       const body = await response.json();
       if (!response.ok) { setContactError(body.error || "No pudimos preparar el contacto."); return; }
       const url = new URL(body.url);
@@ -54,7 +63,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
   }
   return <section className="request-matches" aria-label="Trabajadores compatibles">
     <h2>Encuentra a quién contactar.</h2>
-    <p>Buscar y contactar desde estos resultados es gratis.</p>
+    <p>Buscar y revisar perfiles es gratis. El contacto requiere el pase de empleador.</p>
     <button className="btn-primary" disabled={loading || contacting !== null} onClick={search}>{loading ? "Verificando perfiles…" : result ? "Actualizar resultados" : "Buscar trabajadores compatibles"}</button>
     <div aria-live="polite" aria-busy={loading}>
       {error && <p role="alert">{error}</p>}
@@ -67,7 +76,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
           <h3>{worker.name}</h3><p>{worker.city}</p>
           <p>{worker.reasons.join(" · ")}</p>
           {worker.scopeEvidence.length > 0 && <p>Habilidades que aparecen en tu alcance: {worker.scopeEvidence.join(", ")}</p>}
-          <div className="request-actions"><Link className="btn-secondary" href={`/trabajador/${worker.id}`} onClick={() => storeProfileRequest(draft, worker.id)}>Ver perfil</Link><Link className="btn-secondary" href={`/empleadores/mi-cuenta?worker=${encodeURIComponent(worker.id)}`}>Guardar en mi espacio</Link><button className="btn-primary" disabled={contacting !== null} onClick={() => contact(worker.id)}>{contacting === worker.id ? "Preparando contacto…" : "Contactar gratis por WhatsApp"}</button></div>
+          <div className="request-actions"><Link className="btn-secondary" href={`/trabajador/${worker.id}`} onClick={() => storeProfileRequest(draft, worker.id)}>Ver perfil</Link><Link className="btn-secondary" href={`/empleadores/mi-cuenta?worker=${encodeURIComponent(worker.id)}`}>Guardar en mi espacio</Link><button className="btn-primary" disabled={contacting !== null} onClick={() => contact(worker.id)}>{contacting === worker.id ? "Verificando acceso…" : "Contactar trabajador"}</button></div>
         </li>)}</ul>}
         {result.count > visible && <button className="btn-secondary" onClick={() => setVisible(previous => previous + 20)}>Ver más perfiles</button>}
         <div className="request-express">
@@ -81,5 +90,6 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
       </>}
     </div>
     {contactError && <p role="alert">{contactError}</p>}
+    {paywallWorker && <ContactPaywall workerId={paywallWorker} onClose={() => setPaywallWorker(null)} />}
   </section>;
 }

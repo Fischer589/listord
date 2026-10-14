@@ -22,8 +22,14 @@ test("workspace migration is additive, leaves worker data intact, and keeps priv
       insert into public.workers values('${worker}', 'Preserved Worker', true);`);
     const migration = await readFile(new URL("../supabase/migrations/202610111900_employer_workspace.sql", import.meta.url), "utf8");
     await db.exec(migration);
+    await db.exec(await readFile(new URL("../supabase/migrations/202610131500_workspace_exact_period.sql", import.meta.url), "utf8"));
     assert.deepEqual((await db.query<{full_name:string}>("select full_name from public.workers")).rows, [{ full_name: "Preserved Worker" }]);
     await db.query("insert into public.employer_workspace_orders(owner_user_id) values($1)", [owner]);
+    await db.exec("set time zone 'America/New_York'");
+    await assert.rejects(db.query(`update public.employer_workspace_orders set status='paid', paid_at='2026-10-14T00:00:00Z',
+      access_until='2026-11-14T00:00:00Z' where owner_user_id=$1`, [owner]), /employer_workspace_exact_30d/);
+    await db.query(`update public.employer_workspace_orders set status='paid', paid_at='2026-10-14T00:00:00Z',
+      access_until='2026-11-13T00:00:00Z' where owner_user_id=$1`, [owner]);
     await db.query("insert into public.employer_workspace_candidates(owner_user_id,worker_id) values($1,$2)", [owner, worker]);
     await db.exec("set role authenticated");
     await assert.rejects(db.query("select * from public.employer_workspace_orders"), /permission denied/);

@@ -1,7 +1,6 @@
 import { availabilityRenewalEnabled } from "./availability";
 import { getSupabaseAdminClient } from "./supabase-admin";
 import type { MatchRow } from "./request-matching";
-import { getSupabaseClient } from "./supabase";
 import { findMatches, MATCH_COLUMNS, MATCH_LIMIT, MATCH_WINDOW_DAYS } from "./request-matching";
 import type { RequestDraft } from "./request-specification";
 
@@ -21,7 +20,7 @@ export async function getRequestMatches(draft: RequestDraft) {
       return { error, count, data: data?.map(row => ({ ...(row.workers as unknown as MatchRow), availability_confirmed_at: row.confirmed_at })) ?? null };
     }, now, "confirmed");
   }
-  const client = getSupabaseClient();
+  const client = getSupabaseAdminClient();
   if (!client) throw new Error("MATCH_DATA_UNAVAILABLE");
   return findMatches(draft, () => client.from("workers")
     .select(MATCH_COLUMNS, { count: "exact" })

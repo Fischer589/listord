@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { MarketplaceSession } from "./marketplace-session";
 import { isValidWhatsAppUrl } from "@/lib/whatsapp";
 import { EmployerOpportunities } from "./employer-opportunities";
+import { selectedWorker } from "@/lib/free-contact";
 
 type Candidate = { id: string; full_name: string; city: string | null; skills: string[] | null; savedAt: string };
 type StaffingRequest = { id: string; title: string; details: string; status: "open" | "closed"; created_at: string };
@@ -32,7 +33,7 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
   useEffect(() => {
     try {
       if (selectedWorkerId) sessionStorage.setItem("listord-workspace-selected-worker", selectedWorkerId);
-      else if (returned) setWorkerToSave(sessionStorage.getItem("listord-workspace-selected-worker"));
+      else setWorkerToSave(sessionStorage.getItem("listord-workspace-selected-worker") || selectedWorker());
     } catch { /* Selection is optional when browser storage is unavailable. */ }
   }, [selectedWorkerId, returned]);
   const load = useCallback(async () => {
@@ -46,6 +47,10 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
     const stop = window.setTimeout(() => window.clearInterval(poll), 60_000);
     return () => { window.clearInterval(poll); window.clearTimeout(stop); };
   }, [returned, data?.active, load]);
+  useEffect(() => {
+    if (!returned || !data?.active || !selectedWorkerId) return;
+    window.location.assign(`/trabajador/${encodeURIComponent(selectedWorkerId)}`);
+  }, [returned, data?.active, selectedWorkerId]);
   async function act(body: Record<string, unknown>, message: string) {
     setBusy(true); setError(""); setNotice("");
     try { await api(token, body); await load(); setNotice(message); return true; }
@@ -74,13 +79,13 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
       <p className="workspace-eyebrow">Pase de Empleador · 30 días</p>
       <h2 id="workspace-offer-title">Tu próximo equipo, en orden</h2>
       <p>Guarda candidatos, organiza solicitudes de personal, registra intentos de contacto y vuelve a tus listas.</p>
-      <p className="workspace-offer__fineprint">Explorar perfiles y contactar por WhatsApp sigue siendo gratis. Confirma disponibilidad, respuesta y condiciones directamente con cada persona.</p>
+      <p className="workspace-offer__fineprint">Explora perfiles gratis. El pase desbloquea el contacto con trabajadores durante 30 días.</p>
     </div>
     <div className="workspace-offer__purchase">
       <p className="workspace-offer__price">RD$299 <span>/ 30 días</span></p>
       <p>Pago único. Sin renovación automática.</p>
       <div className="workspace-actions">
-        <Link className="btn-primary" href="/empleadores/pago">Comprar 30 días · RD$299</Link>
+        <Link className="btn-primary" href={workerToSave ? `/empleadores/pago?worker=${encodeURIComponent(workerToSave)}` : "/empleadores/pago"}>Comprar 30 días · RD$299</Link>
         <button type="button" className="btn-secondary" onClick={() => void load()}>Actualizar estado</button>
       </div>
       {returned && <p role="status" className="workspace-feedback">Esperando confirmación del pago por Stripe. El regreso desde Checkout no activa el acceso.</p>}
@@ -93,12 +98,13 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
       <div>
         <p className="workspace-eyebrow">Pase de Empleador · 30 días</p>
         <h2>Tu pase está activo</h2>
-        <p>El contacto con trabajadores sigue siendo gratis. Confirma su disponibilidad directamente.</p>
+        <p>Puedes contactar trabajadores durante la vigencia del pase. Confirma su disponibilidad directamente.</p>
       </div>
       <div className="workspace-pass__date"><span>Válido hasta</span><strong>{new Date(data.accessUntil!).toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" })}</strong></div>
     </header>
     {workerToSave && <aside className="workspace-selected" aria-label="Perfil seleccionado">
-      <div><p className="workspace-eyebrow">Desde el directorio</p><p>Perfil seleccionado para tu lista de candidatos.</p></div>
+      <div><p className="workspace-eyebrow">Desde el directorio</p><p>Tu trabajador seleccionado está listo para contactar.</p></div>
+      <Link className="btn-secondary" href={`/trabajador/${encodeURIComponent(workerToSave)}`}>Volver al trabajador</Link>
       <button type="button" className="btn-primary" disabled={busy} onClick={() => void act({ action: "save_candidate", workerId: workerToSave }, "Candidato guardado.").then(saved => {
         if (saved) { setWorkerToSave(null); try { sessionStorage.removeItem("listord-workspace-selected-worker"); } catch { /* Optional storage. */ } }
       })}>Guardar candidato</button>
@@ -143,7 +149,7 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, canceled }: { tok
 }
 
 export function EmployerWorkspace({ selectedWorkerId, returned, canceled, featuredReturn = false, featuredCanceled = false, featuredOpportunityId = null, opportunitiesEnabled = false, expressAvailable = false }: { selectedWorkerId: string | null; returned: boolean; canceled: boolean; featuredReturn?: boolean; featuredCanceled?: boolean; featuredOpportunityId?: string | null; opportunitiesEnabled?: boolean; expressAvailable?: boolean }) {
-  return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar y usar tu espacio privado de empleador. La exploración y el contacto directo son gratis.">
+  return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar y usar tu espacio privado de empleador. La exploración es gratis; el contacto requiere el pase.">
     {token => <><WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} canceled={canceled} />
       {opportunitiesEnabled && <EmployerOpportunities token={token} featuredReturn={featuredReturn} featuredCanceled={featuredCanceled} featuredOpportunityId={featuredOpportunityId} expressAvailable={expressAvailable} />}</>}
   </MarketplaceSession>;

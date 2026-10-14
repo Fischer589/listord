@@ -110,7 +110,7 @@ export default async function Home({
                   </span>
                   <span className="hero-stat-sep">trabajadores</span>
                   <span className="hero-stat-sep">·</span>
-                  <span>Contacto gratis</span>
+                  <span>Explora gratis</span>
                   {activeCities.length > 0 && (
                     <>
                       <span className="hero-stat-sep">·</span>
@@ -272,7 +272,7 @@ export default async function Home({
               <span className="trust-item-icon">💬</span>
               <h3 className="trust-item-title">Directo a WhatsApp</h3>
               <p className="trust-item-body">
-                Hablas directamente con la persona por WhatsApp, sin pagar por el contacto.
+                Exploras perfiles gratis. El pase de empleador desbloquea el contacto por 30 días.
               </p>
             </div>
             <div className="trust-item">

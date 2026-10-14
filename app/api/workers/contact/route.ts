@@ -4,10 +4,11 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { readJsonBody } from "@/lib/http-json";
 import { parseMatchRequest } from "@/lib/request-matching";
 import { requestSummary } from "@/lib/request-specification";
+import { contactAccessResponse, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 
 const headers = { "Cache-Control": "private, no-store" };
 
-/** Discovery contact is free. Existing payment/entitlement records are untouched. */
+/** Discovery is free; the private handoff requires the employer's paid pass. */
 export async function POST(request: Request) {
   const body = await readJsonBody(request, 4096).catch(() => null) as { workerId?: unknown; draft?: unknown } | null;
   if (typeof body?.workerId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.workerId)) {
@@ -15,6 +16,8 @@ export async function POST(request: Request) {
   }
   const draft = body.draft === undefined ? null : parseMatchRequest(body.draft);
   if (body.draft !== undefined && !draft) return NextResponse.json({ error: "Revisa los detalles de tu solicitud." }, { status: 400, headers });
+  try { await requireWorkspaceContact(request); }
+  catch (error) { return contactAccessResponse(error, headers); }
   try {
     const supabase = getSupabaseAdminClient();
     if (!supabase) throw new Error("unavailable");
@@ -28,7 +31,7 @@ export async function POST(request: Request) {
     const text = draft
       ? `Hola ${data.full_name.trim()}, vi tu perfil en ListoRD (${body.workerId}). Quisiera consultarte sobre este trabajo:\n\n${requestSummary(draft)}\n\n¿Podemos confirmar tu disponibilidad, las tareas, el horario y el pago?`
       : `Hola ${data.full_name?.trim() || ""}, vi tu perfil en ListoRD (${body.workerId}). ¿Podemos hablar de tu trabajo?`;
-    return NextResponse.json({ url: `${url}?text=${encodeURIComponent(text)}`, reason: "free_contact", free_contacts_remaining: null }, { headers });
+    return NextResponse.json({ url: `${url}?text=${encodeURIComponent(text)}` }, { headers });
   } catch {
     return NextResponse.json({ error: "No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo." }, { status: 503, headers });
   }

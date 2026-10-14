@@ -15,7 +15,14 @@ test("admin sessions fail closed for missing, wrong, tampered and expired creden
   const token = await createAdminSession("test-only-secret");
   assert.equal(await isAdminSession(token, "test-only-secret"), true);
   assert.equal(await isAdminSession(token, "other-secret"), false);
-  assert.equal(await isAdminSession(`${token.slice(0, -1)}x`, "test-only-secret"), false);
+  const parts = token.split(".");
+  parts[3] = `${parts[3][0] === "x" ? "y" : "x"}${parts[3].slice(1)}`;
+  assert.equal(await isAdminSession(parts.join("."), "test-only-secret"), false);
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  const signature = token.split(".")[3];
+  const last = signature.at(-1)!;
+  const alternate = `${signature.slice(0, -1)}${alphabet[alphabet.indexOf(last) ^ 1]}`;
+  assert.equal(await isAdminSession(`${token.slice(0, -signature.length)}${alternate}`, "test-only-secret"), false);
   const expired = token.replace(/^v1\.\d+\./, "v1.1000000000.");
   assert.equal(await isAdminSession(expired, "test-only-secret"), false);
 });

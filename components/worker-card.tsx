@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { storeProfileRequest } from "@/lib/contact-context";
 import { openFreeWorkerContact } from "@/lib/free-contact";
+import { ContactPaywall } from "@/components/contact-paywall";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import type { RequestDraft } from "@/lib/request-specification";
 import type { Worker } from "@/lib/types";
@@ -83,6 +84,7 @@ export function WorkerCard({ worker, requestDraft = null }: { worker: Worker; re
   const isComplete = hasCompleteProfile(worker);
   const [contactError, setContactError] = useState("");
   const [contacting, setContacting] = useState(false);
+  const [paywall, setPaywall] = useState(false);
   const cardRef = useRef<HTMLElement | null>(null);
 
   // ── Analytics ──
@@ -109,7 +111,7 @@ export function WorkerCard({ worker, requestDraft = null }: { worker: Worker; re
 
   async function handleContactClick(selectedWorker: Worker) {
     setContactError(""); setContacting(true);
-    try { await openFreeWorkerContact(selectedWorker.id, fullName, primarySkill, requestDraft); }
+    try { if (await openFreeWorkerContact(selectedWorker.id, fullName, primarySkill, requestDraft) === "paywall") setPaywall(true); }
     catch { setContactError("No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo."); }
     finally { setContacting(false); }
   }
@@ -186,7 +188,7 @@ export function WorkerCard({ worker, requestDraft = null }: { worker: Worker; re
             className="tap-target wc-whatsapp-btn"
           >
             <WhatsAppIcon />
-            Contactar por WhatsApp
+            Contactar trabajador
           </button>
           <Link href={`/trabajador/${worker.id}`} onClick={() => { if (requestDraft) storeProfileRequest(requestDraft, worker.id); }} className="wc-profile-link">
             Ver perfil completo →
@@ -199,6 +201,7 @@ export function WorkerCard({ worker, requestDraft = null }: { worker: Worker; re
         {contactError && (
           <p className="wc-error">{contactError}</p>
         )}
+        {paywall && <ContactPaywall workerId={worker.id} onClose={() => setPaywall(false)} />}
 
 
       </div>

@@ -5,14 +5,17 @@ import { MATCH_HEADERS, readMatchBody } from "@/lib/request-match-server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { requestSummary } from "@/lib/request-specification";
+import { contactAccessResponse, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 
-/** Explicit, free handoff; phone never enters match lists. Recheck eligibility. */
+/** Matching is free; the private handoff requires the employer's paid pass. */
 export async function POST(request: Request) {
   const body = await readMatchBody(request).catch(() => null) as { draft?: unknown; workerId?: unknown } | null;
   const draft = parseMatchRequest(body?.draft);
   const id = body?.workerId;
   const reply = (error: string, status: number) => NextResponse.json({ error }, { status, headers: MATCH_HEADERS });
   if (!draft || typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return reply("Revisa tu solicitud y el perfil elegido.", 400);
+  try { await requireWorkspaceContact(request); }
+  catch (error) { return contactAccessResponse(error, MATCH_HEADERS); }
   try {
     const client = getSupabaseAdminClient();
     if (!client) return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503);

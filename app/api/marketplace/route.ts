@@ -3,6 +3,7 @@ import { readJsonBody } from "@/lib/http-json";
 import { MARKETPLACE_HEADERS as headers, marketplaceEnabled, object, publication, PUBLIC_OPPORTUNITY_COLUMNS, uuid } from "@/lib/marketplace";
 import { MarketplaceError, marketplaceAdmin, rpcFailure, verifiedMarketplaceUser } from "@/lib/marketplace-server";
 import { featuredCheckoutReady, featuredReadEnabled } from "@/lib/marketplace-featured";
+import { publicWorkerFields } from "@/lib/public-worker";
 
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers });
 function failure(e: unknown) { return e instanceof MarketplaceError ? json({ error: e.message }, e.status) : json({ error: "Servicio no disponible. No se confirmó ningún cambio." }, 503); }
@@ -14,9 +15,9 @@ export async function GET(request: Request) {
     if (url.searchParams.get("mine") === "true") {
       const actor = await verifiedMarketplaceUser(request);
       const [owned, workers, decisions] = await Promise.all([
-        admin.from("marketplace_opportunity_owners").select(`opportunity_id,marketplace_opportunities(${PUBLIC_OPPORTUNITY_COLUMNS},moderation_status)`).eq("owner_user_id", actor).order("created_at", { ascending: false }).limit(50).abortSignal(AbortSignal.timeout(8000)),
+        admin.from("marketplace_opportunity_owners").select(`opportunity_id,marketplace_opportunities!inner(${PUBLIC_OPPORTUNITY_COLUMNS},moderation_status)`).eq("owner_user_id", actor).is("marketplace_opportunities.deleted_at", null).order("created_at", { ascending: false }).limit(50).abortSignal(AbortSignal.timeout(8000)),
         admin.from("workers").select("id,full_name").eq("owner_user_id", actor).eq("is_verified", true).limit(20).abortSignal(AbortSignal.timeout(8000)),
-        admin.from("marketplace_interests").select(`opportunity_id,worker_id,decision,marketplace_opportunities(${PUBLIC_OPPORTUNITY_COLUMNS})`).eq("decision_user_id", actor).order("updated_at", { ascending: false }).limit(100).abortSignal(AbortSignal.timeout(8000))
+        admin.from("marketplace_interests").select(`opportunity_id,worker_id,decision,marketplace_opportunities!inner(${PUBLIC_OPPORTUNITY_COLUMNS})`).eq("decision_user_id", actor).is("marketplace_opportunities.deleted_at", null).order("updated_at", { ascending: false }).limit(100).abortSignal(AbortSignal.timeout(8000))
       ]);
       if (owned.error || workers.error || decisions.error) throw new Error("unavailable");
       const opportunityIds = (owned.data ?? []).map(row => row.opportunity_id);
@@ -37,9 +38,10 @@ export async function GET(request: Request) {
       const applicants = (interests.data ?? []).flatMap(interest => {
         const worker = byWorker.get(interest.worker_id);
         if (!worker || worker.owner_user_id !== interest.decision_user_id) return [];
+        const preview = publicWorkerFields({ full_name: worker.full_name, city: worker.city, skills: worker.skills });
         return [{
           opportunity_id: interest.opportunity_id, worker_id: worker.id,
-          full_name: worker.full_name, city: worker.city, skills: worker.skills,
+          full_name: preview.full_name, city: preview.city, skills: preview.skills,
           created_at: interest.created_at
         }];
       });
@@ -58,7 +60,7 @@ export async function GET(request: Request) {
     const id = url.searchParams.get("id");
     if (id && !uuid(id)) return json({ error: "Identificador inválido." }, 400);
     const now = new Date().toISOString();
-    let query = admin.from("marketplace_opportunities").select(PUBLIC_OPPORTUNITY_COLUMNS).eq("status", "open").eq("moderation_status", "approved").gt("expires_at", now).order("created_at", { ascending: false }).limit(50);
+    let query = admin.from("marketplace_opportunities").select(PUBLIC_OPPORTUNITY_COLUMNS).is("deleted_at", null).eq("status", "open").eq("moderation_status", "approved").gt("expires_at", now).order("created_at", { ascending: false }).limit(50);
     if (id) query = query.eq("id", id);
     const { data, error } = await query.abortSignal(AbortSignal.timeout(8000));
     if (error) throw new Error("unavailable");
@@ -69,7 +71,7 @@ export async function GET(request: Request) {
     if (active.error) throw new Error("unavailable");
     const ids = Array.from(new Set((active.data ?? []).map(row => row.opportunity_id)));
     const featured = ids.length ? await admin.from("marketplace_opportunities")
-      .select(PUBLIC_OPPORTUNITY_COLUMNS).in("id", ids).eq("status", "open")
+      .select(PUBLIC_OPPORTUNITY_COLUMNS).in("id", ids).is("deleted_at", null).eq("status", "open")
       .eq("moderation_status", "approved").gt("expires_at", now)
       .abortSignal(AbortSignal.timeout(8000)) : { data: [], error: null };
     if (featured.error) throw new Error("unavailable");

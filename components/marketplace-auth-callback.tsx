@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { getMarketplaceBrowserClient } from "@/lib/marketplace-browser";
+import { getMarketplaceBrowserClient, persistMarketplaceSession } from "@/lib/marketplace-browser";
 
 const failure = "El enlace de verificación venció o no es válido. Solicita un nuevo código desde ListoRD.";
 
@@ -39,6 +39,8 @@ export function MarketplaceAuthCallback({ destination }: { destination: string }
       }
       const { data, error } = await client.auth.getUser();
       if (error || !data.user || data.user.is_anonymous || !(data.user.email_confirmed_at || data.user.phone_confirmed_at)) throw new Error("UNVERIFIED");
+      const session = await client.auth.getSession();
+      if (!session.data.session || !await persistMarketplaceSession(session.data.session)) throw new Error("SESSION_UNAVAILABLE");
     }
     confirmation.current ??= confirm();
     void confirmation.current.then(() => {

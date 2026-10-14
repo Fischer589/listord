@@ -84,7 +84,7 @@ async function deliverableTargets(actor: string, id: string): Promise<string[]> 
   const admin = marketplaceAdmin();
   const owner = await admin.from("marketplace_opportunity_owners").select("opportunity_id").eq("opportunity_id", id).eq("owner_user_id", actor).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
   if (owner.error || !owner.data) throw new MarketplaceError(403, "Solicitud no disponible.");
-  const opp = await admin.from("marketplace_opportunities").select("specification").eq("id", id).eq("status", "open").eq("moderation_status", "approved").abortSignal(AbortSignal.timeout(8000)).single();
+  const opp = await admin.from("marketplace_opportunities").select("specification").eq("id", id).is("deleted_at", null).eq("status", "open").eq("moderation_status", "approved").abortSignal(AbortSignal.timeout(8000)).single();
   const draft = parseMatchRequest(opp.data?.specification);
   if (opp.error || !draft) throw new MarketplaceError(409, "La solicitud no está abierta.");
   const matches = await getRequestMatches(draft);

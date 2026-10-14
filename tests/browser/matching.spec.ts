@@ -20,7 +20,7 @@ const fixture = {
   workers: [1, 2].map(id => ({ id: `00000000-0000-4000-8000-00000000000${id}`, name: `Perfil de prueba ${id}`, city: "Puerto Plata", reasons: ["Oficio en su perfil", "Misma ciudad", "Disponibilidad declarada"], scopeEvidence: ["Pisos"] })),
 };
 
-test("real-count rendering, disabled Express, free contact recheck and editing resets matches", async ({ page }) => {
+test("free matching shows the RD$299 gate on contact and editing resets matches", async ({ page }) => {
   let searches = 0;
   let contacts = 0;
   await page.route("**/api/requests/matches", async route => {
@@ -30,22 +30,18 @@ test("real-count rendering, disabled Express, free contact recheck and editing r
     searches++;
     await route.fulfill({ json: fixture });
   });
-  await page.route("**/api/requests/contact", async route => {
-    const body = route.request().postDataJSON();
-    expect(body.draft.city).toBe("Puerto Plata");
-    expect(body.workerId).toBe(fixture.workers[0].id);
-    contacts++;
-    await route.fulfill({ status: 409, json: { error: "Este perfil ya no cumple los criterios. Actualiza los resultados." } });
-  });
+  await page.route("**/api/requests/contact", async route => { contacts++; await route.fulfill({ status: 500, json: { error: "Unexpected unpaid handoff" } }); });
   await preview(page);
   await page.getByRole("button", { name: "Buscar trabajadores compatibles" }).click();
   await expect(page.getByRole("heading", { name: "Encontramos 2 trabajadores compatibles" })).toBeVisible();
   await expect(page.getByText("RD$299 — Pago único", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "ENCONTRAR PERSONAL AHORA" })).toBeDisabled();
   await expect(page.getByText(/No han confirmado interés/)).toBeVisible();
-  await page.getByRole("button", { name: "Contactar gratis por WhatsApp" }).first().click();
-  await expect(page.getByText("Este perfil ya no cumple los criterios. Actualiza los resultados.")).toBeVisible();
-  expect(contacts).toBe(1); expect(searches).toBe(1);
+  await page.getByRole("button", { name: "Contactar trabajador" }).first().click();
+  await expect(page.getByRole("dialog", { name: "Desbloquea el contacto con trabajadores" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Desbloquear contactos — RD$299" })).toHaveAttribute("href", `/empleadores/pago?worker=${fixture.workers[0].id}`);
+  expect(contacts).toBe(0); expect(searches).toBe(1);
+  await page.getByRole("button", { name: "Seguir explorando" }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole("button", { name: "Editar fecha y pago" }).click();
   await page.locator("#duration").fill("5 horas");
@@ -67,7 +63,7 @@ test("database failure is not zero; retry yields honest empty state", async ({ p
   await page.getByRole("button", { name: "Buscar trabajadores compatibles" }).click();
   await expect(page.getByRole("heading", { name: "Encontramos 0 trabajadores compatibles" })).toBeVisible();
   await expect(page.getByText(/disponibilidad desconocida o perfiles antiguos/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Contactar gratis por WhatsApp" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Contactar trabajador" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "ENCONTRAR PERSONAL AHORA" })).toBeDisabled();
 });
 

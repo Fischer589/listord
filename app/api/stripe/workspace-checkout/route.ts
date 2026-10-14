@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { verifiedMarketplaceUser } from "@/lib/marketplace-server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
-import { WORKSPACE_AMOUNT_CENTS, WORKSPACE_CURRENCY, WORKSPACE_PURPOSE, workspaceEnabled, workspaceOrigin, workspaceStripeReady } from "@/lib/employer-workspace";
+import { WORKSPACE_AMOUNT_CENTS, WORKSPACE_CURRENCY, WORKSPACE_PURPOSE, isUuid, workspaceEnabled, workspaceOrigin, workspaceStripeReady } from "@/lib/employer-workspace";
 import { readJsonBody } from "@/lib/http-json";
 
 export const runtime = "nodejs";
@@ -11,17 +11,19 @@ const unavailable = () => NextResponse.json({ error: "No pudimos iniciar el pago
 
 export async function POST(request: Request) {
   if (!workspaceEnabled() || !workspaceStripeReady(request.url)) return unavailable();
-  let body: { mode?: unknown; replaceEmbedded?: unknown } = {};
+  let body: { mode?: unknown; replaceEmbedded?: unknown; workerId?: unknown } = {};
   if (request.body) {
     try {
       const input = await readJsonBody(request, 256);
       if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("INVALID_REQUEST");
       body = input as typeof body;
       if (body.mode !== undefined && body.mode !== "embedded" && body.mode !== "hosted") throw new Error("INVALID_REQUEST");
+      if (body.workerId !== undefined && !isUuid(body.workerId)) throw new Error("INVALID_REQUEST");
     } catch { return NextResponse.json({ error: "Solicitud no válida." }, { status: 400, headers }); }
   }
   const mode = body.mode === "embedded" ? "embedded" : "hosted";
   const replaceEmbedded = body.replaceEmbedded === true && mode === "hosted";
+  const workerReturn = isUuid(body.workerId) ? `&worker=${encodeURIComponent(body.workerId)}` : "";
   let ownerId: string;
   let origin: string;
   try {
@@ -85,15 +87,15 @@ export async function POST(request: Request) {
       branding_settings: { display_name: "BLACKTHORNE INDUSTRIES", background_color: "#FDFCF8", button_color: "#1A3D2B", font_family: "inter" },
       expires_at: Math.floor(Date.now() / 1000) + 45 * 60,
       line_items: [{ price_data: { currency: WORKSPACE_CURRENCY, unit_amount: WORKSPACE_AMOUNT_CENTS,
-        product_data: { name: "Espacio para empleadores ListoRD · 30 días", description: "Candidatos guardados, solicitudes privadas y registro de contactos. Sin renovación automática." }
+        product_data: { name: "Pase de Empleador ListoRD · 30 días", description: "Contacto con trabajadores, candidatos guardados y solicitudes privadas. Pago único; sin renovación automática." }
       }, quantity: 1 }],
       client_reference_id: ownerId,
       metadata: { purpose: WORKSPACE_PURPOSE, order_id: order.id, owner_user_id: ownerId },
       ...(mode === "embedded" ? {
         redirect_on_completion: "if_required" as const,
-        return_url: `${origin}/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}`,
+        return_url: `${origin}/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}${workerReturn}`,
       } : {
-        success_url: `${origin}/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${origin}/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}${workerReturn}`,
         cancel_url: `${origin}/empleadores/mi-cuenta?checkout=cancel`,
       })
     }, { idempotencyKey: `workspace:${order.id}` });

@@ -5,7 +5,8 @@ import type { Metadata } from "next";
 import { AppHeader } from "@/components/app-header";
 import { WorkerProfileContactButton } from "@/components/worker-profile-contact-button";
 import { ShareProfileButton } from "@/components/share-profile-button";
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import { publicWorkerFields } from "@/lib/public-worker";
 import { formatIncomeShort, workStyleLabels } from "@/lib/format";
 import type { Worker, WorkStyle } from "@/lib/types";
 
@@ -37,7 +38,7 @@ type ProfileRow = Pick<
 >;
 
 async function getWorkerProfile(slug: string): Promise<ProfileRow | null> {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdminClient();
   if (!supabase) return null;
 
   const { data, error } = await supabase
@@ -48,7 +49,7 @@ async function getWorkerProfile(slug: string): Promise<ProfileRow | null> {
     .maybeSingle();
 
   if (error || !data) return null;
-  return data as ProfileRow;
+  return publicWorkerFields(data as ProfileRow);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

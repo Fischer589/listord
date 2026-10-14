@@ -59,6 +59,15 @@ test("privacy candidate on isolated PostgreSQL: leaky policies/column grants con
       }
       await db.exec("reset role");
     }
+    await db.exec(await readFile(new URL("../supabase/migrations/202610131400_worker_contact_preview_privacy.sql", import.meta.url), "utf8"));
+    for (const role of ["anon", "authenticated"]) {
+      await db.exec(`set role ${role}`);
+      assert.equal((await db.query("select id from workers where is_verified=true")).rows.length, 1);
+      for (const column of ["full_name", "city", "short_intro", "skills", "experience", "photo_url", "whatsapp_number"]) {
+        await assert.rejects(db.query(`select ${column} from workers`), /permission denied/);
+      }
+      await db.exec("reset role");
+    }
     await db.exec("set role anon");
     assert.equal((await db.query("select * from contact_requests")).rows.length,0);
     await assert.rejects(db.query("select owns_worker_profile($1)",[id]),/permission denied/);
