@@ -3,8 +3,7 @@ import { NextResponse } from "next/server";
 import { matchWorker, MATCH_COLUMNS, parseMatchRequest } from "@/lib/request-matching";
 import { MATCH_HEADERS, readMatchBody } from "@/lib/request-match-server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
-import { requestSummary } from "@/lib/request-specification";
+import { buildWorkerContactWhatsAppUrl } from "@/lib/whatsapp";
 import { contactAccessResponse, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 
 /** Matching is free; the private handoff requires the employer's paid pass. */
@@ -32,8 +31,8 @@ export async function POST(request: Request) {
       confirmedAt = state.data?.confirmed_at ?? null;
     }
     if (!data || !matchWorker({ ...data, availability_confirmed_at: confirmedAt }, draft, new Date(), renewed ? "confirmed" : "legacy")) return reply("Este perfil ya no cumple los criterios. Actualiza los resultados.", 409);
-    const url = buildWhatsAppUrl(data.whatsapp_number);
+    const url = buildWorkerContactWhatsAppUrl(data.whatsapp_number, data.full_name);
     if (!url) return reply("Este perfil no tiene un contacto disponible.", 404);
-    return NextResponse.json({ url: `${url}?text=${encodeURIComponent(`Hola ${data.full_name}, vi tu perfil en ListoRD (${id}). ¿Te interesa este trabajo?\n\n${requestSummary(draft)}\n\n¿Puedes confirmar el horario, las tareas y el pago?`)}` }, { headers: MATCH_HEADERS });
+    return NextResponse.json({ url }, { headers: MATCH_HEADERS });
   } catch { return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503); }
 }

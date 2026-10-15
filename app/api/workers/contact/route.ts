@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { buildWorkerContactWhatsAppUrl } from "@/lib/whatsapp";
 import { readJsonBody } from "@/lib/http-json";
 import { parseMatchRequest } from "@/lib/request-matching";
-import { requestSummary } from "@/lib/request-specification";
 import { contactAccessResponse, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 
 const headers = { "Cache-Control": "private, no-store" };
@@ -25,13 +24,9 @@ export async function POST(request: Request) {
       .eq("id", body.workerId).eq("is_verified", true)
       .abortSignal(AbortSignal.timeout(8000)).maybeSingle();
     if (error) throw new Error("unavailable");
-    const url = data && buildWhatsAppUrl(data.whatsapp_number);
+    const url = data && buildWorkerContactWhatsAppUrl(data.whatsapp_number, data.full_name);
     if (!url) return NextResponse.json({ error: "Este contacto no está disponible." }, { status: 404, headers });
-    if (draft && !data.full_name?.trim()) return NextResponse.json({ error: "Este contacto no está disponible." }, { status: 404, headers });
-    const text = draft
-      ? `Hola ${data.full_name.trim()}, vi tu perfil en ListoRD (${body.workerId}). Quisiera consultarte sobre este trabajo:\n\n${requestSummary(draft)}\n\n¿Podemos confirmar tu disponibilidad, las tareas, el horario y el pago?`
-      : `Hola ${data.full_name?.trim() || ""}, vi tu perfil en ListoRD (${body.workerId}). ¿Podemos hablar de tu trabajo?`;
-    return NextResponse.json({ url: `${url}?text=${encodeURIComponent(text)}` }, { headers });
+    return NextResponse.json({ url }, { headers });
   } catch {
     return NextResponse.json({ error: "No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo." }, { status: 503, headers });
   }

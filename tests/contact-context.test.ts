@@ -62,12 +62,12 @@ test("an anonymous contact attempt preserves the selected worker without request
   };
   try {
     const id = "22222222-2222-4222-8222-222222222222";
-    assert.equal(await openFreeWorkerContact(id, "Fixture Worker", "limpieza"), "paywall");
+    assert.equal(await openFreeWorkerContact(id), "paywall");
     assert.equal((JSON.parse(entries.get("listord-selected-worker-v1")!) as {id: string}).id, id);
     const draft = { ...emptyRequest(), category: "limpieza", city: "Puerto Plata", answers: {
       property: "Casa", tasks: "Pisos y baños", supplies: "Los pongo yo"
     }, timing: "15 de octubre", duration: "4 horas", amount: "1500" };
-    assert.equal(await openFreeWorkerContact(id, "Fixture Worker", "limpieza", draft), "paywall");
+    assert.equal(await openFreeWorkerContact(id, draft), "paywall");
     assert.equal(opened.length, 0);
   } finally {
     globalThis.fetch = oldFetch;

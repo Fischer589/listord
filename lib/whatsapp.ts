@@ -44,6 +44,16 @@ export function buildWhatsAppUrl(value?: string | null) {
   return `https://wa.me/${phoneNumber}`;
 }
 
+export function workerContactMessage(fullName?: string | null) {
+  const firstName = fullName?.trim().split(/\s+/)[0];
+  return `¡Hola${firstName ? `, ${firstName}` : ""}! 👋 Vi tu perfil en ListoRD y me llamó la atención. Me gustaría conversar contigo sobre una oportunidad de trabajo. ¿Estás disponible para hablar? 😊`;
+}
+
+export function buildWorkerContactWhatsAppUrl(number?: string | null, fullName?: string | null) {
+  const url = buildWhatsAppUrl(number);
+  return url ? `${url}?text=${encodeURIComponent(workerContactMessage(fullName))}` : null;
+}
+
 export function isValidWhatsAppUrl(value?: string | null) {
   if (!value) {
     return false;

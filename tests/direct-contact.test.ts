@@ -12,6 +12,7 @@ import { POST as applicantContact } from "../app/api/marketplace/contacts/route"
 import { GET as contactStatus } from "../app/api/contact-access/route";
 import { emptyRequest } from "../lib/request-specification";
 import { directContactCheckoutReady } from "../lib/direct-contact";
+import { workerContactMessage } from "../lib/whatsapp";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const other = "33333333-3333-4333-8333-333333333333";
@@ -82,7 +83,10 @@ test("one paid direct order authorizes only its verified owner and worker across
       assert.equal((await handler(req(path, body, false))).status, 401);
       const allowed = await handler(req(path, body));
       assert.equal(allowed.status, 200);
-      assert.match(await allowed.text(), /wa\.me\/18095550100/);
+      const result = await allowed.json();
+      const url = new URL(path === "/api/marketplace/contacts" ? result.contacts[0].url : result.url);
+      assert.equal(url.pathname, "/18095550100");
+      assert.equal(url.searchParams.get("text"), workerContactMessage("Ana"));
     }
     const statusRequest = (id: string) => new Request(`https://example.test/api/contact-access?worker=${id}`, { headers: { Authorization: "Bearer fixture_token_12345678901234567890" } });
     assert.deepEqual(await (await contactStatus(statusRequest(worker))).json(), { active: true });
@@ -95,7 +99,9 @@ test("one paid direct order authorizes only its verified owner and worker across
     mode = "live"; linkedOwner = other;
     assert.equal((await contact(req("/api/workers/contact", { workerId: worker }))).status, 402);
     workspaceActive = true;
-    assert.equal((await contact(req("/api/workers/contact", { workerId: otherWorker }))).status, 200, "RD$299 remains independent");
+    const workspaceContact = await contact(req("/api/workers/contact", { workerId: otherWorker }));
+    assert.equal(workspaceContact.status, 200, "RD$299 remains independent");
+    assert.equal(new URL((await workspaceContact.json()).url).searchParams.get("text"), workerContactMessage("Ana"));
   } finally {
     globalThis.fetch = fetchBefore;
     names.forEach((name, i) => { if (before[i] === undefined) delete process.env[name]; else process.env[name] = before[i]; });

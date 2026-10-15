@@ -5,7 +5,7 @@ import { openFreeWorkerContact } from "@/lib/free-contact";
 import { ContactPaywall } from "@/components/contact-paywall";
 import type { RequestDraft } from "@/lib/request-specification";
 
-export function WorkerProfileContactButton({ workerId, workerName, primarySkill, city }: { workerId: string; workerName: string; primarySkill: string; city?: string | null }) {
+export function WorkerProfileContactButton({ workerId, primarySkill, city }: { workerId: string; workerName: string; primarySkill: string; city?: string | null }) {
   const [contactError, setContactError] = useState("");
   const [loading, setLoading] = useState(false);
   const [paywall, setPaywall] = useState(false);
@@ -13,7 +13,7 @@ export function WorkerProfileContactButton({ workerId, workerName, primarySkill,
   useEffect(() => { setRequestDraft(takeProfileRequest(workerId)); }, [workerId]);
   async function handleContact() {
     setLoading(true); setContactError("");
-    try { if (await openFreeWorkerContact(workerId, workerName, primarySkill, requestDraft) === "paywall") setPaywall(true); }
+    try { if (await openFreeWorkerContact(workerId, requestDraft) === "paywall") setPaywall(true); }
     catch { setContactError("No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo."); }
     finally { setLoading(false); }
   }

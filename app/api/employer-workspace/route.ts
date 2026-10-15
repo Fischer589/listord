@@ -3,7 +3,7 @@ import { verifiedMarketplaceUser } from "@/lib/marketplace-server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { isUuid, workspaceEnabled, workspaceSessionPattern, workspaceSessionPrefix } from "@/lib/employer-workspace";
 import { readJsonBody } from "@/lib/http-json";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { buildWorkerContactWhatsAppUrl } from "@/lib/whatsapp";
 import { contactAccessResponse, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 
 export const runtime = "nodejs";
@@ -86,22 +86,19 @@ export async function POST(request: Request) {
         return error ? failure() : NextResponse.json({ ok: true }, { headers });
       }
       const requestId = body.requestId === null || body.requestId === undefined ? null : body.requestId;
-      let title = "";
       if (requestId !== null) {
         if (!isUuid(requestId)) return failure(400, "Solicitud no válida.");
         const { data: staffing, error } = await db.from("employer_workspace_requests")
           .select("title").eq("id", requestId).eq("owner_user_id", ownerId).maybeSingle();
         if (error) return failure();
         if (!staffing) return failure(404, "Solicitud no encontrada.");
-        title = staffing.title;
       }
-      const url = buildWhatsAppUrl(worker.whatsapp_number);
+      const url = buildWorkerContactWhatsAppUrl(worker.whatsapp_number, worker.full_name);
       if (!url) return failure(404, "Este contacto no está disponible.");
       const { data: log, error: logError } = await db.from("employer_workspace_contacts")
         .insert({ owner_user_id: ownerId, worker_id: workerId, request_id: requestId }).select("id").single();
       if (logError || !log?.id) return failure();
-      const message = `Hola ${worker.full_name?.trim() || ""}, vi tu perfil en ListoRD (${workerId}).${title ? ` Te contacto por mi solicitud: ${title}.` : ""} ¿Podemos hablar de tareas, horario y pago?`;
-      return NextResponse.json({ url: `${url}?text=${encodeURIComponent(message)}` }, { headers });
+      return NextResponse.json({ url }, { headers });
     }
     if (body.action === "add_request") {
       const title = typeof body.title === "string" ? body.title.trim() : "";

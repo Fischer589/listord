@@ -111,7 +111,7 @@ export function WorkerCard({ worker, requestDraft = null }: { worker: Worker; re
 
   async function handleContactClick(selectedWorker: Worker) {
     setContactError(""); setContacting(true);
-    try { if (await openFreeWorkerContact(selectedWorker.id, fullName, primarySkill, requestDraft) === "paywall") setPaywall(true); }
+    try { if (await openFreeWorkerContact(selectedWorker.id, requestDraft) === "paywall") setPaywall(true); }
     catch { setContactError("No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo."); }
     finally { setContacting(false); }
   }

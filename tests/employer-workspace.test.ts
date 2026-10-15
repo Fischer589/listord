@@ -227,9 +227,7 @@ test("paid contact tracking stores a private handoff with the selected worker an
     assert.deepEqual(inserted, { owner_user_id: owner, worker_id: worker, request_id: orderId });
     const url = new URL((await response.json()).url);
     assert.equal(url.hostname, "wa.me");
-    assert.match(url.searchParams.get("text") ?? "", /Verified Worker/);
-    assert.match(url.searchParams.get("text") ?? "", /Limpieza semanal/);
-    assert.match(url.searchParams.get("text") ?? "", new RegExp(worker));
+    assert.equal(url.searchParams.get("text"), "¡Hola, Verified! 👋 Vi tu perfil en ListoRD y me llamó la atención. Me gustaría conversar contigo sobre una oportunidad de trabajo. ¿Estás disponible para hablar? 😊");
   } finally {
     globalThis.fetch = oldFetch;
     names.forEach((name, i) => { if (old[i] === undefined) delete process.env[name]; else process.env[name] = old[i]; });

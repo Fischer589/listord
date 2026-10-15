@@ -17,7 +17,7 @@ export function selectedWorker() {
   } catch { return null; }
 }
 
-export async function openFreeWorkerContact(workerId: string, name: string, skill: string, draft: RequestDraft | null = null): Promise<"opened" | "paywall"> {
+export async function openFreeWorkerContact(workerId: string, draft: RequestDraft | null = null): Promise<"opened" | "paywall"> {
   rememberSelectedWorker(workerId);
   const client = getMarketplaceBrowserClient();
   const token = client ? (await restoreMarketplaceSession(client))?.access_token : null;
@@ -29,9 +29,7 @@ export async function openFreeWorkerContact(workerId: string, name: string, skil
   if (response.status === 401 || response.status === 402) { trackEvent("paywall_open", { worker_id: workerId }); return "paywall"; }
   const data = await response.json();
   if (!response.ok || typeof data.url !== "string" || !isValidWhatsAppUrl(data.url)) throw new Error("CONTACT_UNAVAILABLE");
-  const url = new URL(data.url);
-  if (!draft) url.searchParams.set("text", `Hola ${name.split(" ")[0]}, te encontré en ListoRD. Necesito un(a) ${skill}. ¿Podemos confirmar tareas, horario y pago?`);
   trackEvent("contact_click", { worker_id: workerId });
-  window.location.assign(url.href);
+  window.location.assign(data.url);
   return "opened";
 }
