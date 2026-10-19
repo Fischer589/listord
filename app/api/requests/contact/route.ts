@@ -1,4 +1,3 @@
-import { availabilityRenewalEnabled } from "@/lib/availability";
 import { NextResponse } from "next/server";
 import { matchWorker, MATCH_COLUMNS, parseMatchRequest } from "@/lib/request-matching";
 import { MATCH_HEADERS, readMatchBody } from "@/lib/request-match-server";
@@ -22,16 +21,15 @@ export async function POST(request: Request) {
     const { data, error } = await client.from("workers").select(`${MATCH_COLUMNS},whatsapp_number,owner_user_id`).eq("id", id).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
     if (error) return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503);
     let confirmedAt: string | null = null;
-    const renewed = availabilityRenewalEnabled();
-    if (renewed && !data?.owner_user_id) return reply("La titularidad de este perfil aún no está confirmada.", 409);
-    if (renewed && data) {
+    if (!data?.owner_user_id) return reply("La titularidad de este perfil aún no está confirmada.", 409);
+    if (data) {
       const state = await client.from("worker_availability").select("confirmed_at")
         .eq("worker_id", id).eq("available", true).gt("access_expires_at", new Date().toISOString())
         .abortSignal(AbortSignal.timeout(8000)).maybeSingle();
       if (state.error) return reply("No pudimos verificar la disponibilidad. Intenta de nuevo.", 503);
       confirmedAt = state.data?.confirmed_at ?? null;
     }
-    if (!data || !matchWorker({ ...data, availability_confirmed_at: confirmedAt }, draft, new Date(), renewed ? "confirmed" : "legacy")) return reply("Este perfil ya no cumple los criterios. Actualiza los resultados.", 409);
+    if (!matchWorker({ ...data, availability_confirmed_at: confirmedAt }, draft, new Date(), "confirmed")) return reply("Este perfil ya no cumple los criterios. Actualiza los resultados.", 409);
     const url = buildWorkerContactWhatsAppUrl(data.whatsapp_number, data.full_name);
     if (!url) return reply("Este perfil no tiene un contacto disponible.", 404);
     await recordAuthorizedHandoff(access, "request");

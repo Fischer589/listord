@@ -41,8 +41,18 @@ export async function GET() {
 }
 export async function POST(request: Request) {
   await requireAdmin();
-  if (!marketplaceEnabled()) return NextResponse.json({ error: "Deshabilitado." }, { status: 503, headers });
   const b = object(await readJsonBody(request, 2048).catch(() => null));
+  if (b?.action === "link_owner") {
+    if (!uuid(b.id) || !uuid(b.owner) || b.identityVerified !== true || typeof b.evidence !== "string" || !/^[A-Za-z0-9:_-]{5,160}$/.test(b.evidence) || typeof b.operator !== "string" || !/^[A-Za-z0-9_-]{3,60}$/.test(b.operator)) return NextResponse.json({ error: "Verifica al titular y registra la referencia privada de evidencia." }, { status: 400, headers });
+    try {
+      const admin = marketplaceAdmin();
+      const verified = await admin.auth.admin.getUserById(b.owner);
+      if (verified.error || !verified.data.user || verified.data.user.is_anonymous || !(verified.data.user.email_confirmed_at || verified.data.user.phone_confirmed_at)) throw new Error();
+      const { error } = await admin.rpc("marketplace_link_owner", { p_worker: b.id, p_owner: b.owner, p_evidence: b.evidence, p_operator: b.operator }).abortSignal(AbortSignal.timeout(8000));
+      rpcFailure(error); return NextResponse.json({ saved: true }, { headers });
+    } catch { return NextResponse.json({ error: "No se vinculó el perfil. No se reemplaza un titular existente." }, { status: 409, headers }); }
+  }
+  if (!marketplaceEnabled()) return NextResponse.json({ error: "Deshabilitado." }, { status: 503, headers });
   if (b?.action === "delete") {
     if (!uuid(b.id) || b.confirmId !== b.id) return NextResponse.json({ error: "Confirma el identificador de la oportunidad." }, { status: 400, headers });
     try {
@@ -70,16 +80,6 @@ export async function POST(request: Request) {
       const conflict = error instanceof Error && /NOT_FOUND|CHECKOUT_STILL_OPEN/.test(error.message);
       return NextResponse.json({ error: conflict ? "La oportunidad ya fue eliminada o tiene un pago pendiente. Actualiza antes de reintentar." : "No se pudo eliminar la oportunidad de forma segura." }, { status: conflict ? 409 : 503, headers });
     }
-  }
-  if (b?.action === "link_owner") {
-    if (!uuid(b.id) || !uuid(b.owner) || b.identityVerified !== true || typeof b.evidence !== "string" || !/^[A-Za-z0-9:_-]{5,160}$/.test(b.evidence) || typeof b.operator !== "string" || !/^[A-Za-z0-9_-]{3,60}$/.test(b.operator)) return NextResponse.json({ error: "Verifica al titular y registra la referencia privada de evidencia." }, { status: 400, headers });
-    try {
-      const admin = marketplaceAdmin();
-      const verified = await admin.auth.admin.getUserById(b.owner);
-      if (verified.error || !verified.data.user || verified.data.user.is_anonymous || !(verified.data.user.email_confirmed_at || verified.data.user.phone_confirmed_at)) throw new Error();
-      const { error } = await admin.rpc("marketplace_link_owner", { p_worker: b.id, p_owner: b.owner, p_evidence: b.evidence, p_operator: b.operator }).abortSignal(AbortSignal.timeout(8000));
-      rpcFailure(error); return NextResponse.json({ saved: true }, { headers });
-    } catch { return NextResponse.json({ error: "No se vinculó el perfil. No se reemplaza un titular existente." }, { status: 409, headers }); }
   }
   if (b?.action === "resolve_report" && uuid(b.id) && typeof b.remove === "boolean") {
     try {

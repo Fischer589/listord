@@ -63,7 +63,7 @@ test("HTTP handlers keep matching free but reject anonymous contact before worke
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "fixture-anon";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "fixture-service";
   let mode = "ok";
-  const recent = { ...row, created_at: new Date().toISOString(), whatsapp_number: "18095550100" };
+  const recent = { ...row, created_at: "2025-01-01T00:00:00Z", whatsapp_number: "18095550100" };
   let selected = "";
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
@@ -73,12 +73,16 @@ test("HTTP handlers keep matching free but reject anonymous contact before worke
     if (mode === "error") return new Response(JSON.stringify({ message: "SECRET DB ERROR" }), { status: 500 });
     const contact = selected.includes("whatsapp_number");
     if (!contact) {
-      assert.equal(url.searchParams.get("is_verified"), "eq.true");
-      assert.equal(url.searchParams.get("available_now"), "eq.true");
+      assert.equal(url.pathname, "/rest/v1/worker_availability");
+      assert.equal(url.searchParams.get("available"), "eq.true");
+      assert.equal(url.searchParams.get("workers.is_verified"), "eq.true");
+      assert.equal(url.searchParams.get("workers.available_now"), "eq.true");
+      assert.equal(url.searchParams.get("workers.owner_user_id"), "not.is.null");
+      assert.ok(url.searchParams.has("access_expires_at"));
       assert.equal(url.searchParams.get("limit"), "1000");
-      assert.equal(url.searchParams.getAll("created_at").length, 2);
+      assert.equal(url.searchParams.getAll("confirmed_at").length, 2);
     }
-    const records = mode === "empty" ? [] : [{ ...recent, available_now: mode !== "inactive" }];
+    const records = mode === "empty" ? [] : [{ confirmed_at: new Date(Date.now() - 1000).toISOString(), workers: { ...recent, available_now: mode !== "inactive" } }];
     return new Response(JSON.stringify(contact ? records[0] ?? null : records), { headers: { "content-type": "application/json", "content-range": `0-${records.length - 1}/${mode === "partial" ? 5 : records.length}` } });
   };
   try {
@@ -86,6 +90,7 @@ test("HTTP handlers keep matching free but reject anonymous contact before worke
     const { POST: contact } = await import("../app/api/requests/contact/route");
     const request = (body: unknown) => new Request("https://listord.example/api/requests/matches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     assert.equal((await matches(request({}))).status, 400);
+    process.env.WORKER_AVAILABILITY_RENEWAL_ENABLED = "false";
     assert.equal((await matches(request({ ...draft, requirements: "x".repeat(13000) }))).status, 400);
     const crossOrigin = request(draft); crossOrigin.headers.set("origin", "https://evil.example");
     assert.equal((await matches(crossOrigin)).status, 400);
@@ -94,11 +99,11 @@ test("HTTP handlers keep matching free but reject anonymous contact before worke
     assert.equal(response.headers.get("cache-control"), "private, no-store");
     const body = await response.json(); assert.equal(body.count, 1);
     assert.doesNotMatch(JSON.stringify(body), /18095550100|whatsapp|edit_token/);
-    assert.equal(selected, MATCH_COLUMNS);
+    assert.equal(selected, `confirmed_at,workers!inner(${MATCH_COLUMNS})`);
     const handoff = await contact(request({ draft, workerId: row.id }));
     assert.equal(handoff.status, 401);
     assert.doesNotMatch(await handoff.text(), /18095550100|wa\.me/);
-    assert.equal(selected, MATCH_COLUMNS);
+    assert.equal(selected, `confirmed_at,workers!inner(${MATCH_COLUMNS})`);
     mode = "empty"; assert.equal((await (await matches(request(draft))).json()).count, 0);
     for (mode of ["partial", "error"]) {
       const failed = await matches(request(draft)); assert.equal(failed.status, 503);

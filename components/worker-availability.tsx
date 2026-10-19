@@ -4,7 +4,7 @@ import Link from "next/link";
 import { validAvailabilityKey } from "@/lib/availability";
 
 type Availability = { available: boolean; confirmedAt: string | null; fresh: boolean };
-export function WorkerAvailability({ enabled }: { enabled: boolean }) {
+export function WorkerAvailability() {
   const originalKey = useRef<string | null>(null);
   const [key, setKey] = useState("");
   const [state, setState] = useState<Availability | null>(null);
@@ -21,7 +21,6 @@ export function WorkerAvailability({ enabled }: { enabled: boolean }) {
       setState(null); setError("");
       if (!validAvailabilityKey(secret)) { setKey(""); setBusy(false); return; }
       setKey(secret);
-      if (!enabled) return;
       const current = new AbortController();
       abort = current;
       setBusy(true);
@@ -34,7 +33,7 @@ export function WorkerAvailability({ enabled }: { enabled: boolean }) {
     openLink(true);
     window.addEventListener("hashchange", onHashChange);
     return () => { abort?.abort(); window.removeEventListener("hashchange", onHashChange); };
-  }, [enabled]);
+  }, []);
   async function renew(available: boolean) {
     setBusy(true); setError("");
     try {
@@ -48,13 +47,13 @@ export function WorkerAvailability({ enabled }: { enabled: boolean }) {
   return <section className="request-builder">
     <h1>¿Estás disponible para trabajar?</h1>
     <p>Confirma en un paso, sin crear otro perfil. Tu confirmación dura 30 días; después debes renovarla. Puedes pausar en cualquier momento.</p>
-    {!enabled ? <p role="status">La renovación todavía no está habilitada. Tu perfil y tus fotos se conservan.</p> : !key ? <p>Abre el enlace privado que recibiste después de verificar que el perfil es tuyo.</p> : <>
+    {!key ? <p>Abre el enlace privado que recibiste después de verificar que el perfil es tuyo.</p> : <>
       <p role="status" aria-live="polite">{busy ? "Guardando o consultando…" : state?.fresh ? "Disponibilidad vigente por 30 días desde tu última confirmación." : state?.available ? "Tu disponibilidad venció. Confirma si puedes recibir solicitudes." : state ? "No estás marcado como disponible." : "Confirma tu disponibilidad para recibir solicitudes."}</p>
       <div className="request-actions"><button disabled={busy} className="btn-primary" onClick={() => renew(true)}>Sí, estoy disponible</button><button disabled={busy} className="btn-secondary" onClick={() => renew(false)}>Ahora no estoy disponible</button></div>
       <p>Esto no acepta ningún trabajo ni confirma un horario específico.</p>
     </>}
     {error && <p role="alert">{error}</p>}
     <p className="request-footnote">Guarda el enlace privado original. No lo compartas. Por seguridad, la clave se quita de la barra del navegador al abrirlo.</p>
-    <Link className="btn-secondary" href="/trabajadores/recuperar">Necesito ayuda con mi acceso</Link>
+    <Link className="btn-secondary availability-help-link" href="/trabajadores/recuperar">Necesito ayuda con mi acceso</Link>
   </section>;
 }

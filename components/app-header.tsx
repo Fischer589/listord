@@ -35,7 +35,7 @@ export function AppHeader() {
 
         <Link
           href="/"
-          className="site-logo-link"
+          className="site-logo-link max-[400px]:px-2"
           aria-label="ListoRD — Inicio"
         >
           {/* Logo mark — heart with double checkmark (matches brand logo) */}
@@ -69,7 +69,7 @@ export function AppHeader() {
               fill="none"
             />
           </svg>
-          <span className="site-logo-text">ListoRD</span>
+          <span className="site-logo-text max-[360px]:sr-only">ListoRD</span>
         </Link>
 
         {/* ── Desktop nav (640px+) — unchanged ── */}
@@ -96,10 +96,10 @@ export function AppHeader() {
         </nav>
 
         {/* ── Mobile nav (< 640px) — primary CTA + hamburger ── */}
-        <div className="flex items-center gap-2 sm:hidden" ref={menuRef}>
+        <div className="flex items-center gap-1 sm:hidden" ref={menuRef}>
           <Link
             href="/solicitar"
-            className="tap-target btn-primary text-xs px-3 py-2 text-white"
+            className="tap-target btn-primary text-xs px-2 py-2 text-white"
           >
             Necesito gente
           </Link>
@@ -107,7 +107,7 @@ export function AppHeader() {
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
-            className="tap-target flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-mid)] bg-[var(--surface-pure)] text-[var(--ink)]"
+            className="tap-target flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-mid)] bg-[var(--surface-pure)] text-[var(--ink)]"
             aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={menuOpen}
             aria-controls="mobile-nav-menu"

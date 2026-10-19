@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 const key = "a".repeat(64);
 test("private availability link: expired -> renew -> pause, no registration and no analytics secret", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
   const analytics: string[] = [];
   const actions: unknown[] = [];
   await page.route("**/api/analytics/events", async route => {
@@ -15,6 +16,7 @@ test("private availability link: expired -> renew -> pause, no registration and 
   });
   await page.goto(`/trabajadores/disponibilidad#clave=${key}`);
   await expect(page.getByText("Tu disponibilidad venció. Confirma si puedes recibir solicitudes.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sí, estoy disponible", exact: true })).toBeInViewport();
   await expect(page).toHaveURL(/\/trabajadores\/disponibilidad$/);
   await page.getByRole("button", { name: "Sí, estoy disponible", exact: true }).click();
   await expect(page.getByText("Disponibilidad vigente por 30 días desde tu última confirmación.")).toBeVisible();
@@ -23,6 +25,8 @@ test("private availability link: expired -> renew -> pause, no registration and 
   expect(actions).toEqual(["status", "renew", "renew"]);
   expect(analytics.join(" ")).not.toContain(key);
   expect(analytics.join(" ")).not.toContain("clave");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 320, height: 812 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 

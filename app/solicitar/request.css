@@ -22,6 +22,7 @@
 .request-preview { padding: 1.5rem; background: var(--surface); border-radius: var(--r); border-left: 4px solid var(--green); white-space: pre-line; overflow-wrap: anywhere; }
 .request-footnote { font-size: .85rem; margin-top: 2rem; }
 @media (max-width: 420px) { .request-pair { grid-template-columns: 1fr; } .request-actions > * { width: 100%; text-align: center; } }
+@media (max-width: 420px) { .availability-help-link { max-width: 100%; white-space: normal; text-align: center; } }
 
 .request-builder h1, .request-error-box { scroll-margin-top: 6rem; }
 .request-matches { margin-top: 2rem; border-top: 1px solid var(--border-mid); padding-top: 1.5rem; }

@@ -61,10 +61,10 @@ for (const route of ["checkout", "worker-checkout", "boost-checkout", "employer-
   assert.equal(response.status, 503, route);
 }
 const renewal = await fetch(`${base}/api/workers/availability`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
-assert.equal(renewal.status, 503);
+assert.equal(renewal.status, 400);
 const outcome = await fetch(`${base}/resultados/empleador/22222222-2222-4222-8222-222222222222`);
 assert.match(await outcome.text(), /No se ha registrado ninguna respuesta/);
-console.log("Containment: legacy edit links, new checkout and availability disabled; outcomes report no saved response");
+console.log("Containment: legacy edit links and new checkout disabled; availability requires a private key; outcomes report no saved response");
 
 const image = await fetch(base + "/_next/image?url=%2Flogo.png&w=640&q=75");
 assert.equal(image.status, 404);

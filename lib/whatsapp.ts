@@ -45,8 +45,10 @@ export function buildWhatsAppUrl(value?: string | null) {
 }
 
 export function workerContactMessage(fullName?: string | null) {
-  const firstName = fullName?.trim().split(/\s+/)[0];
-  return `¡Hola${firstName ? `, ${firstName}` : ""}! 👋 Vi tu perfil en ListoRD y me llamó la atención. Me gustaría conversar contigo sobre una oportunidad de trabajo. ¿Estás disponible para hablar? 😊`;
+  const candidate = fullName?.trim().split(/\s+/)[0];
+  let firstName = candidate && !candidate.includes("\uFFFD") ? candidate : "";
+  try { encodeURIComponent(firstName); } catch { firstName = ""; }
+  return `\u00a1Hola${firstName ? `, ${firstName}` : ""}! \uD83D\uDC4B Vi tu perfil en ListoRD y me llam\u00F3 la atenci\u00F3n. Me gustar\u00EDa conversar contigo sobre una oportunidad de trabajo. \u00BFEst\u00E1s disponible para hablar? \uD83D\uDE0A`;
 }
 
 export function buildWorkerContactWhatsAppUrl(number?: string | null, fullName?: string | null) {

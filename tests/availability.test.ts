@@ -109,9 +109,8 @@ test("HTTP renewal requires private key, server gate, CSRF checks and admin auth
     const { POST: issue } = await import("../app/api/admin/availability-access/route");
     const req = (body: unknown) => new Request("https://listord.example/api/workers/availability", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     process.env.WORKER_AVAILABILITY_RENEWAL_ENABLED = "false";
-    assert.equal((await POST(req({ key, action: "renew", available: true }))).status, 503);
-    assert.equal(calls, 0);
-    process.env.WORKER_AVAILABILITY_RENEWAL_ENABLED = "true";
+    assert.equal((await POST(req({ key, action: "renew", available: true }))).status, 200,
+      "the old Express gate cannot block a worker's private self-confirmation");
     assert.equal((await POST(req({ key: id, action: "renew", available: true }))).status, 400);
     assert.equal((await POST(req({ key, action: "renew", available: "true" }))).status, 400);
     const cross = req({ key, action: "renew", available: true }); cross.headers.set("origin", "https://evil.example");

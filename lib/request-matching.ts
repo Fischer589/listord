@@ -50,6 +50,13 @@ const TRADE_ALIASES: Record<string, string[]> = {
   carpinteria: ["carpintero", "carpintera", "ebanista"], seguridad: ["vigilante", "guardia de seguridad", "vigilancia"],
 };
 const UNITS: Record<string, string> = { "por hora": "hourly", "por día": "daily", "por semana": "weekly", "por mes": "monthly" };
+export function workerHasTradeCategory(skills: string[] | null | undefined, categoryKey: string): boolean {
+  const category = CATEGORIES.find(c => c.searchKey === categoryKey);
+  if (!category || !Array.isArray(skills) || skills.some(skill => typeof skill !== "string")) return false;
+  const trades = [...(TRADE_ALIASES[categoryKey] ?? []), category.label];
+  if (categoryKey !== "cuidadora") trades.push(category.searchKey);
+  return skills.map(normalizeText).some(skill => trades.some(trade => skill === normalizeText(trade)));
+}
 export function matchWorker(row: MatchRow, draft: RequestDraft, now: Date, freshness: "legacy" | "confirmed" = "legacy"): RequestMatch | null {
   const created = Date.parse(row.created_at ?? "");
   // Creation is only a conservative upper bound on the age of the availability
@@ -60,12 +67,7 @@ export function matchWorker(row: MatchRow, draft: RequestDraft, now: Date, fresh
   if (row.is_verified !== true || row.available_now !== true || !fresh) return null;
   if (!row.id || !row.full_name?.trim() || !row.city || !Array.isArray(row.skills) || row.skills.some(skill => typeof skill !== "string")) return null;
   if (normalizeText(row.city) !== normalizeText(draft.city)) return null;
-  const category = CATEGORIES.find(c => c.searchKey === draft.category)!;
-  const trades = [...TRADE_ALIASES[draft.category], category.label];
-  // Generic 'cuidadora' is ambiguous between child/adult care.
-  if (draft.category !== "cuidadora") trades.push(category.searchKey);
-  const skills = row.skills.map(normalizeText);
-  if (!skills.some(skill => trades.some(trade => skill === normalizeText(trade)))) return null;
+  if (!workerHasTradeCategory(row.skills, draft.category)) return null;
   const income = Number(row.desired_income);
   const comparable = draft.compensation !== "negotiable" && Boolean(UNITS[draft.unit]) && UNITS[draft.unit] === row.income_type && Number.isFinite(income) && income > 0;
   if (comparable && income > Number(draft.amount)) return null;

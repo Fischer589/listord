@@ -4,6 +4,8 @@ export function isFreshAvailability(available: unknown, confirmedAt: unknown, no
   const timestamp = Date.parse(confirmedAt);
   return Number.isFinite(timestamp) && timestamp <= now.getTime() && timestamp > now.getTime() - AVAILABILITY_DAYS * 86400000;
 }
+/** Legacy Express outreach kill switch. Worker self-confirmation and guided matching
+ * use the private availability ledger regardless of this sales setting. */
 export function availabilityRenewalEnabled(): boolean {
   return process.env.WORKER_AVAILABILITY_RENEWAL_ENABLED === "true";
 }

@@ -1,5 +1,4 @@
 import { AdminAvailabilityAccess } from "@/components/admin-availability-access";
-import { availabilityRenewalEnabled } from "@/lib/availability";
 import { requireAdmin } from "@/lib/admin-auth";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import Image from "next/image";
@@ -98,10 +97,11 @@ async function approveLocalTestWorker() {
 
 // ─── Data ──────────────────────────────────────────────────
 
+type AdminWorker = Worker & { owner_user_id?: string | null };
 type AdminWorkersResult = {
   approvedCount: number;
   pendingCount: number;
-  workers: Worker[];
+  workers: AdminWorker[];
 };
 
 async function getAdminWorkers(): Promise<AdminWorkersResult> {
@@ -124,6 +124,7 @@ async function getAdminWorkers(): Promise<AdminWorkersResult> {
       work_style,
       short_intro,
       is_verified,
+      owner_user_id,
       created_at
     `)
     .order("created_at", { ascending: false });
@@ -233,6 +234,7 @@ export default async function AdminWorkersPage({
               >
                 Depósitos
               </a>
+              <a href="/api/admin/worker-activation-report" className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5">Resumen de activación</a>
               <form action="/admin/logout" method="post">
                 <button type="submit" className="mt-1 shrink-0 rounded-md border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/50 shadow-soft hover:bg-black/5">
                   Cerrar sesión
@@ -398,7 +400,7 @@ export default async function AdminWorkersPage({
                         </span>
                       )}
 
-                      {worker.is_verified && availabilityRenewalEnabled() && <AdminAvailabilityAccess workerId={worker.id} />}
+                      {worker.is_verified && <AdminAvailabilityAccess workerId={worker.id} ownerLinked={Boolean(worker.owner_user_id)} />}
                       {!worker.is_verified ? (
                         <>
                           <form action={approveWorker} className="inline">

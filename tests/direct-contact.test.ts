@@ -71,8 +71,10 @@ test("one paid direct order authorizes only its verified owner and worker across
       return Response.json(status === "paid" && mode === "live" && linkedOwner === owner && url.searchParams.get("worker_id") === `eq.${worker}` ? [{ id: orderId }] : []);
     }
     privateReads++;
+    if (url.pathname === "/rest/v1/worker_availability") return Response.json({ confirmed_at: new Date(Date.now() - 1000).toISOString() });
     if (url.pathname === "/rest/v1/workers") return Response.json({ id: worker, full_name: "Ana", city: "Puerto Plata", skills: ["Limpieza"],
-      whatsapp_number: "18095550100", is_verified: true, available_now: true, created_at: new Date().toISOString(), desired_income: 1200, income_type: "daily" });
+      whatsapp_number: "18095550100", is_verified: true, available_now: true, owner_user_id: linkedOwner,
+      created_at: "2025-01-01T00:00:00Z", desired_income: 1200, income_type: "daily" });
     if (url.pathname === "/rest/v1/marketplace_opportunities") return Response.json({ id: opportunity });
     if (url.pathname === "/rest/v1/marketplace_opportunity_owners") return Response.json({ opportunity_id: opportunity });
     if (url.pathname === "/rest/v1/rpc/marketplace_contacts_v2") return Response.json([{ worker_id: worker, worker_name: "Ana", name: "Ana", phone: "18095550100" }]);

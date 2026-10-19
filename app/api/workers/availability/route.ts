@@ -2,11 +2,10 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { MATCH_HEADERS, readMatchBody } from "@/lib/request-match-server";
-import { availabilityRenewalEnabled, isFreshAvailability, validAvailabilityKey } from "@/lib/availability";
+import { isFreshAvailability, validAvailabilityKey } from "@/lib/availability";
 
 export async function POST(request: Request) {
   const reply = (error: string, status: number) => NextResponse.json({ error }, { status, headers: MATCH_HEADERS });
-  if (!availabilityRenewalEnabled()) return reply("La renovación todavía no está habilitada. Tu perfil se conserva.", 503);
   const body = await readMatchBody(request).catch(() => null) as { key?: unknown; available?: unknown; action?: unknown } | null;
   if (!validAvailabilityKey(body?.key) || !["status", "renew"].includes(String(body?.action)) || (body?.action === "renew" && typeof body.available !== "boolean")) return reply("Usa tu enlace privado de disponibilidad.", 400);
   const tokenHash = createHash("sha256").update(body.key).digest("hex");
