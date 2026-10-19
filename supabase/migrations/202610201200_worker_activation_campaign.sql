@@ -20,7 +20,6 @@ create table public.worker_activation_queue (
   check ((suppressed_at is null) = (suppression_reason is null)),
   check (suppression_reason is null or suppression_reason in ('worker_request','invalid_contact','provider_failure','dispute','operator_hold'))
 );
-insert into public.worker_activation_queue(worker_id) select id from public.workers;
 create function public.worker_activation_enqueue() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin
@@ -29,6 +28,10 @@ begin
 end $$;
 create trigger worker_activation_enqueue after insert on public.workers
   for each row execute function public.worker_activation_enqueue();
+-- CREATE TRIGGER blocks concurrent worker inserts until commit; backfill now
+-- runs after trigger creation so a registration cannot miss the queue.
+insert into public.worker_activation_queue(worker_id)
+  select id from public.workers on conflict do nothing;
 
 create table public.worker_notification_consent (
   worker_id uuid not null references public.workers(id) on delete restrict,

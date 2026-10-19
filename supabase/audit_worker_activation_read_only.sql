@@ -7,6 +7,9 @@ select current_user as auditor_role, current_setting('transaction_read_only') as
   to_regclass('public.workers') is not null as workers_present,
   to_regclass('public.worker_availability') is not null as availability_present,
   to_regclass('public.worker_activation_queue') is not null as activation_queue_present,
+  to_regclass('public.worker_notification_consent') is not null as notification_consent_present,
+  to_regclass('public.worker_activation_permission_events') is not null as permission_events_present,
+  to_regclass('public.worker_activation_batches') is not null as activation_batches_present,
   to_regclass('public.worker_activation_batch_recipients') is not null as activation_recipients_present,
   to_regclass('supabase_migrations.schema_migrations') is not null as migration_ledger_present;
 
@@ -24,7 +27,11 @@ with expected(signature) as (values
 select signature,proc is not null as present,
   coalesce((length(definition)-length(replace(definition,'interval ''30 days''','')))
     /length('interval ''30 days'''),0) as thirty_day_guards,
-  position('SECURITY DEFINER' in upper(coalesce(definition,'')))>0 as security_definer
+  coalesce((length(definition)-length(replace(definition,
+    'a.confirmed_at>now()-interval ''30 days''','')))
+    /length('a.confirmed_at>now()-interval ''30 days'''),0) as thirty_day_availability_guards,
+  coalesce((select p.prosecdef from pg_proc p where p.oid=proc),false) as security_definer,
+  coalesce(has_function_privilege('service_role',proc,'EXECUTE'),false) as service_role_execute
 from definitions order by signature;
 
 select table_name, column_name, data_type from information_schema.columns
