@@ -52,13 +52,17 @@ test("private migration creates a full queue, seven-day SQL guards and atomic ow
       grant select,update on public.workers to service_role;`);
     await db.exec(await readFile(new URL("../supabase/migrations/202610081400_worker_availability.sql", import.meta.url), "utf8"));
     await db.exec(`create function public.marketplace_express_targets(uuid,uuid,uuid[]) returns table(worker_id uuid)
-        language sql security definer as $$ select null::uuid where now()-interval '30 days'>now() $$;
+        language sql security definer as $$ select null::uuid from (select now() as confirmed_at) a
+          where a.confirmed_at>now()-interval '30 days' $$;
       create function public.marketplace_express_reserve(uuid,uuid,text,uuid[]) returns uuid
-        language sql security definer as $$ select null::uuid where now()-interval '30 days'>now() $$;
+        language sql security definer as $$ select null::uuid from (select now() as confirmed_at) a
+          where a.confirmed_at>now()-interval '30 days' $$;
       create function public.marketplace_express_chargeable(uuid) returns boolean
-        language sql security definer as $$ select now()-interval '30 days'>now() $$;
+        language sql security definer as $$ select exists(select 1 from (select now() as confirmed_at) a
+          where a.confirmed_at>now()-interval '30 days') $$;
       create function public.marketplace_express_claim(uuid) returns table(worker_id uuid)
-        language sql security definer as $$ select null::uuid where now()-interval '30 days'>now() $$;`);
+        language sql security definer as $$ select null::uuid from (select now() as confirmed_at) a
+          where a.confirmed_at>now()-interval '30 days' $$;`);
     const before = (await db.query("select * from public.workers order by id")).rows;
     await db.exec(await readFile(new URL("../supabase/migrations/202610201200_worker_activation_campaign.sql", import.meta.url), "utf8"));
     assert.deepEqual((await db.query("select * from public.workers order by id")).rows, before, "migration does not activate or rewrite workers");
@@ -66,7 +70,7 @@ test("private migration creates a full queue, seven-day SQL guards and atomic ow
     for (const signature of ["marketplace_express_targets(uuid,uuid,uuid[])","marketplace_express_reserve(uuid,uuid,text,uuid[])",
       "marketplace_express_chargeable(uuid)","marketplace_express_claim(uuid)"]) {
       const result = await db.query<{ source: string }>("select pg_get_functiondef($1::regprocedure) as source", [signature]);
-      assert.match(result.rows[0].source, /interval '7 days'/);
+      assert.match(result.rows[0].source, /a\.confirmed_at>now\(\)-interval '7 days'/);
       assert.doesNotMatch(result.rows[0].source, /interval '30 days'/);
     }
     for (const role of ["anon","authenticated"]) {

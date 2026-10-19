@@ -274,7 +274,9 @@ grant execute on function public.issue_worker_availability(uuid,text),
 -- The existing Express SQL checks must use the same seven-day expiry as the
 -- application. Refuse unexpected function definitions for manual review.
 do $$
-declare item record; definition text; needle text := 'interval ''30 days'''; hits integer;
+declare item record; definition text;
+  needle text := 'a.confirmed_at>now()-interval ''30 days''';
+  interval_needle text := 'interval ''30 days'''; hits integer; interval_hits integer;
 begin
   for item in select * from (values
     ('public.marketplace_express_targets(uuid,uuid,uuid[])',1),
@@ -285,10 +287,12 @@ begin
     if to_regprocedure(item.signature) is null then raise exception 'Express function missing: %',item.signature; end if;
     definition := pg_get_functiondef(to_regprocedure(item.signature));
     hits := (length(definition)-length(replace(definition,needle,'')))/length(needle);
-    if hits<>item.expected_hits or position('SECURITY DEFINER' in upper(definition))=0 then
+    interval_hits := (length(definition)-length(replace(definition,interval_needle,'')))/length(interval_needle);
+    if hits<>item.expected_hits or interval_hits<>item.expected_hits or not (
+      select p.prosecdef from pg_proc p where p.oid=to_regprocedure(item.signature)) then
       raise exception 'Unexpected Express availability guard: %',item.signature;
     end if;
-    execute replace(definition,needle,'interval ''7 days''');
+    execute replace(definition,needle,'a.confirmed_at>now()-interval ''7 days''');
   end loop;
 end $$;
 commit;
