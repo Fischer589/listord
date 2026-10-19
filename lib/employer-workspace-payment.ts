@@ -51,7 +51,7 @@ export async function recordWorkspacePayment(event: Stripe.Event) {
 
 export async function revokeWorkspacePayment(event: Stripe.Event, stripe: Stripe) {
   let charge: Stripe.Charge;
-  if (event.type === "charge.dispute.created") {
+  if (event.type.startsWith("charge.dispute.")) {
     const dispute = event.data.object as Stripe.Dispute;
     const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
     if (!chargeId) return retry();
@@ -61,15 +61,18 @@ export async function revokeWorkspacePayment(event: Stripe.Event, stripe: Stripe
   const paymentIntent = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
   if (!paymentIntent) return NextResponse.json({ received: true }, { headers });
   if (!Number.isSafeInteger(event.created) || event.created <= 0) return retry();
-  const reversal = { reversed_at: new Date(event.created * 1000).toISOString(), reversal_kind: event.type === "charge.dispute.created" ? "dispute" : "refund" };
+  const resolutionOnly = event.type === "charge.dispute.funds_reinstated" || event.type === "charge.dispute.closed";
+  const reversal = { reversed_at: new Date(event.created * 1000).toISOString(), reversal_kind: event.type.startsWith("charge.dispute.") ? "dispute" : "refund" };
   const db = getSupabaseAdminClient();
   if (!db) return retry();
-  const { data: paidOrder, error: paidError } = await db.from("employer_workspace_orders")
-    .update({ status: "refunded", access_until: null, ...reversal }).eq("stripe_payment_intent_id", paymentIntent)
-    .eq("status", "paid").select("id,amount").maybeSingle();
-  if (paidError) return retry();
-  if (paidOrder?.id) return await recordEmployerReversal(db, event, "workspace", paidOrder.id, paidOrder.amount)
-    ? NextResponse.json({ received: true }, { headers }) : retry();
+  if (!resolutionOnly) {
+    const { data: paidOrder, error: paidError } = await db.from("employer_workspace_orders")
+      .update({ status: "refunded", access_until: null, ...reversal }).eq("stripe_payment_intent_id", paymentIntent)
+      .eq("status", "paid").select("id,amount").maybeSingle();
+    if (paidError) return retry();
+    if (paidOrder?.id) return await recordEmployerReversal(db, event, "workspace", paidOrder.id, paidOrder.amount)
+      ? NextResponse.json({ received: true }, { headers }) : retry();
+  }
 
   // Stripe does not guarantee event ordering. Resolve the Checkout Session
   // when a refund arrives before the paid event bound its PaymentIntent.
@@ -88,6 +91,7 @@ export async function revokeWorkspacePayment(event: Stripe.Event, stripe: Stripe
       .eq("stripe_session_id", session.id).maybeSingle();
     if (orderError || !order) return retry();
     if (!await recordEmployerReversal(db, event, "workspace", order.id, order.amount)) return retry();
+    if (resolutionOnly) return NextResponse.json({ received: true }, { headers });
     if (order.status === "refunded") return NextResponse.json({ received: true }, { headers });
     const { data: updated, error: updateError } = await db.from("employer_workspace_orders")
       .update({ status: "refunded", stripe_payment_intent_id: paymentIntent, access_until: null, ...reversal })

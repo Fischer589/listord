@@ -85,9 +85,13 @@ test("signed workspace events grant exactly once after a confirmed ledger update
   let paymentIntent: string | null = null;
   let updates = 0;
   let acknowledge = true;
+  const reversalKinds: string[] = [];
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
-    if (url.pathname === "/rest/v1/employer_payment_reversals") return Response.json(null);
+    if (url.pathname === "/rest/v1/employer_payment_reversals") {
+      reversalKinds.push(JSON.parse(String(init?.body)).kind);
+      return Response.json(null);
+    }
     assert.equal(url.pathname, "/rest/v1/employer_workspace_orders");
     if (init?.method === "GET") {
       if (url.searchParams.has("stripe_session_id")) return Response.json({ id: orderId, owner_user_id: owner,
@@ -117,7 +121,7 @@ test("signed workspace events grant exactly once after a confirmed ledger update
     return { data: [baseSession] };
   };
   async function deliver(type: string, changes: Record<string, unknown> = {}, secret = "workspace_fixture") {
-    const payload = JSON.stringify({ id: "evt_workspace_fixture", type, created: 1_760_000_000,
+    const payload = JSON.stringify({ id: `evt_${type.replaceAll(".", "_")}`, type, created: 1_760_000_000,
       data: { object: { ...baseSession, ...changes } } });
     const signature = stripe.webhooks.generateTestHeaderString({ payload, secret });
     return webhook(new Request("https://example.test/api/stripe/webhook", { method: "POST", headers: { "stripe-signature": signature }, body: payload }));
@@ -154,8 +158,12 @@ test("signed workspace events grant exactly once after a confirmed ledger update
     assert.equal(status, "refunded");
     assert.equal(updates, 2);
     status = "paid"; paymentIntent = "pi_workspace_fixture";
-    assert.equal((await deliver("charge.dispute.created", { charge: "ch_workspace_fixture", amount: WORKSPACE_AMOUNT_CENTS })).status, 200);
+    assert.equal((await deliver("charge.dispute.created", { id: "dp_workspace_fixture", charge: "ch_workspace_fixture", amount: WORKSPACE_AMOUNT_CENTS })).status, 200);
     assert.equal(status, "refunded", "a Workspace dispute revokes contact entitlement");
+    assert.equal((await deliver("charge.dispute.closed", { id: "dp_workspace_fixture", charge: "ch_workspace_fixture", amount: WORKSPACE_AMOUNT_CENTS, status: "won" })).status, 200);
+    assert.equal((await deliver("charge.dispute.funds_reinstated", { id: "dp_workspace_fixture", charge: "ch_workspace_fixture", amount: WORKSPACE_AMOUNT_CENTS })).status, 200);
+    assert.equal(status, "refunded", "dispute resolution never restores Workspace access");
+    assert.deepEqual(reversalKinds.slice(-3), ["dispute_opened", "dispute_won", "dispute_released"]);
   } finally {
     sessionsPrototype.list = originalList;
     chargesPrototype.retrieve = originalChargeRetrieve;

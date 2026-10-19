@@ -212,9 +212,13 @@ test("signed direct payment is idempotent and refund or dispute revokes even aft
   let status = "pending";
   let intent: string | null = null;
   let writes = 0;
+  const reversalKinds: string[] = [];
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
-    if (url.pathname === "/rest/v1/employer_payment_reversals") return Response.json(null);
+    if (url.pathname === "/rest/v1/employer_payment_reversals") {
+      reversalKinds.push(JSON.parse(String(init?.body)).kind);
+      return Response.json(null);
+    }
     if (url.pathname === "/rest/v1/analytics_events") {
       assert.deepEqual(JSON.parse(String(init?.body)), { event_name: "checkout_success", metadata: { plan: "direct" } });
       return Response.json(null);
@@ -246,10 +250,14 @@ test("signed direct payment is idempotent and refund or dispute revokes even aft
     assert.equal(status, "refunded");
     assert.equal((await deliver("checkout.session.completed")).status, 200);
     status = "pending"; intent = null;
-    assert.equal((await deliver("charge.dispute.created", { charge: "ch_direct_fixture", amount: 8900 }, "evt_dispute_fixture")).status, 200);
+    assert.equal((await deliver("charge.dispute.created", { id: "dp_direct_fixture", charge: "ch_direct_fixture", amount: 8900 }, "evt_dispute_fixture")).status, 200);
     assert.equal(status, "disputed");
     assert.equal((await deliver("checkout.session.completed")).status, 200);
     assert.equal(status, "disputed");
+    assert.equal((await deliver("charge.dispute.closed", { id: "dp_direct_fixture", charge: "ch_direct_fixture", amount: 8900, status: "won" }, "evt_dispute_won")).status, 200);
+    assert.equal((await deliver("charge.dispute.funds_reinstated", { id: "dp_direct_fixture", charge: "ch_direct_fixture", amount: 8900 }, "evt_dispute_reinstated")).status, 200);
+    assert.equal(status, "disputed", "dispute resolution never restores a contact entitlement");
+    assert.deepEqual(reversalKinds.slice(-3), ["dispute_opened", "dispute_won", "dispute_released"]);
     status = "pending"; intent = null;
     assert.equal((await deliver("checkout.session.expired", { payment_status: "unpaid" })).status, 200);
     assert.equal(status, "failed");

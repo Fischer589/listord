@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (event.type === "charge.dispute.created") {
+  if (["charge.dispute.created", "charge.dispute.funds_withdrawn", "charge.dispute.funds_reinstated", "charge.dispute.closed"].includes(event.type)) {
     return (await revokeDirectContactPayment(event, stripe)) ?? revokeWorkspacePayment(event, stripe);
   }
   if (event.type === "charge.refunded" &&

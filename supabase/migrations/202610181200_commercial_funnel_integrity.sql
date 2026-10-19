@@ -40,16 +40,19 @@ create table public.employer_payment_reversals (
   stripe_event_id text primary key,
   order_id uuid not null,
   product text not null check (product in ('direct', 'workspace')),
-  kind text not null check (kind in ('refund', 'dispute')),
+  kind text not null check (kind in ('refund', 'dispute_opened', 'dispute_won', 'dispute_lost', 'dispute_released')),
+  dispute_id text,
   cumulative_amount_cents integer not null check (cumulative_amount_cents > 0),
-  occurred_at timestamptz not null
+  occurred_at timestamptz not null,
+  constraint employer_payment_reversals_dispute_id_check check
+    ((kind = 'refund' and dispute_id is null) or (kind <> 'refund' and dispute_id is not null))
 );
 create index employer_payment_reversals_order_idx on public.employer_payment_reversals(product, order_id, occurred_at);
 alter table public.employer_payment_reversals enable row level security;
 revoke all on public.employer_payment_reversals from anon, authenticated;
 grant all on public.employer_payment_reversals to service_role;
 comment on table public.employer_payment_reversals is
-  'Private idempotent snapshots of cumulative amounts from signed Stripe refund and dispute webhooks.';
+  'Private idempotent signed Stripe refund snapshots and dispute states; no customer contact data.';
 
 -- Only service_role can read this view. Anonymous visits/searches are assigned to
 -- the first bound Checkout product for that browser session, otherwise unassigned.
@@ -82,27 +85,63 @@ with bound_orders as (
   from event_rows group by day, product
 ), order_rows as (
   select (created_at at time zone 'UTC')::date as day, product, 1::bigint as checkout_starts, 0::bigint as paid_orders,
-    0::bigint as refunds, 0::bigint as disputes, 0::bigint as net_collected_cents from bound_orders
+    0::bigint as refunds, 0::bigint as disputes, 0::bigint as refunded_cents,
+    0::bigint as disputed_cents, 0::bigint as net_collected_cents from bound_orders
   union all
-  select (paid_at at time zone 'UTC')::date, product, 0, 1, 0, 0, amount::bigint
+  select (paid_at at time zone 'UTC')::date, product, 0, 1, 0, 0, 0, 0, amount::bigint
   from bound_orders where paid_at is not null
-), reversal_deltas as (
-  select r.product, r.kind, r.occurred_at,
-    greatest(least(r.cumulative_amount_cents, b.amount) - coalesce(max(least(r.cumulative_amount_cents, b.amount))
-      over (partition by r.product, r.order_id order by r.occurred_at, r.stripe_event_id
-        rows between unbounded preceding and 1 preceding), 0), 0)::bigint as delta_cents
+), reversal_events as (
+  -- Recompute from Stripe event time, not webhook delivery time. Refund snapshots
+  -- sharing a second must be ordered by their cumulative amount.
+  select r.*, b.amount,
+    row_number() over (partition by r.product, r.order_id order by r.occurred_at,
+      case when r.kind = 'refund' then 0 when r.kind = 'dispute_opened' then 1
+        when r.kind = 'dispute_released' then 3 else 2 end,
+      case when r.kind = 'refund' then r.cumulative_amount_cents end, r.stripe_event_id) as sequence
   from public.employer_payment_reversals r
   join bound_orders b on b.id = r.order_id and b.product = r.product
+  where b.paid_at is not null
+), reversal_balances as (
+  -- A refund is permanent; a dispute holds only the remaining paid balance.
+  -- A won closure alone does not release a hold: funds_reinstated confirms it.
+  select r.product, r.order_id, r.kind, r.dispute_id, r.occurred_at, r.sequence,
+    least(r.amount, coalesce(refunds.amount, 0))::bigint as refunded_total,
+    least(greatest(r.amount - coalesce(refunds.amount, 0), 0),
+      coalesce(disputes.amount, 0))::bigint as disputed_total
+  from reversal_events r
+  left join lateral (
+    select max(cumulative_amount_cents) as amount from reversal_events e
+    where e.product = r.product and e.order_id = r.order_id
+      and e.sequence <= r.sequence and e.kind = 'refund'
+  ) refunds on true
+  left join lateral (
+    select sum(latest.cumulative_amount_cents) as amount from (
+      select distinct on (e.dispute_id) e.kind, e.cumulative_amount_cents
+      from reversal_events e where e.product = r.product and e.order_id = r.order_id
+        and e.sequence <= r.sequence and e.dispute_id is not null
+        and e.kind in ('dispute_opened', 'dispute_released')
+      order by e.dispute_id, e.sequence desc
+    ) latest where latest.kind = 'dispute_opened'
+  ) disputes on true
+), reversal_deltas as (
+  select r.product, r.kind, r.occurred_at, r.dispute_id,
+    (r.refunded_total - coalesce(lag(r.refunded_total) over w, 0))::bigint as refund_delta,
+    (r.disputed_total - coalesce(lag(r.disputed_total) over w, 0))::bigint as dispute_delta,
+    row_number() over (partition by r.product, r.order_id, r.dispute_id order by r.sequence) as dispute_event_number
+  from reversal_balances r
+  window w as (partition by r.product, r.order_id order by r.sequence)
 ), financial_rows as (
-  select day, product, checkout_starts, paid_orders, refunds, disputes, net_collected_cents from order_rows
+  select day, product, checkout_starts, paid_orders, refunds, disputes,
+    refunded_cents, disputed_cents, net_collected_cents from order_rows
   union all
   select (occurred_at at time zone 'UTC')::date, product, 0, 0,
-    case when kind = 'refund' then 1 else 0 end,
-    case when kind = 'dispute' then 1 else 0 end,
-    -delta_cents from reversal_deltas
+    case when kind = 'refund' and refund_delta > 0 then 1 else 0 end,
+    case when kind = 'dispute_opened' and dispute_event_number = 1 then 1 else 0 end,
+    refund_delta, dispute_delta, -(refund_delta + dispute_delta) from reversal_deltas
 ), order_totals as (
   select day, product, sum(checkout_starts) as checkout_starts, sum(paid_orders) as paid_orders,
     sum(refunds) as refunds, sum(disputes) as disputes,
+    sum(refunded_cents) as refunded_cents, sum(disputed_cents) as disputed_cents,
     sum(net_collected_cents) as net_collected_cents from financial_rows group by day, product
 ), handoff_totals as (
   select (created_at at time zone 'UTC')::date as day, product, count(*)::bigint as authorized_handoffs
@@ -116,6 +155,8 @@ select coalesce(e.day, o.day, h.day) as day,
   coalesce(o.paid_orders, 0)::bigint as paid_orders,
   coalesce(o.refunds, 0)::bigint as refunds,
   coalesce(o.disputes, 0)::bigint as disputes,
+  coalesce(o.refunded_cents, 0)::bigint as refunded_cents,
+  coalesce(o.disputed_cents, 0)::bigint as disputed_cents,
   coalesce(o.net_collected_cents, 0)::bigint as net_collected_cents,
   coalesce(h.authorized_handoffs, 0)::bigint as authorized_handoffs
 from event_totals e full join order_totals o on o.day = e.day and o.product = e.product
@@ -123,5 +164,5 @@ full join handoff_totals h on h.day = coalesce(e.day, o.day) and h.product = coa
 revoke all on public.commercial_funnel_daily from public, anon, authenticated;
 grant select on public.commercial_funnel_daily to service_role;
 comment on view public.commercial_funnel_daily is
-  'Private UTC daily funnel. net_collected_cents is gross paid minus signed refund/dispute increments, before processor fees; historical reversals need reconciliation.';
+  'Private UTC daily funnel. Refunded cents are cumulative refund increments; disputed cents are signed changes in held funds, negative on reinstatement. Net collected is paid minus refunds and active dispute holds, before processor fees; historical reversals need reconciliation.';
 commit;

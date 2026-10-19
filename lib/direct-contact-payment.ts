@@ -58,7 +58,7 @@ export async function revokeDirectContactPayment(event: Stripe.Event, stripe: St
   if (event.type === "charge.refunded") {
     const charge = event.data.object as Stripe.Charge;
     intent = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-  } else if (event.type === "charge.dispute.created") {
+  } else if (event.type.startsWith("charge.dispute.")) {
     const dispute = event.data.object as Stripe.Dispute;
     const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
     if (chargeId) {
@@ -84,6 +84,7 @@ export async function revokeDirectContactPayment(event: Stripe.Event, stripe: St
   if (error || !order || order.amount !== DIRECT_CONTACT_AMOUNT_CENTS || order.currency !== DIRECT_CONTACT_CURRENCY ||
       (order.stripe_payment_intent_id && order.stripe_payment_intent_id !== intent)) return retry();
   if (!await recordEmployerReversal(db, event, "direct", order.id, order.amount)) return retry();
+  if (event.type === "charge.dispute.funds_reinstated" || event.type === "charge.dispute.closed") return received();
   if (order.status === "refunded" || order.status === "disputed" || order.status === "revoked") return received({ already_processed: true });
   const status = event.type === "charge.refunded" ? "refunded" : "disputed";
   if (!Number.isSafeInteger(event.created) || event.created <= 0) return retry();
