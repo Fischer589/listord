@@ -14,8 +14,8 @@ const unavailable = () => NextResponse.json({ error: "El pago de contacto no est
 export async function POST(request: Request) {
   const prefix = workspaceSessionPrefix();
   if (!prefix || !directContactCheckoutReady(request.url)) return unavailable();
-  const body = await readJsonBody(request, 256).catch(() => null) as { workerId?: unknown } | null;
-  if (!isUuid(body?.workerId) || !body || Object.keys(body).some(key => key !== "workerId")) {
+  const body = await readJsonBody(request, 256).catch(() => null) as { workerId?: unknown; browserSessionId?: unknown } | null;
+  if (!isUuid(body?.workerId) || (body?.browserSessionId !== undefined && !isUuid(body.browserSessionId)) || !body || Object.keys(body).some(key => key !== "workerId" && key !== "browserSessionId")) {
     return NextResponse.json({ error: "Selecciona un trabajador válido." }, { status: 400, headers });
   }
   let ownerId: string;
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       }, { idempotencyKey: `direct-contact:${order.id}` });
       if (!session.id.startsWith(prefix) || !session.url?.startsWith("https://checkout.stripe.com/")) throw new Error("INVALID_SESSION");
       const { data: bound, error: bindError } = await db.from("employer_direct_contact_orders")
-        .update({ stripe_session_id: session.id }).eq("id", order.id).eq("owner_user_id", ownerId)
+        .update({ stripe_session_id: session.id, browser_session_id: body.browserSessionId ?? null }).eq("id", order.id).eq("owner_user_id", ownerId)
         .eq("worker_id", workerId).eq("status", "pending").select("id").maybeSingle();
       if (bindError || !bound?.id) return unavailable();
       return NextResponse.json({ url: session.url, sessionId: session.id }, { headers });

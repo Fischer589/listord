@@ -5,7 +5,7 @@ import Link from "next/link";
 import { MarketplaceSession } from "./marketplace-session";
 import { prepareDirectContactReturn } from "@/lib/marketplace-browser";
 import { rememberSelectedWorker, selectedWorker } from "@/lib/free-contact";
-import { trackEvent } from "@/lib/analytics";
+import { getBrowserSessionId, trackEvent } from "@/lib/analytics";
 
 export function DirectContactSession({ workerId }: { workerId: string | null }) {
   return <MarketplaceSession emailRedirectPath="/empleadores/contacto" beforeSendEmail={() => { if (workerId) rememberSelectedWorker(workerId); }}
@@ -34,7 +34,7 @@ function DirectContactCheckout({ token, workerId }: { token: string; workerId: s
         if (!await prepareDirectContactReturn()) throw new Error("No pudimos conservar tu sesión para volver del pago. Intenta de nuevo.");
         const response = await fetch("/api/stripe/direct-contact-checkout", { method: "POST", cache: "no-store",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ workerId: selectedId }), signal: AbortSignal.timeout(20000) });
+          body: JSON.stringify({ workerId: selectedId, browserSessionId: getBrowserSessionId() }), signal: AbortSignal.timeout(20000) });
         const result = await response.json() as { url?: string; sessionId?: string; alreadyActive?: boolean; error?: string };
         if (!response.ok) throw new Error(result.error || "No pudimos preparar el pago.");
         if (disposed) return;

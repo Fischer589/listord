@@ -28,8 +28,23 @@ export async function requireWorkspaceContact(request: Request, workerId?: strin
       .limit(1).abortSignal(AbortSignal.timeout(8000));
     if (direct.error) throw new ContactAccessError(503);
     if (!direct.data?.length) throw new ContactAccessError(402);
+    return { ownerId, db, product: "direct" as const, orderId: direct.data[0].id as string };
   }
-  return { ownerId, db };
+  return { ownerId, db, product: "workspace" as const, orderId: data[0].id as string };
+}
+
+/** Record only an authorized URL issuance, with no contact details or URL. */
+export async function recordAuthorizedHandoff(
+  access: Awaited<ReturnType<typeof requireWorkspaceContact>>,
+  route: "worker" | "request" | "marketplace" | "workspace"
+) {
+  try {
+    const { error } = await access.db.from("employer_contact_handoffs")
+      .insert({ order_id: access.orderId, product: access.product, route });
+    if (error) throw error;
+  } catch {
+    console.warn("Authorized contact handoff was not recorded.", { route, product: access.product });
+  }
 }
 
 export function contactAccessResponse(error: unknown, headers: Record<string, string>) {

@@ -6,7 +6,7 @@ import type { StripeEmbeddedCheckout } from "@stripe/stripe-js";
 import { bindWorkspaceCheckoutReturn, clearWorkspaceCheckoutReturn, prepareWorkspaceCheckoutReturn } from "@/lib/marketplace-browser";
 import { MarketplaceSession } from "./marketplace-session";
 import { rememberSelectedWorker, selectedWorker } from "@/lib/free-contact";
-import { trackEvent } from "@/lib/analytics";
+import { getBrowserSessionId, trackEvent } from "@/lib/analytics";
 
 type Phase = "loading" | "active" | "unavailable" | "embedded" | "fallback" | "verifying" | "confirmed";
 type CheckoutResult = { mode?: string; sessionId?: string; clientSecret?: string; url?: string; error?: string };
@@ -14,7 +14,7 @@ type CheckoutResult = { mode?: string; sessionId?: string; clientSecret?: string
 async function createCheckout(token: string, mode: "embedded" | "hosted", replaceEmbedded = false, workerId: string | null = null): Promise<CheckoutResult> {
   const response = await fetch("/api/stripe/workspace-checkout", { method: "POST", cache: "no-store",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ mode, replaceEmbedded, ...(workerId ? { workerId } : {}) }), signal: AbortSignal.timeout(20000) });
+    body: JSON.stringify({ mode, replaceEmbedded, browserSessionId: getBrowserSessionId(), ...(workerId ? { workerId } : {}) }), signal: AbortSignal.timeout(20000) });
   const result = await response.json() as CheckoutResult;
   if (!response.ok) throw new Error(result.error || "No pudimos preparar el pago. Intenta más tarde.");
   return result;

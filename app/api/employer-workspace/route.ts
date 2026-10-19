@@ -4,7 +4,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { isUuid, workspaceEnabled, workspaceSessionPattern, workspaceSessionPrefix } from "@/lib/employer-workspace";
 import { readJsonBody } from "@/lib/http-json";
 import { buildWorkerContactWhatsAppUrl } from "@/lib/whatsapp";
-import { contactAccessResponse, requireWorkspaceContact } from "@/lib/workspace-contact-access";
+import { contactAccessResponse, recordAuthorizedHandoff, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 
 export const runtime = "nodejs";
 const headers = { "Cache-Control": "private, no-store" };
@@ -67,8 +67,9 @@ export async function POST(request: Request) {
     if (body.action === "save_candidate" || body.action === "remove_candidate" || body.action === "prepare_contact") {
       if (!isUuid(body.workerId)) return failure(400, "Trabajador no válido.");
       const workerId = body.workerId;
+      let access: Awaited<ReturnType<typeof requireWorkspaceContact>> | null = null;
       if (body.action === "prepare_contact") {
-        try { await requireWorkspaceContact(request, workerId); }
+        try { access = await requireWorkspaceContact(request, workerId); }
         catch (error) { return contactAccessResponse(error, headers); }
       }
       if (body.action === "remove_candidate") {
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
       const { data: log, error: logError } = await db.from("employer_workspace_contacts")
         .insert({ owner_user_id: ownerId, worker_id: workerId, request_id: requestId }).select("id").single();
       if (logError || !log?.id) return failure();
+      if (access) await recordAuthorizedHandoff(access, "workspace");
       return NextResponse.json({ url }, { headers });
     }
     if (body.action === "add_request") {

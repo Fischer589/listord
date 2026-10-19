@@ -6,6 +6,7 @@ export type AnalyticsEventName =
   | "request_abandoned"
   | "request_matches"
   | "request_contact"
+  | "directory_search_submitted"
   | "page_view"
   | "worker_view"
   | "contact_click"

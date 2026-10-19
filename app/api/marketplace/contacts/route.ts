@@ -3,15 +3,16 @@ import { readJsonBody } from "@/lib/http-json";
 import { MARKETPLACE_HEADERS as headers, marketplaceEnabled, object, uuid } from "@/lib/marketplace";
 import { MarketplaceError, marketplaceAdmin, rpcFailure } from "@/lib/marketplace-server";
 import { buildWorkerContactWhatsAppUrl } from "@/lib/whatsapp";
-import { contactAccessResponse, requireWorkspaceContact } from "@/lib/workspace-contact-access";
+import { contactAccessResponse, recordAuthorizedHandoff, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 export async function POST(request: Request) {
   if (!marketplaceEnabled()) return NextResponse.json({ error: "Deshabilitado." }, { status: 503, headers });
   const b = object(await readJsonBody(request, 1024).catch(() => null));
   if (!uuid(b?.id) || !uuid(b.workerId)) return NextResponse.json({ error: "Selecciona un trabajador válido." }, { status: 400, headers });
   try {
-    let actor: string;
-    try { actor = (await requireWorkspaceContact(request, b.workerId)).ownerId; }
+    let access: Awaited<ReturnType<typeof requireWorkspaceContact>>;
+    try { access = await requireWorkspaceContact(request, b.workerId); }
     catch (error) { return contactAccessResponse(error, headers); }
+    const actor = access.ownerId;
     const admin = marketplaceAdmin();
     const listing = await admin.from("marketplace_opportunities").select("id")
       .eq("id", b.id).is("deleted_at", null).eq("status", "open").eq("moderation_status", "approved")
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
       if (!url || !uuid(c.worker_id)) return [];
       return [{ name: c.name, workerId: c.worker_id, url }];
     });
+    if (contacts.length > 0) await recordAuthorizedHandoff(access, "marketplace");
     return NextResponse.json({ contacts }, { headers });
   } catch (e) { return NextResponse.json({ error: e instanceof MarketplaceError ? e.message : "No se pudo abrir el contacto." }, { status: e instanceof MarketplaceError ? e.status : 503, headers }); }
 }

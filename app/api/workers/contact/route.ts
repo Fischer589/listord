@@ -3,7 +3,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildWorkerContactWhatsAppUrl } from "@/lib/whatsapp";
 import { readJsonBody } from "@/lib/http-json";
 import { parseMatchRequest } from "@/lib/request-matching";
-import { contactAccessResponse, requireWorkspaceContact } from "@/lib/workspace-contact-access";
+import { contactAccessResponse, recordAuthorizedHandoff, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 
 const headers = { "Cache-Control": "private, no-store" };
 
@@ -15,7 +15,8 @@ export async function POST(request: Request) {
   }
   const draft = body.draft === undefined ? null : parseMatchRequest(body.draft);
   if (body.draft !== undefined && !draft) return NextResponse.json({ error: "Revisa los detalles de tu solicitud." }, { status: 400, headers });
-  try { await requireWorkspaceContact(request, body.workerId); }
+  let access: Awaited<ReturnType<typeof requireWorkspaceContact>>;
+  try { access = await requireWorkspaceContact(request, body.workerId); }
   catch (error) { return contactAccessResponse(error, headers); }
   try {
     const supabase = getSupabaseAdminClient();
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
     if (error) throw new Error("unavailable");
     const url = data && buildWorkerContactWhatsAppUrl(data.whatsapp_number, data.full_name);
     if (!url) return NextResponse.json({ error: "Este contacto no está disponible." }, { status: 404, headers });
+    await recordAuthorizedHandoff(access, "worker");
     return NextResponse.json({ url }, { headers });
   } catch {
     return NextResponse.json({ error: "No pudimos abrir WhatsApp ahora mismo. Intenta de nuevo." }, { status: 503, headers });

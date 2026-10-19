@@ -66,8 +66,16 @@ test("database failure is not zero; retry yields honest empty state", async ({ p
   await page.getByRole("button", { name: "Buscar trabajadores compatibles" }).click();
   await expect(page.getByRole("heading", { name: "Encontramos 0 trabajadores compatibles" })).toBeVisible();
   await expect(page.getByText(/disponibilidad desconocida o perfiles antiguos/)).toBeVisible();
+  const directory = page.getByRole("link", { name: "Explorar directorio" });
+  await expect(directory).toHaveAttribute("href", "/?skill=limpieza&city=Puerto+Plata#descubre");
+  await expect(page.getByText("La disponibilidad de esos perfiles no está confirmada.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Contactar trabajador" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "ENCONTRAR PERSONAL AHORA" })).toBeDisabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await directory.click();
+  await expect(page).toHaveURL(/skill=limpieza&city=Puerto\+Plata#descubre$/);
+  await expect(page.getByRole("textbox", { name: "Ciudad" })).toHaveValue("Puerto Plata");
+  await expect(page.getByRole("textbox", { name: "Habilidad" })).toHaveValue("limpieza");
 });
 
 test("production route rejects malformed anonymous input before querying data", async ({ request }) => {

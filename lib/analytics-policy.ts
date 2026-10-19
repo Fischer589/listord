@@ -1,6 +1,6 @@
 const browserEvents = new Set([
   "request_started", "request_preview", "request_abandoned", "request_matches", "request_contact",
-  "page_view", "worker_view", "contact_click", "paywall_open", "checkout_start",
+  "page_view", "worker_view", "contact_click", "paywall_open", "checkout_start", "directory_search_submitted",
   "boost_purchase_started", "boosted_profile_view", "boost_contact_initiated"
 ]);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

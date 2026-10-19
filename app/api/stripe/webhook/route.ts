@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   }
 
   if (event.type === "charge.dispute.created") {
-    return (await revokeDirectContactPayment(event, stripe)) ?? NextResponse.json({ received: true });
+    return (await revokeDirectContactPayment(event, stripe)) ?? revokeWorkspacePayment(event, stripe);
   }
   if (event.type === "charge.refunded" &&
       (event.data.object as Stripe.Charge).payment_intent) {

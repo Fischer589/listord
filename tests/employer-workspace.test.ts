@@ -78,17 +78,21 @@ test("signed workspace events grant exactly once after a confirmed ledger update
   const stripe = new Stripe("sk_test_fixture");
   const sessionsPrototype = Object.getPrototypeOf(stripe.checkout.sessions);
   const originalList = sessionsPrototype.list;
+  const chargesPrototype = Object.getPrototypeOf(stripe.charges);
+  const originalChargeRetrieve = chargesPrototype.retrieve;
+  chargesPrototype.retrieve = async () => ({ payment_intent: "pi_workspace_fixture" });
   let status = "pending";
   let paymentIntent: string | null = null;
   let updates = 0;
   let acknowledge = true;
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
+    if (url.pathname === "/rest/v1/employer_payment_reversals") return Response.json(null);
     assert.equal(url.pathname, "/rest/v1/employer_workspace_orders");
     if (init?.method === "GET") {
       if (url.searchParams.has("stripe_session_id")) return Response.json({ id: orderId, owner_user_id: owner,
         status, amount: WORKSPACE_AMOUNT_CENTS, currency: "dop", stripe_session_id: "cs_test_workspace_fixture", stripe_payment_intent_id: paymentIntent });
-      return Response.json({ status, stripe_payment_intent_id: paymentIntent });
+      return Response.json({ id: orderId, amount: WORKSPACE_AMOUNT_CENTS, status, stripe_payment_intent_id: paymentIntent });
     }
     assert.equal(init?.method, "PATCH");
     const body = JSON.parse(String(init.body));
@@ -103,7 +107,7 @@ test("signed workspace events grant exactly once after a confirmed ledger update
     if (url.searchParams.get("status") !== `eq.${status}`) return Response.json(null);
     status = body.status;
     paymentIntent = body.stripe_payment_intent_id ?? paymentIntent;
-    return Response.json({ id: orderId });
+    return Response.json({ id: orderId, amount: WORKSPACE_AMOUNT_CENTS });
   };
   const baseSession = { id: "cs_test_workspace_fixture", mode: "payment", payment_status: "paid", amount_total: WORKSPACE_AMOUNT_CENTS,
     currency: "dop", payment_intent: "pi_workspace_fixture", client_reference_id: owner,
@@ -138,19 +142,23 @@ test("signed workspace events grant exactly once after a confirmed ledger update
     assert.equal(updates, 2);
     assert.equal((await deliver("checkout.session.async_payment_succeeded")).status, 200);
     assert.equal(updates, 2);
-    assert.equal((await deliver("charge.refunded", { payment_intent: "pi_workspace_fixture" })).status, 200);
+    assert.equal((await deliver("charge.refunded", { payment_intent: "pi_workspace_fixture", amount_refunded: WORKSPACE_AMOUNT_CENTS })).status, 200);
     assert.equal(status, "refunded");
     assert.equal((await deliver("checkout.session.completed")).status, 200);
     assert.equal(status, "refunded");
     assert.equal(updates, 2);
     status = "pending"; paymentIntent = null;
-    assert.equal((await deliver("charge.refunded", { payment_intent: "pi_workspace_fixture" })).status, 200);
+    assert.equal((await deliver("charge.refunded", { payment_intent: "pi_workspace_fixture", amount_refunded: WORKSPACE_AMOUNT_CENTS })).status, 200);
     assert.equal(status, "refunded");
     assert.equal((await deliver("checkout.session.completed")).status, 200);
     assert.equal(status, "refunded");
     assert.equal(updates, 2);
+    status = "paid"; paymentIntent = "pi_workspace_fixture";
+    assert.equal((await deliver("charge.dispute.created", { charge: "ch_workspace_fixture", amount: WORKSPACE_AMOUNT_CENTS })).status, 200);
+    assert.equal(status, "refunded", "a Workspace dispute revokes contact entitlement");
   } finally {
     sessionsPrototype.list = originalList;
+    chargesPrototype.retrieve = originalChargeRetrieve;
     globalThis.fetch = oldFetch;
     names.forEach((name, i) => { if (old[i] === undefined) delete process.env[name]; else process.env[name] = old[i]; });
   }
@@ -197,13 +205,14 @@ test("paid contact tracking stores a private handoff with the selected worker an
   Object.assign(process.env, { EMPLOYER_WORKSPACE_ENABLED: "true", STRIPE_SECRET_KEY: "sk_test_fixture", NEXT_PUBLIC_SUPABASE_URL: "https://workspace-fixture.example.test",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_anon", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
   let inserted: Record<string, unknown> | null = null;
+  let funnelHandoff: Record<string, unknown> | null = null;
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
     if (url.pathname === "/auth/v1/user") return Response.json({ id: owner, email_confirmed_at: "2026-01-01T00:00:00Z", aud: "authenticated", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" });
     if (url.pathname === "/rest/v1/employer_workspace_orders") {
       assert.match(url.searchParams.get("access_until") ?? "", /^gt\./);
       assert.equal(url.searchParams.get("stripe_session_id"), "like.cs\\_test\\_%");
-      return Response.json([{ access_until: "2099-01-01T00:00:00Z" }]);
+      return Response.json([{ id: orderId, access_until: "2099-01-01T00:00:00Z" }]);
     }
     if (url.pathname === "/rest/v1/workers") {
       assert.equal(url.searchParams.get("id"), `eq.${worker}`);
@@ -213,6 +222,10 @@ test("paid contact tracking stores a private handoff with the selected worker an
     if (url.pathname === "/rest/v1/employer_workspace_requests") {
       assert.equal(url.searchParams.get("owner_user_id"), `eq.${owner}`);
       return Response.json({ title: "Limpieza semanal" });
+    }
+    if (url.pathname === "/rest/v1/employer_contact_handoffs") {
+      funnelHandoff = JSON.parse(String(init?.body));
+      return Response.json(null);
     }
     assert.equal(url.pathname, "/rest/v1/employer_workspace_contacts");
     assert.equal(init?.method, "POST");
@@ -225,6 +238,7 @@ test("paid contact tracking stores a private handoff with the selected worker an
       body: JSON.stringify({ action: "prepare_contact", workerId: worker, requestId: orderId }) }));
     assert.equal(response.status, 200);
     assert.deepEqual(inserted, { owner_user_id: owner, worker_id: worker, request_id: orderId });
+    assert.deepEqual(funnelHandoff, { order_id: orderId, product: "workspace", route: "workspace" });
     const url = new URL((await response.json()).url);
     assert.equal(url.hostname, "wa.me");
     assert.equal(url.searchParams.get("text"), "¡Hola, Verified! 👋 Vi tu perfil en ListoRD y me llamó la atención. Me gustaría conversar contigo sobre una oportunidad de trabajo. ¿Estás disponible para hablar? 😊");
@@ -298,6 +312,7 @@ test("checkout keeps one-time RD$299 terms, per-session Blackthorne branding, an
     if (init?.method === "POST") return Response.json({ id: orderId });
     assert.equal(init?.method, "PATCH");
     const body = JSON.parse(String(init.body));
+    if (body.stripe_session_id && body.browser_session_id) assert.equal(body.browser_session_id, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
     if (body.stripe_session_id) return Response.json(acknowledgeBinding ? { id: orderId } : null);
     return Response.json(null);
   };
@@ -308,7 +323,8 @@ test("checkout keeps one-time RD$299 terms, per-session Blackthorne branding, an
     activePaidMode = "test";
     assert.equal((await checkout(makeRequest())).status, 409, "a current paid order cannot be charged again");
     activePaidMode = "live";
-    const success = await checkout(makeRequest());
+    assert.equal((await checkout(makeRequest({ browserSessionId: "forged" }))).status, 400);
+    const success = await checkout(makeRequest({ browserSessionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" }));
     assert.equal(success.status, 200);
     assert.deepEqual(await success.json(), { mode: "hosted", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });
     pendingRow = { id: orderId, stripe_session_id: "cs_test_workspace_fixture", created_at: new Date().toISOString() };

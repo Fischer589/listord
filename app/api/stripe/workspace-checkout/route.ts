@@ -12,7 +12,7 @@ const unavailable = () => NextResponse.json({ error: "No pudimos iniciar el pago
 export async function POST(request: Request) {
   const sessionPrefix = workspaceSessionPrefix();
   if (!workspaceEnabled() || !workspaceStripeReady(request.url) || !sessionPrefix) return unavailable();
-  let body: { mode?: unknown; replaceEmbedded?: unknown; workerId?: unknown } = {};
+  let body: { mode?: unknown; replaceEmbedded?: unknown; workerId?: unknown; browserSessionId?: unknown } = {};
   if (request.body) {
     try {
       const input = await readJsonBody(request, 256);
@@ -20,6 +20,7 @@ export async function POST(request: Request) {
       body = input as typeof body;
       if (body.mode !== undefined && body.mode !== "embedded" && body.mode !== "hosted") throw new Error("INVALID_REQUEST");
       if (body.workerId !== undefined && !isUuid(body.workerId)) throw new Error("INVALID_REQUEST");
+      if (body.browserSessionId !== undefined && !isUuid(body.browserSessionId)) throw new Error("INVALID_REQUEST");
     } catch { return NextResponse.json({ error: "Solicitud no válida." }, { status: 400, headers }); }
   }
   const mode = body.mode === "embedded" ? "embedded" : "hosted";
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
     }, { idempotencyKey: `workspace:${order.id}` });
     if (!session.id || (mode === "embedded" ? !session.client_secret : !session.url?.startsWith("https://checkout.stripe.com/"))) throw new Error("INVALID_SESSION");
     const { data: bound, error: bindError } = await db.from("employer_workspace_orders")
-      .update({ stripe_session_id: session.id }).eq("id", order.id).eq("owner_user_id", ownerId)
+      .update({ stripe_session_id: session.id, browser_session_id: body.browserSessionId ?? null }).eq("id", order.id).eq("owner_user_id", ownerId)
       .eq("status", "pending").select("id").maybeSingle();
     if (bindError || !bound?.id) return unavailable();
     return NextResponse.json(mode === "embedded"

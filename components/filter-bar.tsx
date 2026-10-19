@@ -1,3 +1,6 @@
+"use client";
+
+import { trackEvent } from "@/lib/analytics";
 import { workStyleLabels } from "@/lib/format";
 import type { WorkStyle } from "@/lib/types";
 
@@ -24,7 +27,7 @@ export function FilterBar({
   workStyle?: string;
 }) {
   return (
-    <form className="filter-form grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
+    <form className="filter-form grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5" onSubmit={() => trackEvent("directory_search_submitted")}>
       <label className="grid gap-2 text-sm font-black text-ink">
         Ciudad
         <input

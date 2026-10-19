@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { getSupabaseAdminClient } from "./supabase-admin";
 import { DIRECT_CONTACT_AMOUNT_CENTS, DIRECT_CONTACT_CURRENCY, DIRECT_CONTACT_PURPOSE } from "./direct-contact";
 import { workspaceSessionPrefix } from "./employer-workspace";
+import { recordEmployerReversal } from "./employer-revenue";
 
 const headers = { "Cache-Control": "private, no-store" };
 const received = (extra: Record<string, unknown> = {}) => NextResponse.json({ received: true, ...extra }, { headers });
@@ -43,8 +44,6 @@ export async function recordDirectContactPayment(event: Stripe.Event) {
     .eq("id", order.id).eq("status", "pending").eq("stripe_session_id", session.id).select("id").maybeSingle();
   if (updateError) return retry();
   if (updated?.id) {
-    try { await db.from("analytics_events").insert({ event_name: "checkout_success", metadata: { plan: "direct" } }); }
-    catch { /* Measurement never determines payment fulfillment. */ }
     return received();
   }
   const latest = await db.from("employer_direct_contact_orders").select("status,stripe_payment_intent_id")
@@ -84,10 +83,13 @@ export async function revokeDirectContactPayment(event: Stripe.Event, stripe: St
     .eq("worker_id", session.metadata!.worker_id).eq("stripe_session_id", session.id).maybeSingle();
   if (error || !order || order.amount !== DIRECT_CONTACT_AMOUNT_CENTS || order.currency !== DIRECT_CONTACT_CURRENCY ||
       (order.stripe_payment_intent_id && order.stripe_payment_intent_id !== intent)) return retry();
+  if (!await recordEmployerReversal(db, event, "direct", order.id, order.amount)) return retry();
   if (order.status === "refunded" || order.status === "disputed" || order.status === "revoked") return received({ already_processed: true });
   const status = event.type === "charge.refunded" ? "refunded" : "disputed";
+  if (!Number.isSafeInteger(event.created) || event.created <= 0) return retry();
   const { data: updated, error: updateError } = await db.from("employer_direct_contact_orders")
-    .update({ status, stripe_payment_intent_id: intent, stripe_reversal_event_id: event.id })
+    .update({ status, stripe_payment_intent_id: intent, stripe_reversal_event_id: event.id,
+      reversed_at: new Date(event.created * 1000).toISOString(), reversal_kind: event.type === "charge.refunded" ? "refund" : "dispute" })
     .eq("id", order.id).eq("status", order.status).select("id").maybeSingle();
   return updateError || !updated?.id ? retry() : received();
 }

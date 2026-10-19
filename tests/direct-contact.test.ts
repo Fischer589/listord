@@ -54,8 +54,15 @@ test("one paid direct order authorizes only its verified owner and worker across
   let mode: "live" | "test" = "live";
   let workspaceActive = false;
   let privateReads = 0;
+  const handoffs: Array<{order_id:string; product:string; route:string}> = [];
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
+    if (url.pathname === "/rest/v1/employer_contact_handoffs") {
+      const row = JSON.parse(String(init?.body));
+      assert.equal(JSON.stringify(row).includes("18095550100"), false);
+      handoffs.push(row);
+      return Response.json(null);
+    }
     if (url.pathname === "/auth/v1/user") return Response.json({ id: linkedOwner, email_confirmed_at: "2026-01-01T00:00:00Z" });
     if (url.pathname === "/rest/v1/employer_workspace_orders") return Response.json(workspaceActive ? [{ id: "workspace" }] : []);
     if (url.pathname === "/rest/v1/employer_direct_contact_orders") {
@@ -88,6 +95,11 @@ test("one paid direct order authorizes only its verified owner and worker across
       assert.equal(url.pathname, "/18095550100");
       assert.equal(url.searchParams.get("text"), workerContactMessage("Ana"));
     }
+    assert.deepEqual(handoffs, [
+      { order_id: orderId, product: "direct", route: "worker" },
+      { order_id: orderId, product: "direct", route: "request" },
+      { order_id: orderId, product: "direct", route: "marketplace" }
+    ]);
     const statusRequest = (id: string) => new Request(`https://example.test/api/contact-access?worker=${id}`, { headers: { Authorization: "Bearer fixture_token_12345678901234567890" } });
     assert.deepEqual(await (await contactStatus(statusRequest(worker))).json(), { active: true });
     const reads = privateReads;
@@ -102,6 +114,7 @@ test("one paid direct order authorizes only its verified owner and worker across
     const workspaceContact = await contact(req("/api/workers/contact", { workerId: otherWorker }));
     assert.equal(workspaceContact.status, 200, "RD$299 remains independent");
     assert.equal(new URL((await workspaceContact.json()).url).searchParams.get("text"), workerContactMessage("Ana"));
+    assert.deepEqual(handoffs.at(-1), { order_id: "workspace", product: "workspace", route: "worker" });
   } finally {
     globalThis.fetch = fetchBefore;
     names.forEach((name, i) => { if (before[i] === undefined) delete process.env[name]; else process.env[name] = before[i]; });
@@ -141,7 +154,11 @@ test("direct checkout rejects missing gates, forged requests, unverified employe
     assert.equal(url.pathname, "/rest/v1/employer_direct_contact_orders");
     if (init?.method === "GET") return Response.json(url.searchParams.get("status") === "eq.pending" ? null : []);
     if (init?.method === "POST") return Response.json({ id: orderId });
-    if (init?.method === "PATCH") return Response.json({ id: orderId });
+    if (init?.method === "PATCH") {
+      const update = JSON.parse(String(init.body));
+      if (update.stripe_session_id) assert.equal(update.browser_session_id, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+      return Response.json({ id: orderId });
+    }
     throw new Error("Unexpected request");
   };
   const req = (body: unknown, auth = true) => new Request("https://preview.example.test/api/stripe/direct-contact-checkout", { method: "POST",
@@ -151,12 +168,13 @@ test("direct checkout rejects missing gates, forged requests, unverified employe
     assert.equal((await checkout(req({ workerId: worker }))).status, 503);
     process.env.DIRECT_CONTACT_CHECKOUT_ENABLED = "true";
     assert.equal((await checkout(req({ workerId: worker, amount: 1 }))).status, 400);
+    assert.equal((await checkout(req({ workerId: worker, browserSessionId: "forged" }))).status, 400);
     assert.equal((await checkout(req({ workerId: "forged" }))).status, 400);
     assert.equal((await checkout(req({ workerId: worker }, false))).status, 401);
     priceAmount = 8901;
     assert.equal((await checkout(req({ workerId: worker }))).status, 503);
     priceAmount = 8900;
-    const response = await checkout(req({ workerId: worker }));
+    const response = await checkout(req({ workerId: worker, browserSessionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" }));
     assert.equal(response.status, 200);
     assert.equal((await response.json()).sessionId, "cs_test_direct_fixture");
     assert.equal(created, 1);
@@ -196,6 +214,7 @@ test("signed direct payment is idempotent and refund or dispute revokes even aft
   let writes = 0;
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
+    if (url.pathname === "/rest/v1/employer_payment_reversals") return Response.json(null);
     if (url.pathname === "/rest/v1/analytics_events") {
       assert.deepEqual(JSON.parse(String(init?.body)), { event_name: "checkout_success", metadata: { plan: "direct" } });
       return Response.json(null);
@@ -223,11 +242,11 @@ test("signed direct payment is idempotent and refund or dispute revokes even aft
     assert.equal(status, "paid");
     assert.equal((await deliver("checkout.session.completed")).status, 200);
     assert.equal(writes, 1);
-    assert.equal((await deliver("charge.refunded", { payment_intent: "pi_direct_fixture" }, "evt_refund_fixture")).status, 200);
+    assert.equal((await deliver("charge.refunded", { payment_intent: "pi_direct_fixture", amount_refunded: 8900 }, "evt_refund_fixture")).status, 200);
     assert.equal(status, "refunded");
     assert.equal((await deliver("checkout.session.completed")).status, 200);
     status = "pending"; intent = null;
-    assert.equal((await deliver("charge.dispute.created", { charge: "ch_direct_fixture" }, "evt_dispute_fixture")).status, 200);
+    assert.equal((await deliver("charge.dispute.created", { charge: "ch_direct_fixture", amount: 8900 }, "evt_dispute_fixture")).status, 200);
     assert.equal(status, "disputed");
     assert.equal((await deliver("checkout.session.completed")).status, 200);
     assert.equal(status, "disputed");
