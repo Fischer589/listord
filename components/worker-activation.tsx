@@ -44,7 +44,8 @@ function ActivationProfiles({ token }: { token: string }) {
   const visibleProfiles = requestedProfile ? profiles.filter(profile => profile.id === requestedProfile) : profiles;
   if (!visibleProfiles.length) return <section className="request-builder"><h2>Verifica la titularidad de tu perfil</h2>
     <p>Tu cuenta está verificada, pero todavía no está vinculada a un perfil. Por seguridad, un número compartido o un enlace antiguo no basta para vincularlo.</p>
-    <Link className="btn-primary" href="/trabajadores/recuperar">Solicitar revisión de titularidad</Link>
+    <Link className="btn-primary" href={requestedProfile
+      ? `/trabajadores/reclamar?perfil=${encodeURIComponent(requestedProfile)}` : "/trabajadores/reclamar"}>Solicitar revisión de titularidad</Link>
     {notice && <p role="alert">{notice}</p>}</section>;
   return <section className="request-builder"><h2>Tus perfiles verificados</h2>
     <p>La disponibilidad dura 7 días desde tu confirmación. Elegir avisos por WhatsApp es una decisión separada.</p>

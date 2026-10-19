@@ -4,6 +4,32 @@ This change prepares a private queue for every worker row. It does not infer
 ownership, availability, invitation permission, WhatsApp job notification
 consent, delivery, or payment from registration. It makes no outbound request.
 
+## Production audit supplied October 19, 2026
+
+The operator-reported read-only audit found 412 approved profiles, 412 recorded
+WhatsApp numbers, 399 distinct numbers, zero linked owners, zero fresh
+availability confirmations, and zero active Express outreach consents. Thirteen
+more profile-number entries than distinct numbers require duplicate review;
+that difference is not a count of all profiles sharing a number. The current
+registration form contains no activation invitation consent field, wording
+version, or permission timestamp. Its former post-registration notice said
+workers would hear from ListoRD on WhatsApp when visible; that notice cannot
+establish prior permission for this activation campaign. No evidence-backed
+activation recipients were identified. The activation migration has not been
+applied, so its queue cannot yet provide a production recipient count.
+
+The existing historical profile fields and server-generated edit tokens do not
+provide a trusted independent proof that a new account created a particular
+legacy row. A claimant can initiate a support request at
+`/trabajadores/reclamar?perfil=<worker-id>` after verified Auth sign-in. The
+configured support WhatsApp number must be real; a placeholder disables the
+request link. Linking requires a restricted case record, independent profile-specific proof,
+the worker's instruction, and the audited admin owner-link action. Shared or
+disputed numbers require a second reviewer. Routine automatic legacy linking
+remains closed until an approved independent identity source can bind a claimant
+to the specific historical profile. Phone control, public profile facts, email
+verification alone, and invitation links cannot do that.
+
 ## Data and access
 
 - Apply only `202610201200_worker_activation_campaign.sql` through the reviewed

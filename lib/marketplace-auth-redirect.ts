@@ -11,8 +11,11 @@ const destinations: Record<MarketplaceAuthIntent, string> = {
 export function marketplaceAuthDestination(intent: string, workerId?: string | null) {
   if (!Object.prototype.hasOwnProperty.call(destinations, intent)) return null;
   const destination = destinations[intent as MarketplaceAuthIntent];
-  return intent === "direct" && workerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(workerId)
-    ? `${destination}?worker=${encodeURIComponent(workerId)}` : destination;
+  const validWorker = workerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(workerId);
+  if (!validWorker) return destination;
+  if (intent === "direct") return `${destination}?worker=${encodeURIComponent(workerId)}`;
+  if (intent === "worker") return `${destination}?perfil=${encodeURIComponent(workerId)}`;
+  return destination;
 }
 
 /** Only ListoRD hosts can appear in email verification links. */
@@ -30,6 +33,7 @@ export function marketplaceAuthCallbackUrl(intent: MarketplaceAuthIntent, curren
     }
   } catch { /* Invalid origins fall back to the canonical ListoRD host. */ }
   const destination = marketplaceAuthDestination(intent, workerId);
-  const worker = intent === "direct" && destination?.includes("?worker=") ? destination.slice(destination.indexOf("?")) : "";
-  return `${origin}/auth/callback/${intent}${worker}`;
+  const selectedWorker = (intent === "direct" || intent === "worker") && destination?.includes("?")
+    ? `?worker=${encodeURIComponent(workerId!)}` : "";
+  return `${origin}/auth/callback/${intent}${selectedWorker}`;
 }

@@ -48,8 +48,8 @@ export function WorkerRegistrationForm({
             ¡Listo! Recibimos tu perfil. 🎉
           </p>
           <p className="mt-2 font-semibold leading-7 text-green-800">
-            Lo revisamos y te avisaremos por WhatsApp cuando estés visible en
-            ListoRD.
+            Revisaremos tu perfil. Para confirmar tu disponibilidad o elegir
+            avisos por WhatsApp, primero deberás verificar su titularidad.
           </p>
         </div>
       )}

@@ -20,6 +20,10 @@ test("all ListoRD email intents use fixed local callback paths and never generat
   assert.equal(marketplaceAuthCallbackUrl("direct", "https://listordapp.com", worker),
     `https://listordapp.com/auth/callback/direct?worker=${worker}`);
   assert.equal(marketplaceAuthDestination("direct", worker), `/empleadores/contacto?worker=${worker}`);
+  assert.equal(marketplaceAuthCallbackUrl("worker", "https://listordapp.com", worker),
+    `https://listordapp.com/auth/callback/worker?worker=${worker}`);
+  assert.equal(marketplaceAuthDestination("worker", worker), `/trabajadores/activar?perfil=${worker}`);
+  assert.equal(marketplaceAuthDestination("worker", "https://evil.example"), "/trabajadores/activar");
   assert.equal(marketplaceAuthDestination("direct", "https://evil.example"), "/empleadores/contacto");
   assert.equal(marketplaceAuthCallbackUrl("account", "https://listordapp.com", worker), "https://listordapp.com/auth/callback/account");
 });
