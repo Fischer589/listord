@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { POST, GET } from "../app/api/marketplace/route";
 import { POST as contacts } from "../app/api/marketplace/contacts/route";
+import { workerContactMessage } from "../lib/whatsapp";
 
 const actor = "11111111-1111-4111-8111-111111111111";
 const id = "22222222-2222-4222-8222-222222222222";
@@ -39,7 +40,7 @@ test("marketplace HTTP verifies Auth identity, binds RPC actor, protects contact
     const data = await response.json(); assert.equal(data.contacts.length, 1, "only the chosen worker is returned"); assert.match(data.contacts[0].url, /wa.me\/18090000111\?text=/);
     assert.equal(data.contacts[0].workerId, id);
     const message = new URL(data.contacts[0].url).searchParams.get("text")!;
-    assert.match(message, /Fixture worker/); assert.ok(message.includes(id));
+    assert.equal(message, workerContactMessage("Fixture worker"));
     assert.equal(response.headers.get("cache-control"), "private, no-store");
     owns = false;
     assert.equal((await contacts(request({ id, workerId: id }))).status, 403, "an interested worker cannot reveal employer contact");
