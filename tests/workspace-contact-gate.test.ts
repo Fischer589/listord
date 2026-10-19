@@ -9,6 +9,7 @@ import { emptyRequest } from "../lib/request-specification";
 const employer = "11111111-1111-4111-8111-111111111111";
 const other = "33333333-3333-4333-8333-333333333333";
 const worker = "22222222-2222-4222-8222-222222222222";
+const workerOwner = "55555555-5555-4555-8555-555555555555";
 const opportunity = "44444444-4444-4444-8444-444444444444";
 const draft = { ...emptyRequest(), category: "limpieza", city: "Puerto Plata", timing: "Fecha flexible", duration: "4 horas", amount: "1500", unit: "por día", answers: { property: "Casa", tasks: "Pisos y baños", supplies: "Los pongo yo" } };
 
@@ -20,8 +21,11 @@ test("all contact endpoints deny anonymous, unpaid, mismatched, expired and refu
     NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_anon", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
   let status: "unpaid" | "paid" | "expired" | "refunded" = "unpaid";
   let linkedOwner = employer;
+  let profileOwner: string | null = workerOwner;
+  let availability: "fresh" | "missing" | "stale" = "fresh";
   let paidSessionMode: "live" | "test" = "live";
   let contactReads = 0;
+  let handoffs = 0;
   globalThis.fetch = async input => {
     const url = new URL(String(input));
     if (url.pathname === "/auth/v1/user") return Response.json({ id: employer, email_confirmed_at: "2026-01-01T00:00:00Z" });
@@ -33,7 +37,15 @@ test("all contact endpoints deny anonymous, unpaid, mismatched, expired and refu
     }
     contactReads++;
     if (url.pathname === "/rest/v1/workers") return Response.json({ id: worker, full_name: "Ana", city: "Puerto Plata", skills: ["Limpieza"],
-      whatsapp_number: "18095550100", is_verified: true, available_now: true, created_at: new Date().toISOString(), desired_income: 1200, income_type: "daily" });
+      whatsapp_number: "18095550100", owner_user_id: profileOwner, is_verified: true, available_now: true, created_at: new Date().toISOString(), desired_income: 1200, income_type: "daily" });
+    if (url.pathname === "/rest/v1/worker_availability") {
+      assert.equal(url.searchParams.get("worker_id"), `eq.${worker}`);
+      assert.equal(url.searchParams.get("available"), "eq.true");
+      assert.ok(url.searchParams.get("access_expires_at")?.startsWith("gt."));
+      if (availability === "missing") return Response.json(null);
+      return Response.json({ confirmed_at: new Date(Date.now() - (availability === "stale" ? 31 : 1) * 86400000).toISOString() });
+    }
+    if (url.pathname === "/rest/v1/employer_contact_handoffs") { handoffs++; return Response.json(null, { status: 201 }); }
     if (url.pathname === "/rest/v1/marketplace_opportunities") return Response.json({ id: opportunity });
     if (url.pathname === "/rest/v1/marketplace_opportunity_owners") return Response.json({ opportunity_id: opportunity });
     if (url.pathname === "/rest/v1/rpc/marketplace_contacts_v2") return Response.json([{ worker_id: worker, worker_name: "Ana", name: "Ana", phone: "18095550100" }]);
@@ -69,6 +81,15 @@ test("all contact endpoints deny anonymous, unpaid, mismatched, expired and refu
       assert.equal(allowed.status, 200, path);
       assert.match((await allowed.text()), /wa\.me\/18095550100/);
       assert.equal(allowed.headers.get("cache-control"), "private, no-store");
+    }
+    assert.equal(handoffs, cases.length);
+    for (const [owner, state] of [[null, "fresh"], [workerOwner, "missing"], [workerOwner, "stale"]] as const) {
+      profileOwner = owner;
+      availability = state;
+      const denied = await requestContact(request("/api/requests/contact", { workerId: worker, draft }));
+      assert.equal(denied.status, 409, `${owner ?? "unowned"}/${state}`);
+      assert.doesNotMatch(await denied.text(), /18095550100|wa\.me/);
+      assert.equal(handoffs, cases.length, "ineligible workers never create a contact handoff");
     }
   } finally {
     globalThis.fetch = fetchBefore;
