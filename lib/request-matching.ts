@@ -1,10 +1,10 @@
-import { isFreshAvailability } from "./availability";
+import { AVAILABILITY_DAYS, isFreshAvailability } from "./availability";
 import { CATEGORIES } from "./categories";
 import { normalizeText } from "./search";
 import { publicWorkerText } from "./public-worker";
 import { emptyRequest, REQUEST_SCHEMAS, validateRequest, type RequestDraft } from "./request-specification";
 
-export const MATCH_WINDOW_DAYS = 30;
+export const MATCH_WINDOW_DAYS = AVAILABILITY_DAYS;
 export const MATCH_COLUMNS = "id,full_name,city,skills,is_verified,available_now,created_at,desired_income,income_type";
 export const MATCH_LIMIT = 1000;
 export type MatchRow = {

@@ -14,10 +14,10 @@ const id = "22222222-2222-4222-8222-222222222222";
 const key = "a".repeat(64);
 const hash = createHash("sha256").update(key).digest("hex");
 
-test("30-day renewal expiration excludes future/unknown/paused state; old workers can renew", () => {
+test("7-day renewal expiration excludes future/unknown/paused state; old workers can renew", () => {
   const now = new Date("2026-10-08T12:00:00Z");
   assert.equal(isFreshAvailability(true, "2026-10-07", now), true);
-  for (const stamp of [null, "bad", "2026-10-09", "2026-09-08T12:00:00Z", "2026-01-01"]) assert.equal(isFreshAvailability(true, stamp, now), false);
+  for (const stamp of [null, "bad", "2026-10-09", "2026-09-30T12:00:00Z", "2026-01-01"]) assert.equal(isFreshAvailability(true, stamp, now), false);
   assert.equal(isFreshAvailability(false, now.toISOString(), now), false);
   assert.equal(validAvailabilityKey("22222222-2222-4222-8222-222222222222"), false, "legacy edit tokens do not authorize renewal");
   const worker = { id, full_name: "Fixture", city: "Puerto Plata", skills: ["Limpieza"], is_verified: true, available_now: true, created_at: "2025-01-01", desired_income: 1000, income_type: "daily", availability_confirmed_at: now.toISOString() };

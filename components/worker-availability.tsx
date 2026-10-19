@@ -46,9 +46,9 @@ export function WorkerAvailability() {
   }
   return <section className="request-builder">
     <h1>¿Estás disponible para trabajar?</h1>
-    <p>Confirma en un paso, sin crear otro perfil. Tu confirmación dura 30 días; después debes renovarla. Puedes pausar en cualquier momento.</p>
+    <p>Confirma en un paso, sin crear otro perfil. Tu confirmación dura 7 días; después debes renovarla. Puedes pausar en cualquier momento.</p>
     {!key ? <p>Abre el enlace privado que recibiste después de verificar que el perfil es tuyo.</p> : <>
-      <p role="status" aria-live="polite">{busy ? "Guardando o consultando…" : state?.fresh ? "Disponibilidad vigente por 30 días desde tu última confirmación." : state?.available ? "Tu disponibilidad venció. Confirma si puedes recibir solicitudes." : state ? "No estás marcado como disponible." : "Confirma tu disponibilidad para recibir solicitudes."}</p>
+      <p role="status" aria-live="polite">{busy ? "Guardando o consultando…" : state?.fresh ? "Disponibilidad vigente por 7 días desde tu última confirmación." : state?.available ? "Tu disponibilidad venció. Confirma si puedes recibir solicitudes." : state ? "No estás marcado como disponible." : "Confirma tu disponibilidad para recibir solicitudes."}</p>
       <div className="request-actions"><button disabled={busy} className="btn-primary" onClick={() => renew(true)}>Sí, estoy disponible</button><button disabled={busy} className="btn-secondary" onClick={() => renew(false)}>Ahora no estoy disponible</button></div>
       <p>Esto no acepta ningún trabajo ni confirma un horario específico.</p>
     </>}

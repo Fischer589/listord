@@ -19,7 +19,7 @@ test("private availability link: expired -> renew -> pause, no registration and 
   await expect(page.getByRole("button", { name: "Sí, estoy disponible", exact: true })).toBeInViewport();
   await expect(page).toHaveURL(/\/trabajadores\/disponibilidad$/);
   await page.getByRole("button", { name: "Sí, estoy disponible", exact: true }).click();
-  await expect(page.getByText("Disponibilidad vigente por 30 días desde tu última confirmación.")).toBeVisible();
+  await expect(page.getByText("Disponibilidad vigente por 7 días desde tu última confirmación.")).toBeVisible();
   await page.getByRole("button", { name: "Ahora no estoy disponible", exact: true }).click();
   await expect(page.getByText("No estás marcado como disponible.")).toBeVisible();
   expect(actions).toEqual(["status", "renew", "renew"]);
@@ -37,7 +37,7 @@ test("missing/invalid private links cannot renew, errors do not claim success", 
   await page.route("**/api/workers/availability", route => route.fulfill({ status: 403, json: { error: "Este enlace no está vigente o el perfil no está aprobado." } }));
   await page.goto(`/trabajadores/disponibilidad#clave=${key}`);
   await expect(page.getByRole("alert").filter({ hasText: "Este enlace no está vigente" })).toBeVisible();
-  await expect(page.getByText("Disponibilidad vigente por 30 días desde tu última confirmación.")).toHaveCount(0);
+  await expect(page.getByText("Disponibilidad vigente por 7 días desde tu última confirmación.")).toHaveCount(0);
 });
 
 test("worker URLs suppress referrers and analytics omit legacy edit-token query", async ({ page }) => {

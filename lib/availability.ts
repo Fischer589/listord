@@ -1,4 +1,4 @@
-export const AVAILABILITY_DAYS = 30;
+export const AVAILABILITY_DAYS = 7;
 export function isFreshAvailability(available: unknown, confirmedAt: unknown, now = new Date()): boolean {
   if (available !== true || typeof confirmedAt !== "string") return false;
   const timestamp = Date.parse(confirmedAt);

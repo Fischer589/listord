@@ -4,7 +4,7 @@ import { clearPersistedMarketplaceSession, clearWorkspaceCheckoutReturn, getMark
 import { marketplaceAuthCallbackUrl, type MarketplaceAuthIntent } from "@/lib/marketplace-auth-redirect";
 
 /** Restore a verified session before offering another email code. */
-export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.", emailRedirectPath, beforeSendEmail }: { children: (token: string) => ReactNode; description?: string; emailRedirectPath: "/empleadores/mi-cuenta" | "/empleadores/contacto" | "/solicitar" | "/oportunidades"; beforeSendEmail?: () => void }) {
+export function MarketplaceSession({ children, description = "Puedes explorar sin cuenta. Verifica tu correo una vez para publicar o responder. Si ya tienes un perfil, solicita su vinculación tras verificar que te pertenece.", emailRedirectPath, beforeSendEmail }: { children: (token: string) => ReactNode; description?: string; emailRedirectPath: "/empleadores/mi-cuenta" | "/empleadores/contacto" | "/solicitar" | "/oportunidades" | "/trabajadores/activar"; beforeSendEmail?: () => void }) {
   const [client, setClient] = useState<ReturnType<typeof getMarketplaceBrowserClient>>(null);
   const [account, setAccount] = useState("");
   const [token, setToken] = useState("");
@@ -49,7 +49,7 @@ export function MarketplaceSession({ children, description = "Puedes explorar si
       if (!client) throw new Error();
       if (!sent) {
         beforeSendEmail?.();
-        const intent: MarketplaceAuthIntent = emailRedirectPath === "/solicitar" ? "publish" : emailRedirectPath === "/oportunidades" ? "apply" : emailRedirectPath === "/empleadores/contacto" ? "direct" : "account";
+        const intent: MarketplaceAuthIntent = emailRedirectPath === "/solicitar" ? "publish" : emailRedirectPath === "/oportunidades" ? "apply" : emailRedirectPath === "/empleadores/contacto" ? "direct" : emailRedirectPath === "/trabajadores/activar" ? "worker" : "account";
         const { error } = await client.auth.signInWithOtp({
           email: email.trim(),
           options: { emailRedirectTo: marketplaceAuthCallbackUrl(intent, window.location.origin,

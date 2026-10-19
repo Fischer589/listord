@@ -19,7 +19,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ available: data[0].available, confirmedAt: data[0].confirmed_at, fresh: isFreshAvailability(data[0].available, data[0].confirmed_at) }, { headers: MATCH_HEADERS });
     }
     const { data, error } = await client.from("worker_availability").select("available,confirmed_at,workers!inner(is_verified)")
-      .eq("token_hash", tokenHash).gt("access_expires_at", new Date().toISOString()).eq("workers.is_verified", true).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
+      .eq("token_hash", tokenHash).gt("access_expires_at", new Date().toISOString())
+      .eq("workers.is_verified", true).not("workers.owner_user_id", "is", null)
+      .abortSignal(AbortSignal.timeout(8000)).maybeSingle();
     if (error) return reply("No pudimos consultar la disponibilidad. Intenta de nuevo.", 503);
     if (!data) return reply("Este enlace no está vigente o el perfil no está aprobado. Solicita ayuda para recuperarlo.", 403);
     return NextResponse.json({ available: data.available, confirmedAt: data.confirmed_at, fresh: isFreshAvailability(data.available, data.confirmed_at) }, { headers: MATCH_HEADERS });
