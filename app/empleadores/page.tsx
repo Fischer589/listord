@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
 import { workspaceEnabled } from "@/lib/employer-workspace";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Encuentra personal y conecta directamente",
+  description: "¿Buscas personal? Explora perfiles gratis en ListoRD y conecta por WhatsApp con el talento que elijas desde RD$100. Sin comisiones sobre salarios.",
+};
 
 export default function EmployersPage() {
   return (
@@ -35,42 +40,39 @@ export default function EmployersPage() {
               Para empleadores
             </p>
             <h1 className="mt-2 text-4xl font-black leading-tight text-ink">
-              Consigue trabajadores más rápido
+              ¿Buscas personal? Tu búsqueda puede terminar aquí.
             </h1>
             <p className="mt-4 max-w-xl leading-7 text-ink/70">
-              Describe el servicio que necesitas y revisa perfiles compatibles gratis.
-              Compra créditos desde RD$100 para desbloquear contactos individuales. Confirma directamente la disponibilidad
-              y los requisitos con cada persona.
+              <strong>Por solo RD$100, conecta directamente con el talento que tu negocio necesita.</strong>{" "}
+              Nosotros facilitamos la búsqueda. Tú eliges a quién contratar.
             </p>
+            <p className="mt-3 text-ink/70">Sin comisiones sobre salarios. Sin intermediarios. Sin complicaciones.</p>
 
             {/* How it works */}
             <div className="mt-8 grid gap-3">
               <p className="text-sm font-black uppercase tracking-wide text-hoja">
                 Así funciona
               </p>
-              <HowStep number={1} text="Busca por ciudad y tipo de trabajo" />
-              <HowStep number={2} text="Revisa perfiles publicados tras revisión" />
-              <HowStep
-                number={3}
-                text="Elige un contacto y usa un crédito prepagado"
-              />
+              <HowStep number={1} text="Cuéntanos qué necesitas" />
+              <HowStep number={2} text="Revisa perfiles compatibles gratis" />
+              <HowStep number={3} text="Elige a alguien y conecta por WhatsApp" />
             </div>
           </div>
 
           <div className="rounded-2xl border border-hoja/20 bg-white p-5 shadow-soft">
             <h2 className="text-lg font-black text-ink">Describe lo que necesitas</h2>
             <p className="mt-3 leading-7 text-ink/70">Elige servicio y ciudad, concreta las condiciones y revisa las coincidencias reales. Un perfil compatible no es una respuesta de interés.</p>
-            <Link href="/solicitar" className="tap-target mt-5 flex items-center justify-center rounded-xl bg-hoja px-4 py-4 font-black text-white">Preparar mi solicitud</Link>
+            <Link href="/solicitar" className="tap-target mt-5 flex items-center justify-center rounded-xl bg-hoja px-4 py-4 font-black text-white">Encontrar mi próximo empleado</Link>
           </div>
         </section>
 
         {workspaceEnabled() && (
           <section className="mt-10 rounded-2xl border border-hoja/30 bg-white p-6 shadow-soft" aria-labelledby="employer-pass-title">
             <p className="text-sm font-black uppercase tracking-wide text-hoja">Créditos de contacto</p>
-            <h2 id="employer-pass-title" className="mt-2 text-2xl font-black text-ink">Paga solo por trabajadores nuevos</h2>
-            <p className="mt-3 max-w-2xl leading-7 text-ink/70">Guarda candidatos y organiza solicitudes privadas. Cada trabajador nuevo usa un crédito; los ya desbloqueados siguen disponibles.</p>
+            <h2 id="employer-pass-title" className="mt-2 text-2xl font-black text-ink">Elige con quién hablar, sin pagar por explorar</h2>
+            <p className="mt-3 max-w-2xl leading-7 text-ink/70">Un crédito te permite conectar con un trabajador nuevo. Puedes volver a contactar a quienes ya desbloqueaste sin otro cargo.</p>
             <p className="mt-3 font-black text-ink">1 por RD$100 · 5 por RD$445 · 10 por RD$890</p>
-            <Link href="/empleadores/contacto" className="tap-target mt-5 inline-flex items-center justify-center rounded-xl bg-hoja px-6 py-3 font-black text-white">Ver saldo y comprar créditos →</Link>
+            <Link href="/empleadores/contacto" className="tap-target mt-5 inline-flex items-center justify-center rounded-xl bg-hoja px-6 py-3 font-black text-white">Ver mis créditos y contactos →</Link>
           </section>
         )}
 
@@ -91,6 +93,16 @@ export default function EmployersPage() {
             title="Perfiles revisados"
             text="La aprobación del perfil no confirma disponibilidad, cualificaciones ni interés en tu solicitud."
           />
+        </section>
+
+        <section className="mt-10 rounded-2xl border border-hoja/20 bg-white p-6 shadow-soft" aria-labelledby="employer-faq-title">
+          <h2 id="employer-faq-title" className="text-2xl font-black text-ink">Preguntas frecuentes</h2>
+          <dl className="mt-4 grid gap-5 text-ink/70 sm:grid-cols-2">
+            <div><dt className="font-black text-ink">¿Puedo revisar perfiles antes de pagar?</dt><dd className="mt-1">Sí. Buscar, comparar perfiles y preparar tu solicitud es gratis.</dd></div>
+            <div><dt className="font-black text-ink">¿Cuánto cuesta conectar?</dt><dd className="mt-1">Un contacto nuevo cuesta RD$100. También hay paquetes de 5 por RD$445 y 10 por RD$890.</dd></div>
+            <div><dt className="font-black text-ink">¿Tengo que pagar otra vez para escribirle a la misma persona?</dt><dd className="mt-1">No. Los contactos que ya desbloqueaste siguen disponibles sin gastar otro crédito.</dd></div>
+            <div><dt className="font-black text-ink">¿ListoRD garantiza la contratación?</dt><dd className="mt-1">No. Confirma disponibilidad y condiciones directamente con cada persona; tú decides a quién contratar.</dd></div>
+          </dl>
         </section>
 
         {/* ── WORKER CTA ── */}

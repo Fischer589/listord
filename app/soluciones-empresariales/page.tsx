@@ -76,17 +76,17 @@ export default function SolucionesEmpresarialesPage() {
         <section className="section--sm border-b border-[var(--border)]">
           <div className="container max-w-3xl">
             <span className="t-eyebrow block mb-4">Soluciones Empresariales</span>
-            <h1 className="t-headline mb-5">¿Necesitas personal?</h1>
+            <h1 className="t-headline mb-5">¿Buscas personal? Tu búsqueda puede terminar aquí.</h1>
             <p className="t-body mb-3" style={{ fontSize: "1.1rem" }}>
-              ListoRD ayuda a empresas, hoteles, restaurantes y negocios a encontrar
-              perfiles de trabajadores publicados dentro de nuestra red.
+              Explora perfiles gratis y elige con quién conectar por WhatsApp desde RD$100.
+              Nosotros facilitamos la búsqueda. Tú decides a quién contratar.
             </p>
             <p className="t-body mb-8">
-              Ya sea una contratación individual o múltiples trabajadores, podemos
-              ayudarte a identificar candidatos para distintas posiciones.
+              También podemos orientarte si buscas personal para varias posiciones.
+              Sin comisiones sobre salarios ni intermediarios en los contactos directos.
             </p>
             <WhatsAppButton size="large" />
-            <p className="t-body mt-5">¿Prefieres organizar tu búsqueda? <a className="font-bold underline" href="/empleadores">Explora las herramientas para empleadores</a>.</p>
+            <p className="t-body mt-5">¿Prefieres elegir por tu cuenta? <a className="font-bold underline" href="/solicitar">Encontrar mi próximo empleado</a>.</p>
           </div>
         </section>
 

@@ -62,8 +62,8 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
     finally { setContacting(null); }
   }
   return <section className="request-matches" aria-label="Trabajadores compatibles">
-    <h2>Encuentra a quién contactar.</h2>
-    <p>Buscar y revisar perfiles es gratis. Cada trabajador nuevo requiere un crédito de contacto.</p>
+    <h2>Elige con quién conversar.</h2>
+    <p>Buscar y revisar perfiles es gratis. Para conectar por WhatsApp con alguien nuevo, usa 1 crédito o compra uno por RD$100.</p>
     <button className="btn-primary" disabled={loading || contacting !== null} onClick={search}>{loading ? "Verificando perfiles…" : result ? "Actualizar resultados" : "Buscar trabajadores compatibles"}</button>
     <div aria-live="polite" aria-busy={loading}>
       {error && <p role="alert">{error}</p>}
@@ -76,7 +76,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
           <h3>{worker.name}</h3><p>{worker.city}</p>
           <p>{worker.reasons.join(" · ")}</p>
           {worker.scopeEvidence.length > 0 && <p>Habilidades que aparecen en tu alcance: {worker.scopeEvidence.join(", ")}</p>}
-          <div className="request-actions"><Link className="btn-secondary" href={`/trabajador/${worker.id}`} onClick={() => storeProfileRequest(draft, worker.id)}>Ver perfil</Link><Link className="btn-secondary" href={`/empleadores/mi-cuenta?worker=${encodeURIComponent(worker.id)}`}>Guardar en mi espacio</Link><button className="btn-primary" disabled={contacting !== null} onClick={() => contact(worker.id)}>{contacting === worker.id ? "Verificando acceso…" : "Contactar trabajador"}</button></div>
+          <div className="request-actions"><Link className="btn-secondary" href={`/trabajador/${worker.id}`} onClick={() => storeProfileRequest(draft, worker.id)}>Ver perfil</Link><Link className="btn-secondary" href={`/empleadores/mi-cuenta?worker=${encodeURIComponent(worker.id)}`}>Guardar en mi espacio</Link><button className="btn-primary" disabled={contacting !== null} onClick={() => contact(worker.id)}>{contacting === worker.id ? "Verificando acceso…" : "Conectar por WhatsApp"}</button></div>
         </li>)}</ul>}
         {result.count > visible && <button className="btn-secondary" onClick={() => setVisible(previous => previous + 20)}>Ver más perfiles</button>}
         <div className="request-express">

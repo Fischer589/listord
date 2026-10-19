@@ -10,24 +10,6 @@ import { getWorkersResult } from "@/lib/workers";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// Action-form verbs for each category slug
-const CATEGORY_VERBS: Record<string, string> = {
-  limpiadora:  "Limpias.",
-  cocinera:    "Cocinas.",
-  plomero:     "Arreglas.",
-  electricista:"Instalas.",
-  albanil:     "Construyes.",
-  pintor:      "Pintas.",
-  tutor:       "Enseñas.",
-  belleza:     "Embelleces.",
-  jardinero:   "Plantas.",
-  chofer:      "Manejas.",
-  ninera:      "Cuidas.",
-  cuidadora:   "Sanas.",
-  carpintero:  "Creas.",
-  vigilante:   "Proteges.",
-};
-
 export function generateStaticParams() {
   return CATEGORIES.map((c) => ({ slug: c.slug }));
 }
@@ -142,8 +124,6 @@ export default async function CategoryPage({
   const hasWorkers = workers.length > 0;
   const count = workers.length;
 
-  const verb = CATEGORY_VERBS[cat.slug] ?? `${cat.label}.`;
-
   return (
     <>
       <AppHeader />
@@ -151,7 +131,7 @@ export default async function CategoryPage({
 
       <main className="page-shell">
 
-        {/* ── CATEGORY HERO — "Verb. Te buscan." ── */}
+        {/* ── CATEGORY HERO ── */}
         <section className="cat-hero">
           <div className="container cat-hero-inner">
 
@@ -169,9 +149,9 @@ export default async function CategoryPage({
               <span className="cat-kicker-emoji">{cat.emoji}</span>
               {cat.label}
             </p>
-            <h1 className="cat-verb">{verb}</h1>
+            <h1 className="cat-verb">¿Buscas {cat.plural}?</h1>
             <h2 className="cat-verb" style={{ color: "var(--green)", marginTop: "0", marginBottom: "1.5rem" }}>
-              Te buscan.
+              Encuentra con quién conectar.
             </h2>
             <p className="cat-desc">{cat.heroDesc}</p>
 
@@ -181,16 +161,15 @@ export default async function CategoryPage({
                 <span className="cat-count-dot" aria-hidden="true" />
                 <span>
                   <strong>{count}</strong>{" "}
-                  {count === 1 ? cat.singular : cat.plural} disponible
-                  {count !== 1 ? "s" : ""} ahora
+                  {count === 1 ? `perfil de ${cat.singular}` : `perfiles de ${cat.plural}`} para revisar
                 </span>
               </div>
             )}
 
             {/* Trust pills */}
             <div className="cat-trust-row">
-              <span className="cat-trust-pill">✓ Verificados</span>
-              <span className="cat-trust-pill">💬 Directo a WhatsApp</span>
+              <span className="cat-trust-pill">✓ Perfiles revisados</span>
+              <span className="cat-trust-pill">💬 Contacto desde RD$100</span>
               <span className="cat-trust-pill">🇩🇴 Solo en RD</span>
             </div>
 

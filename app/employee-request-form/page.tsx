@@ -139,8 +139,7 @@ export default function EmployeeRequestFormPage() {
             </p>
             <h1 className="mt-2 text-3xl font-black text-ink">Solicita personal</h1>
             <p className="mt-2 leading-7 text-ink/70">
-              Cuéntanos qué tipo de trabajador necesitas y te ayudaremos a encontrar
-              personas disponibles.
+              Cuéntanos qué tipo de trabajador necesitas. Puedes revisar perfiles gratis y decidir con quién hablar; confirma la disponibilidad directamente.
             </p>
           </div>
 

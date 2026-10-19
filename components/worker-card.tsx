@@ -188,7 +188,7 @@ export function WorkerCard({ worker, requestDraft = null }: { worker: Worker; re
             className="tap-target wc-whatsapp-btn"
           >
             <WhatsAppIcon />
-            Contactar trabajador
+            Conectar por WhatsApp
           </button>
           <Link href={`/trabajador/${worker.id}`} onClick={() => { if (requestDraft) storeProfileRequest(requestDraft, worker.id); }} className="wc-profile-link">
             Ver perfil completo →

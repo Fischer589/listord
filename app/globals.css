@@ -396,7 +396,9 @@ h1, h2 {
 }
 
 @media (max-width: 639px) {
-  .hero { padding-top: 2.75rem; }
+  .hero { padding-top: 2.25rem; }
+  .hero-body { margin-bottom: 1.5rem; }
+  .hero-stats { margin-bottom: 1.5rem; }
   .hero-brand-statement { margin-top: 2rem; }
 }
 
@@ -414,9 +416,9 @@ h1, h2 {
 
 .hero-title {
   font-family: var(--font-display);
-  font-size: clamp(4rem, 10vw + 0.5rem, 9rem);
+  font-size: clamp(2.7rem, 5.5vw, 5.5rem);
   font-weight: 400;
-  line-height: 0.95;
+  line-height: 1.02;
   letter-spacing: -0.03em;
   color: var(--ink);
   margin-bottom: 1.75rem;
@@ -1471,7 +1473,7 @@ h1, h2 {
 /* ─── 27. RESPONSIVE ─────────────────────────────────────────────────────── */
 
 @media (max-width: 639px) {
-  .hero-title { line-height: 0.92; }
+  .hero-title { font-size: 2.25rem; line-height: 1; margin-bottom: 1.25rem; }
   .worker-cta-inner { padding: 1.75rem; }
 }
 .contact-paywall-backdrop { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; padding: 1rem; background: #102a1dcc; }

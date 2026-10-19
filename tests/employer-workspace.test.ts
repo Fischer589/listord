@@ -233,7 +233,7 @@ test("paid contact tracking stores a private handoff with the selected worker an
     assert.deepEqual(funnelHandoff, { order_id: orderId, product: "workspace", route: "workspace" });
     const url = new URL((await response.json()).url);
     assert.equal(url.hostname, "wa.me");
-    assert.equal(url.searchParams.get("text"), "¡Hola, Verified! 👋 Vi tu perfil en ListoRD y me llamó la atención. Me gustaría conversar contigo sobre una oportunidad de trabajo. ¿Estás disponible para hablar? 😊");
+    assert.equal(url.searchParams.get("text"), "¡Hola! 👋 Encontré tu perfil en ListoRD y me gustaría conversar contigo sobre una oportunidad de trabajo. ¿Tienes disponibilidad para que hablemos de los detalles?");
   } finally {
     globalThis.fetch = oldFetch;
     names.forEach((name, i) => { if (old[i] === undefined) delete process.env[name]; else process.env[name] = old[i]; });

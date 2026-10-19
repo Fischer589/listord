@@ -37,14 +37,14 @@ test("free matching shows contact credits while Express stays separate, and edit
   await expect(page.getByText("RD$299 — Pago único", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "ENCONTRAR PERSONAL AHORA" })).toBeDisabled();
   await expect(page.getByText(/No han confirmado interés/)).toBeVisible();
-  await page.getByRole("button", { name: "Contactar trabajador" }).first().click();
-  const paywall = page.getByRole("dialog", { name: "Desbloquea este contacto" });
+  await page.getByRole("button", { name: "Conectar por WhatsApp" }).first().click();
+  const paywall = page.getByRole("dialog", { name: "¿Listo para terminar tu búsqueda? 🎯" });
   await expect(paywall).toBeVisible();
   await expect(paywall.getByText("Perfil seleccionado: Puerto Plata")).toBeVisible();
   await expect(paywall.getByText("RD$100", { exact: true })).toBeVisible();
   await expect(paywall.getByText("RD$445", { exact: true })).toBeVisible();
   await expect(paywall.getByText("RD$890", { exact: true })).toBeVisible();
-  await expect(paywall.getByRole("link", { name: "Ver mi saldo y comprar créditos" })).toHaveAttribute("href", `/empleadores/contacto?worker=${fixture.workers[0].id}`);
+  await expect(paywall.getByRole("link", { name: "Ver mis créditos y conectar" })).toHaveAttribute("href", `/empleadores/contacto?worker=${fixture.workers[0].id}`);
   expect(contacts).toBe(0); expect(searches).toBe(1);
   await page.getByRole("button", { name: "Seguir explorando" }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -71,7 +71,7 @@ test("database failure is not zero; retry yields honest empty state", async ({ p
   const directory = page.getByRole("link", { name: "Explorar directorio" });
   await expect(directory).toHaveAttribute("href", "/?skill=limpieza&city=Puerto+Plata#descubre");
   await expect(page.getByText("La disponibilidad de esos perfiles no está confirmada.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Contactar trabajador" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Conectar por WhatsApp" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "ENCONTRAR PERSONAL AHORA" })).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await directory.click();

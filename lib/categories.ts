@@ -37,10 +37,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "limpieza",
     seoTitle: "Limpiadoras en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata limpiadoras y empleadas domésticas verificadas en Santo Domingo, Santiago y toda la RD. Sin agencias — contacto directo por WhatsApp.",
-    heroTitle: "Limpiadoras verificadas en República Dominicana",
+      "Explora perfiles de limpiadoras en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de limpiadoras en República Dominicana",
     heroDesc:
-      "Encuentra limpiadoras de hogar confiables en tu ciudad. Perfiles verificados por nuestro equipo — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de limpiadoras gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "limpiadora",
       "empleada doméstica",
@@ -61,10 +61,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "cocina",
     seoTitle: "Cocineras en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata cocineras domésticas y chefs verificados en Santo Domingo, Santiago y toda la RD. Sin agencias — contacto directo por WhatsApp.",
-    heroTitle: "Cocineras verificadas en República Dominicana",
+      "Explora perfiles de cocineras en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de cocineras en República Dominicana",
     heroDesc:
-      "Cocineras domésticas y chefs disponibles en tu ciudad. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de cocineras gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "cocinera",
       "cocinero",
@@ -85,10 +85,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "plomeria",
     seoTitle: "Plomeros en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata plomeros verificados en Santo Domingo, Santiago y toda la RD. Fugas, instalaciones de agua, tuberías — contacto directo por WhatsApp.",
-    heroTitle: "Plomeros verificados en República Dominicana",
+      "Explora perfiles de plomeros en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de plomeros en República Dominicana",
     heroDesc:
-      "Plomeros disponibles para fugas, tuberías e instalaciones de agua. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de plomeros gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "plomero",
       "plomería",
@@ -109,10 +109,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "electricidad",
     seoTitle: "Electricistas en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata electricistas verificados en Santo Domingo, Santiago y toda la RD. Instalaciones eléctricas, breakers, paneles — contacto directo por WhatsApp.",
-    heroTitle: "Electricistas verificados en República Dominicana",
+      "Explora perfiles de electricistas en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de electricistas en República Dominicana",
     heroDesc:
-      "Electricistas disponibles para instalaciones, reparaciones y paneles eléctricos. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de electricistas gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "electricista",
       "electricidad",
@@ -133,10 +133,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "construccion",
     seoTitle: "Albañiles en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata albañiles verificados en Santo Domingo, Santiago y toda la RD. Obra, remodelación, reparaciones — contacto directo por WhatsApp.",
-    heroTitle: "Albañiles verificados en República Dominicana",
+      "Explora perfiles de albañiles en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de albañiles en República Dominicana",
     heroDesc:
-      "Albañiles y ayudantes de construcción disponibles en tu ciudad. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de albañiles gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "albañil",
       "construcción",
@@ -157,10 +157,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "pintura",
     seoTitle: "Pintores en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata pintores verificados en Santo Domingo, Santiago y toda la RD. Pintura de interiores y exteriores — contacto directo por WhatsApp.",
-    heroTitle: "Pintores verificados en República Dominicana",
+      "Explora perfiles de pintores en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de pintores en República Dominicana",
     heroDesc:
-      "Pintores disponibles para interiores, exteriores y acabados. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de pintores gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "pintor",
       "pintura",
@@ -181,10 +181,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "clases",
     seoTitle: "Tutores y profesores en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata tutores y profesores verificados en Santo Domingo, Santiago y toda la RD. Matemáticas, inglés, refuerzo escolar — contacto directo por WhatsApp.",
-    heroTitle: "Tutores verificados en República Dominicana",
+      "Explora perfiles de tutores en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de tutores en República Dominicana",
     heroDesc:
-      "Profesores y tutores disponibles para clases particulares y refuerzo escolar. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de tutores gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "tutor",
       "profesor",
@@ -206,10 +206,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "belleza",
     seoTitle: "Estilistas y manicuristas en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata estilistas, manicuristas y especialistas en belleza verificados en Santo Domingo, Santiago y toda la RD. Contacto directo por WhatsApp.",
-    heroTitle: "Estilistas y especialistas en belleza verificados en RD",
+      "Explora perfiles de especialistas en belleza en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de especialistas en belleza en República Dominicana",
     heroDesc:
-      "Manicuristas, estilistas y técnicas en uñas disponibles en tu ciudad. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de especialistas en belleza gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "manicurista",
       "estilista",
@@ -231,10 +231,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "jardineria",
     seoTitle: "Jardineros en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata jardineros verificados en Santo Domingo, Santiago y toda la RD. Poda, mantenimiento de jardines, paisajismo — contacto directo por WhatsApp.",
-    heroTitle: "Jardineros verificados en República Dominicana",
+      "Explora perfiles de jardineros en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de jardineros en República Dominicana",
     heroDesc:
-      "Jardineros y paisajistas disponibles en tu ciudad. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de jardineros gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "jardinero",
       "jardinería",
@@ -255,10 +255,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "conductor",
     seoTitle: "Choferes y conductores en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata choferes verificados en Santo Domingo, Santiago y toda la RD. Transporte personal, mandados, rutas — contacto directo por WhatsApp.",
-    heroTitle: "Choferes verificados en República Dominicana",
+      "Explora perfiles de choferes en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de choferes en República Dominicana",
     heroDesc:
-      "Conductores disponibles para transporte personal, mandados y rutas. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de choferes gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "chofer",
       "conductor",
@@ -279,10 +279,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "ninos",
     seoTitle: "Niñeras en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata niñeras verificadas en Santo Domingo, Santiago y toda la RD. Cuidado de niños en casa, apoyo escolar — contacto directo por WhatsApp.",
-    heroTitle: "Niñeras verificadas en República Dominicana",
+      "Explora perfiles de niñeras en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de niñeras en República Dominicana",
     heroDesc:
-      "Niñeras y cuidadoras de niños disponibles en tu ciudad. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de niñeras gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "niñera",
       "cuidado niños",
@@ -303,10 +303,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "cuidadora",
     seoTitle: "Cuidadoras y enfermeras en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata cuidadoras verificadas en Santo Domingo, Santiago y toda la RD. Cuidado de adultos mayores, asistencia médica en casa — contacto directo por WhatsApp.",
-    heroTitle: "Cuidadoras verificadas en República Dominicana",
+      "Explora perfiles de cuidadoras en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de cuidadoras en República Dominicana",
     heroDesc:
-      "Cuidadoras y asistentes de salud disponibles en tu ciudad. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de cuidadoras gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "cuidadora",
       "enfermera",
@@ -327,10 +327,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "carpinteria",
     seoTitle: "Carpinteros en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata carpinteros verificados en Santo Domingo, Santiago y toda la RD. Muebles, reparaciones, instalaciones de madera — contacto directo por WhatsApp.",
-    heroTitle: "Carpinteros verificados en República Dominicana",
+      "Explora perfiles de carpinteros en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de carpinteros en República Dominicana",
     heroDesc:
-      "Carpinteros disponibles para muebles, reparaciones e instalaciones. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de carpinteros gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "carpintero",
       "carpintería",
@@ -351,10 +351,10 @@ export const CATEGORIES: CategoryConfig[] = [
     searchKey: "seguridad",
     seoTitle: "Vigilantes y guardias en República Dominicana | ListoRD",
     seoDesc:
-      "Contrata vigilantes verificados en Santo Domingo, Santiago y toda la RD. Seguridad residencial, comercial, eventos — contacto directo por WhatsApp.",
-    heroTitle: "Vigilantes verificados en República Dominicana",
+      "Explora perfiles de vigilantes en República Dominicana gratis. Conecta por WhatsApp desde RD$100 y confirma la disponibilidad directamente.",
+    heroTitle: "Perfiles de vigilantes en República Dominicana",
     heroDesc:
-      "Vigilantes y guardias de seguridad disponibles en tu ciudad. Perfiles verificados — escríbeles directo por WhatsApp.",
+      "Revisa perfiles de vigilantes gratis en tu ciudad. Elige con quién conectar por WhatsApp desde RD$100 y confirma los detalles directamente.",
     keywords: [
       "vigilante",
       "guarda",

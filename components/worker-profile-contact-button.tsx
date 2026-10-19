@@ -20,10 +20,10 @@ export function WorkerProfileContactButton({ workerId, primarySkill, city }: { w
   return (
     <div className="rounded-2xl border border-[rgba(31,31,28,0.07)] bg-white p-5 shadow-soft">
       <p className="text-sm font-black uppercase tracking-wide text-hoja">
-        Contactar
+        ¿Quieres hablar con esta persona?
       </p>
       <p className="mt-2 text-sm font-bold text-ink/65">
-        Explora perfiles gratis. Usa un crédito para desbloquear un trabajador nuevo.
+        Revisa su perfil gratis. Conecta directamente por WhatsApp desde RD$100, o usa un crédito que ya tengas.
       </p>
 
       <button
@@ -33,7 +33,7 @@ export function WorkerProfileContactButton({ workerId, primarySkill, city }: { w
         className="tap-target mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1f7a4c] px-4 py-4 text-lg font-black text-white shadow-[0_16px_34px_rgba(31,122,76,0.2)] hover:bg-[#17613c] disabled:opacity-70"
       >
         <WhatsAppIcon />
-        {loading ? "Verificando acceso..." : "Contactar trabajador"}
+        {loading ? "Verificando acceso..." : "Conectar por WhatsApp"}
       </button>
       <p className="mt-2 text-center text-xs font-bold text-ink/50">
         Mensaje directo — sin intermediarios

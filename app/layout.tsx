@@ -20,11 +20,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://listordapp.com"),
   title: {
-    default: "ListoRD — Trabajadores listos hoy",
+    default: "ListoRD — ¿Buscas personal? Tu búsqueda puede terminar aquí",
     template: "%s | ListoRD"
   },
   description:
-    "Explora perfiles de trabajadores revisados en República Dominicana. Filtra por ciudad y habilidad; confirma la disponibilidad directamente.",
+    "Encuentra talento en República Dominicana. Explora perfiles gratis y conecta por WhatsApp desde RD$100. Sin comisiones sobre salarios ni intermediarios.",
   applicationName: "ListoRD",
   keywords: [
     "trabajadores República Dominicana",
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
     "ListoRD"
   ],
   openGraph: {
-    title: "ListoRD | Trabajadores listos para trabajar hoy",
+    title: "ListoRD | ¿Buscas personal? Tu búsqueda puede terminar aquí",
     description:
-      "Perfiles revisados en tu ciudad; confirma la disponibilidad.",
+      "Explora perfiles gratis y conecta directamente con el talento que elijas desde RD$100. Tú decides a quién contratar.",
     url: "https://listordapp.com",
     siteName: "ListoRD",
     images: [
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ListoRD",
     description:
-      "Trabajadores listos para trabajar hoy en República Dominicana.",
+      "Encuentra. Conecta. Contrata. Explora perfiles gratis y conecta por WhatsApp desde RD$100.",
     images: [
       {
         url: "/logo.png",
@@ -106,7 +106,7 @@ export default function RootLayout({
         {children}
         <footer className="border-t border-[var(--border)] bg-[var(--surface)] py-10 text-center text-sm font-bold text-[var(--ink)]/55">
           <p className="text-base font-black text-[var(--ink)]">
-            Encuentra. Conecta. Listo. 🇩🇴
+            Encuentra. Conecta. Contrata. 🇩🇴
           </p>
           <p className="mt-1 text-[var(--ink)]/55">© 2026 ListoRD</p>
           <nav className="mt-4 flex flex-wrap items-center justify-center gap-4 text-[var(--ink)]/70">

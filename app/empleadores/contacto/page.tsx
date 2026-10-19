@@ -14,8 +14,8 @@ export default async function ContactCreditsPage({ searchParams }: { searchParam
     <div className="payment-page__top"><Link href={workerId ? `/trabajador/${encodeURIComponent(workerId)}` : "/"}>← Seguir explorando</Link></div>
     <header className="payment-page__header">
       <p className="workspace-eyebrow">Contactos prepagados · ListoRD</p>
-      <h1>Compra contactos cuando los necesites</h1>
-      <p>Explora gratis. Cada trabajador nuevo que desbloquees usa un crédito; vuelve a contactar a los ya desbloqueados sin pagar otra vez.</p>
+      <h1>{workerId ? "Conecta con el talento que elegiste" : "Conecta con el talento que tu negocio necesita"}</h1>
+      <p>Explora perfiles gratis. Un contacto nuevo cuesta RD$100 o usa un crédito que ya compraste. Puedes volver a escribirle a quien ya desbloqueaste sin pagar otra vez.</p>
     </header>
     <ContactCreditsSession workerId={workerId} returned={query.checkout === "return"} />
   </main></>;

@@ -194,9 +194,9 @@ function WorkerJsonLd({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const HOW_IT_WORKS = [
-  { step: "1", text: `Haz clic en "Contactar por WhatsApp" abajo` },
-  { step: "2", text: "Se abre WhatsApp con un mensaje listo para enviar" },
-  { step: "3", text: "Hablas directamente con la persona — sin intermediarios" },
+  { step: "1", text: "Revisa el perfil y decide si quieres conectar" },
+  { step: "2", text: "Usa 1 crédito para un contacto nuevo; los ya desbloqueados no gastan otro" },
+  { step: "3", text: "Abre WhatsApp y confirma disponibilidad y condiciones directamente" },
 ];
 
 export default async function WorkerProfilePage({

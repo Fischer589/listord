@@ -6,8 +6,8 @@ import "./request.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Describe el trabajo",
-  description: "Elige servicio y ciudad, define el alcance y prepara tu solicitud de trabajo sin registrarte.",
+  title: "Encuentra personal para tu negocio",
+  description: "Cuéntanos qué necesitas, revisa perfiles compatibles gratis y elige con quién conectar por WhatsApp desde RD$100.",
 };
 export default function RequestPage() {
   return <><AppHeader /><main className="container request-page"><RequestBuilder publicationEnabled={marketplaceEnabled()} /></main></>;

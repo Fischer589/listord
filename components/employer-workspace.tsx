@@ -97,15 +97,15 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, directReturn, can
   if (!data.active) return <section className="workspace-offer" aria-labelledby="workspace-offer-title">
     <div className="workspace-offer__copy">
       <p className="workspace-eyebrow">Créditos de contacto</p>
-      <h2 id="workspace-offer-title">Tu próximo equipo, en orden</h2>
-      <p>Guarda candidatos, organiza solicitudes de personal, registra intentos de contacto y vuelve a tus listas.</p>
-      <p className="workspace-offer__fineprint">Explora perfiles gratis. Un crédito desbloquea a un trabajador nuevo.</p>
+      <h2 id="workspace-offer-title">Tu búsqueda, en un solo lugar</h2>
+      <p>Guarda candidatos, organiza solicitudes de personal y retoma tus conversaciones cuando lo necesites.</p>
+      <p className="workspace-offer__fineprint">Explora perfiles gratis. Un contacto nuevo usa 1 crédito; los que ya desbloqueaste siguen disponibles.</p>
     </div>
     <div className="workspace-offer__purchase">
-      <p className="workspace-offer__price">Desde RD$100</p>
+      <p className="workspace-offer__price">1 contacto por RD$100</p>
       <p>Pago único. Sin renovación automática.</p>
       <div className="workspace-actions">
-        <Link className="btn-primary" href={workerToSave ? `/empleadores/contacto?worker=${encodeURIComponent(workerToSave)}` : "/empleadores/contacto"}>Ver saldo y comprar créditos</Link>
+        <Link className="btn-primary" href={workerToSave ? `/empleadores/contacto?worker=${encodeURIComponent(workerToSave)}` : "/empleadores/contacto"}>Ver mis créditos y contactos</Link>
         <button type="button" className="btn-secondary" onClick={() => void load()}>Actualizar estado</button>
       </div>
       {returned && <p role="status" className="workspace-feedback">Esperando confirmación del pago por Stripe. El regreso desde Checkout no activa el acceso.</p>}
@@ -125,7 +125,7 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, directReturn, can
       <div className="workspace-pass__date"><span>Válido hasta</span><strong>{new Date(data.accessUntil!).toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" })}</strong></div>
     </header>
     {workerToSave && <aside className="workspace-selected" aria-label="Perfil seleccionado">
-      <div><p className="workspace-eyebrow">Desde el directorio</p><p>Tu trabajador seleccionado está listo para contactar.</p></div>
+      <div><p className="workspace-eyebrow">Desde el directorio</p><p>Guardaste este perfil para evaluar si encaja con tu búsqueda.</p></div>
       <Link className="btn-secondary" href={`/trabajador/${encodeURIComponent(workerToSave)}`}>Volver al trabajador</Link>
       <button type="button" className="btn-primary" disabled={busy} onClick={() => void act({ action: "save_candidate", workerId: workerToSave }, "Candidato guardado.").then(saved => {
         if (saved) { setWorkerToSave(null); try { sessionStorage.removeItem("listord-workspace-selected-worker"); } catch { /* Optional storage. */ } }
@@ -140,7 +140,7 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, directReturn, can
         <div className="workspace-stack">{data.candidates.map(worker => <article key={worker.id} className="workspace-item">
           <h3>{worker.full_name}</h3><p>{worker.city || "República Dominicana"} · {(worker.skills || []).slice(0, 3).join(", ")}</p>
           <div className="workspace-actions"><Link className="btn-secondary" href={`/trabajador/${encodeURIComponent(worker.id)}`}>Ver perfil</Link>
-            <button type="button" className="btn-primary" disabled={busy} onClick={() => void contact(worker.id)}>Preparar WhatsApp y registrar intento</button>
+            <button type="button" className="btn-primary" disabled={busy} onClick={() => void contact(worker.id)}>Conectar por WhatsApp</button>
             <button type="button" className="btn-secondary" disabled={busy} onClick={() => void act({ action: "remove_candidate", workerId: worker.id }, "Candidato quitado.")}>Quitar de lista</button></div>
         </article>)}</div>
       </section>

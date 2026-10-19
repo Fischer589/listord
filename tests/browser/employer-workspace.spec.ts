@@ -51,10 +51,10 @@ test("verified employer session restores in a new tab and browser context, then 
 
 test("public employer page explains contact credits and keeps free access clear", async ({ page }) => {
   await page.goto("/empleadores");
-  const offer = page.getByRole("heading", { name: "Paga solo por trabajadores nuevos" }).locator("..");
+  const offer = page.getByRole("heading", { name: "Elige con quién hablar, sin pagar por explorar" }).locator("..");
   await expect(offer).toContainText("1 por RD$100 · 5 por RD$445 · 10 por RD$890");
   await expect(page.getByText("Puedes descubrir perfiles y revisar coincidencias sin pagar.")).toBeVisible();
-  await expect(offer.getByRole("link", { name: "Ver saldo y comprar créditos" })).toHaveAttribute("href", "/empleadores/contacto");
+  await expect(offer.getByRole("link", { name: "Ver mis créditos y contactos" })).toHaveAttribute("href", "/empleadores/contacto");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -63,7 +63,7 @@ test("retired payment page redirects to contact credits without opening the old 
   await page.route("**/api/stripe/workspace-checkout", route => { checkoutRequests++; return route.abort(); });
   await page.goto("/empleadores/pago");
   await expect(page).toHaveURL(/\/empleadores\/contacto$/);
-  await expect(page.getByRole("heading", { name: "Compra contactos cuando los necesites" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Conecta con el talento que tu negocio necesita" })).toBeVisible();
   expect(checkoutRequests).toBe(0);
 });
 
@@ -115,13 +115,13 @@ test("magic-link callback validates and stores the session, clears URL tokens, a
     return route.fulfill({ json: { active: false, accessUntil: null, candidates: [], requests: [], contacts: [] } });
   });
   await page.goto(`/empleadores/mi-cuenta#access_token=${accessToken}&refresh_token=${refreshToken}&expires_in=3600&token_type=bearer&type=magiclink`);
-  await expect(page.getByRole("link", { name: "Ver saldo y comprar créditos" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver mis créditos y contactos" })).toBeVisible();
   await expect(page).toHaveURL("http://127.0.0.1:3188/empleadores/mi-cuenta");
   expect(userValidations).toBeGreaterThan(0);
   expect(await page.evaluate(() => sessionStorage.getItem("listord-marketplace-session-v1"))).not.toBeNull();
   await expect(page.getByRole("button", { name: "Guardar candidato" })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole("link", { name: "Ver saldo y comprar créditos" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver mis créditos y contactos" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Enviar código" })).toHaveCount(0);
   await expect(page).toHaveURL("http://127.0.0.1:3188/empleadores/mi-cuenta");
 });
@@ -157,10 +157,10 @@ test("checkout return waits for server-confirmed credits and never grants access
   await expect(page.getByText("Créditos disponibles: 0")).toBeVisible();
   await page.goto("/empleadores/contacto?worker=" + workerId + "&checkout=return");
   await expect(page.getByText("Créditos disponibles: 0")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Usar 1 crédito y contactar" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Usar 1 crédito y abrir WhatsApp" })).toHaveCount(0);
   remaining = 1; // Signed webhook fulfillment is represented only by this server fixture.
   await expect(page.getByText("Créditos disponibles: 1")).toBeVisible({ timeout: 12000 });
-  await expect(page.getByRole("button", { name: "Usar 1 crédito y contactar" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Usar 1 crédito y abrir WhatsApp" })).toBeVisible();
 });
 
 // Historical workspace purchases remain usable while their server entitlement is active.
@@ -189,7 +189,7 @@ test("a verified old pass restores saved candidates and private requests until e
   await page.getByRole("button", { name: "Enviar código" }).click();
   await page.getByLabel("Código de verificación").fill("123456");
   await page.getByRole("button", { name: "Verificar código" }).click();
-  await expect(page.getByRole("link", { name: "Ver saldo y comprar créditos" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver mis créditos y contactos" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Guardar candidato" })).toHaveCount(0);
   active = true; // Existing verified paid entitlement, never a new checkout.
   await page.reload();
@@ -202,7 +202,7 @@ test("a verified old pass restores saved candidates and private requests until e
   await expect(page.getByRole("heading", { name: "Limpieza semanal" })).toBeVisible();
   active = false; // Historical pass expired.
   await page.reload();
-  await expect(page.getByRole("link", { name: "Ver saldo y comprar créditos" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver mis créditos y contactos" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Perfil de prueba" })).toHaveCount(0);
 });
 

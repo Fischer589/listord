@@ -94,13 +94,14 @@ export default async function Home({
               </p>
 
               <h1 className="hero-title">
-                Trabajas.<br />
-                Te buscan.
+                ¿Buscas personal?<br />
+                Tu búsqueda puede terminar aquí.
               </h1>
 
               <p className="hero-body">
-                Perfiles revisados. Confirma la disponibilidad directamente.<br />
-                Sin agencias, sin comisiones.
+                <strong>Por solo RD$100, conecta directamente con el talento que tu negocio necesita.</strong><br />
+                Nosotros facilitamos la búsqueda. Tú eliges a quién contratar.<br />
+                Sin comisiones sobre salarios. Sin intermediarios. Sin complicaciones.
               </p>
 
               {totalVerified > 0 && (
@@ -125,7 +126,7 @@ export default async function Home({
 
               <div className="hero-actions">
                 <Link href="/solicitar" className="btn-primary tap-target">
-                  Necesito personal
+                  Encontrar mi próximo empleado
                 </Link>
                 <Link href="/trabajadores/registro" className="btn-secondary tap-target">
                   Busco trabajo
@@ -136,7 +137,7 @@ export default async function Home({
               <aside className="hero-brand-statement" aria-label="La visión de ListoRD">
                 <span className="hero-brand-statement__rule" aria-hidden="true" />
                 <p className="hero-brand-statement__label">Nuestra razón de ser</p>
-                <p className="hero-brand-statement__quote">Un negocio que gana dinero ayudando a otros a ganar el suyo.</p>
+                <p className="hero-brand-statement__quote">Encuentra. Conecta. Contrata.</p>
                 <p className="hero-brand-statement__signature">ListoRD</p>
               </aside>
             </div>
@@ -272,7 +273,7 @@ export default async function Home({
               <span className="trust-item-icon">💬</span>
               <h3 className="trust-item-title">Directo a WhatsApp</h3>
               <p className="trust-item-body">
-                Exploras perfiles gratis. Usa un crédito prepagado para desbloquear cada trabajador nuevo.
+                Revisa perfiles gratis. Cuando elijas a alguien, conecta por WhatsApp desde RD$100 o usa un crédito que ya tengas.
               </p>
             </div>
             <div className="trust-item">

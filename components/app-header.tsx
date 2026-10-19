@@ -91,7 +91,7 @@ export function AppHeader() {
             href="/solicitar"
             className="tap-target btn-primary text-xs sm:text-sm px-3 py-2 sm:px-4 text-white"
           >
-            Necesito gente
+            Encontrar mi próximo empleado
           </Link>
         </nav>
 
@@ -99,9 +99,10 @@ export function AppHeader() {
         <div className="flex items-center gap-1 sm:hidden" ref={menuRef}>
           <Link
             href="/solicitar"
-            className="tap-target btn-primary text-xs px-2 py-2 text-white"
+            className="tap-target btn-primary max-w-[164px] px-2 py-2 text-center text-xs leading-tight text-white"
+            style={{ whiteSpace: "normal" }}
           >
-            Necesito gente
+            Encontrar mi próximo empleado
           </Link>
 
           <button

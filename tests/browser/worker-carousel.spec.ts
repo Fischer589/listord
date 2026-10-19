@@ -74,8 +74,8 @@ test("profile arrows are visible, keyboard operable, bounded, and keep mobile sw
 test("anonymous directory contact offers three credit packs and carries the selected worker", async ({ page }) => {
   await page.goto("/");
   const firstCard = page.locator(".wc").first();
-  await firstCard.getByRole("button", { name: "Contactar trabajador" }).click();
-  const paywall = page.getByRole("dialog", { name: "Desbloquea este contacto" });
+  await firstCard.getByRole("button", { name: "Conectar por WhatsApp" }).click();
+  const paywall = page.getByRole("dialog", { name: "¿Listo para terminar tu búsqueda? 🎯" });
   await expect(paywall).toBeVisible();
   await expect(paywall.getByText("Perfil seleccionado: Limpieza · Santiago")).toBeVisible();
   for (const price of ["RD$100", "RD$445", "RD$890"]) await expect(paywall.getByText(price, { exact: true })).toBeVisible();
@@ -89,22 +89,22 @@ test("anonymous directory contact offers three credit packs and carries the sele
     expect(second!.x).toBeGreaterThan(first!.x + first!.width);
     expect(last!.y).toBeGreaterThan(first!.y + first!.height);
   }
-  const cta = paywall.getByRole("link", { name: "Ver mi saldo y comprar créditos" });
+  const cta = paywall.getByRole("link", { name: "Ver mis créditos y conectar" });
   await expect(cta).toHaveAttribute("href", "/empleadores/contacto?worker=00000000-0000-4000-8000-000000000001");
   const ctaBox = await cta.boundingBox();
   expect(ctaBox && ctaBox.height >= 44).toBeTruthy();
   await cta.click();
   await expect(page).toHaveURL(/\/empleadores\/contacto\?worker=00000000-0000-4000-8000-000000000001$/);
-  await expect(page.getByRole("heading", { name: "Compra contactos cuando los necesites" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Conecta con el talento que elegiste" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Verifica tu correo" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test("credit selection retains the worker through employer verification without opening checkout", async ({ page }) => {
   await page.goto("/");
-  await page.locator(".wc").first().getByRole("button", { name: "Contactar trabajador" }).click();
-  const cta = page.getByRole("dialog", { name: "Desbloquea este contacto" })
-    .getByRole("link", { name: "Ver mi saldo y comprar créditos" });
+  await page.locator(".wc").first().getByRole("button", { name: "Conectar por WhatsApp" }).click();
+  const cta = page.getByRole("dialog", { name: "¿Listo para terminar tu búsqueda? 🎯" })
+    .getByRole("link", { name: "Ver mis créditos y conectar" });
   await cta.scrollIntoViewIfNeeded();
   const hit = await cta.evaluate(element => {
     const box = element.getBoundingClientRect();
@@ -114,7 +114,7 @@ test("credit selection retains the worker through employer verification without 
   expect(hit, JSON.stringify(hit)).toMatchObject({ direct: true });
   await cta.click();
   await expect(page).toHaveURL(/\/empleadores\/contacto\?worker=00000000-0000-4000-8000-000000000001$/);
-  await expect(page.getByRole("heading", { name: "Compra contactos cuando los necesites" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Conecta con el talento que elegiste" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Verifica tu correo" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

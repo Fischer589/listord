@@ -71,7 +71,7 @@ export function RequestBuilder({ publicationEnabled = false }: { publicationEnab
   return <div className="request-builder">
     <nav aria-label="Progreso de la solicitud"><ol className="request-steps">{STEPS.map((label, i) => <li key={label} aria-current={step === i ? "step" : undefined}><span>{i + 1}</span>{label}</li>)}</ol></nav>
     <h1 ref={heading} tabIndex={-1}>{["¿Qué necesitas? ¿Dónde?", "Lo esencial para decirte que sí.", "Pongamos los términos claros.", "Así se verá tu solicitud."][step]}</h1>
-    <p className="request-intro">{step === 0 ? "Elige el servicio y la ciudad. Empieza sin registrarte." : step === 3 ? "Revisa los detalles antes de compartirlos. Este borrador todavía no está publicado ni enviado." : "Solo lo necesario para que la persona entienda el trabajo."}</p>
+    <p className="request-intro">{step === 0 ? "Cuéntanos qué necesitas y dónde. Después podrás revisar perfiles gratis y elegir a quién contactar." : step === 3 ? "Revisa los detalles antes de compartirlos. Este borrador todavía no está publicado ni enviado." : "Solo lo necesario para que la persona entienda el trabajo."}</p>
     {Object.keys(errors).length > 0 && <div className="request-error-box" ref={errorBox} tabIndex={-1} role="alert">Revisa los campos indicados. Tus respuestas siguen aquí.</div>}
     {step < 3 ? <form onSubmit={next} noValidate>
       {step === 0 && <div className="request-fields">

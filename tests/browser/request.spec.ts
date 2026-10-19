@@ -7,7 +7,7 @@ test("anonymous request, validation, keyboard focus, preview and editing", async
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
-  await page.getByRole("link", { name: "Necesito personal", exact: true }).click();
+  await page.locator(".hero").getByRole("link", { name: "Encontrar mi próximo empleado", exact: true }).click();
   await expect(page).toHaveURL(/\/solicitar$/);
   await page.getByRole("button", { name: "Continuar" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toBeFocused();

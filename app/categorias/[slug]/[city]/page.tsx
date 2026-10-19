@@ -34,7 +34,7 @@ export async function generateMetadata({
 
   const pluralCap = cat.plural.charAt(0).toUpperCase() + cat.plural.slice(1);
   const title = `${pluralCap} en ${city.name}, República Dominicana | ListoRD`;
-  const desc = `Contrata ${cat.plural} verificados en ${city.name}. Perfiles verificados por nuestro equipo — escríbeles directo por WhatsApp. Sin agencias, sin comisiones.`;
+  const desc = `Explora perfiles de ${cat.plural} en ${city.name} gratis. Elige con quién conectar por WhatsApp desde RD$100; confirma disponibilidad y condiciones directamente.`;
   const url = `https://listordapp.com/categorias/${cat.slug}/${city.slug}`;
 
   return {
@@ -75,7 +75,7 @@ function CityJsonLd({
     "@context": "https://schema.org",
     "@type": "Service",
     name: `${pluralCap} en ${city.name}`,
-    description: `Encuentra ${cat.plural} verificados en ${city.name}, República Dominicana.`,
+    description: `Explora perfiles de ${cat.plural} en ${city.name}, República Dominicana. Confirma la disponibilidad directamente.`,
     provider: {
       "@type": "Organization",
       name: "ListoRD",
@@ -181,6 +181,7 @@ export default async function CityCategoryPage({
             <h1 className="cat-verb">
               {pluralCap} en<br />{city.name}.
             </h1>
+            <p className="cat-desc">Explora perfiles gratis. Elige con quién conectar por WhatsApp desde RD$100 y confirma la disponibilidad directamente.</p>
 
             {/* Live count */}
             {hasWorkers && (
@@ -188,16 +189,15 @@ export default async function CityCategoryPage({
                 <span className="cat-count-dot" aria-hidden="true" />
                 <span>
                   <strong>{count}</strong>{" "}
-                  {count === 1 ? cat.singular : cat.plural} disponible
-                  {count !== 1 ? "s" : ""} en {city.name}
+                  {count === 1 ? `perfil de ${cat.singular}` : `perfiles de ${cat.plural}`} para revisar en {city.name}
                 </span>
               </div>
             )}
 
             {/* Trust pills */}
             <div className="cat-trust-row">
-              <span className="cat-trust-pill">✓ Verificados</span>
-              <span className="cat-trust-pill">💬 Directo a WhatsApp</span>
+              <span className="cat-trust-pill">✓ Perfiles revisados</span>
+              <span className="cat-trust-pill">💬 Contacto desde RD$100</span>
               <span className="cat-trust-pill">📍 {city.name}</span>
             </div>
 
