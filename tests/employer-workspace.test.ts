@@ -49,25 +49,8 @@ test("workspace session mode filter treats underscores literally", async () => {
   } finally { await db.close(); }
 });
 
-test("workspace checkout fails closed without gate, verified account, and safe origin", async () => {
-  const names = ["EMPLOYER_WORKSPACE_ENABLED", "STRIPE_SECRET_KEY", "APP_ORIGIN", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
-  const old = names.map(name => process.env[name]);
-  try {
-    delete process.env.EMPLOYER_WORKSPACE_ENABLED;
-    assert.equal((await checkout(new Request("https://example.test/api/stripe/workspace-checkout", { method: "POST" }))).status, 503);
-    process.env.EMPLOYER_WORKSPACE_ENABLED = "true";
-    process.env.STRIPE_SECRET_KEY = "sk_live_fixture";
-    assert.equal((await checkout(new Request("https://example.test/api/stripe/workspace-checkout", { method: "POST" }))).status, 503);
-    process.env.STRIPE_SECRET_KEY = "sk_test_fixture";
-    process.env.APP_ORIGIN = "https://listordapp.com";
-    assert.equal((await checkout(new Request("https://listordapp.com/api/stripe/workspace-checkout", { method: "POST" }))).status, 503);
-    process.env.APP_ORIGIN = "https://www.listordapp.com";
-    assert.equal((await checkout(new Request("https://www.listordapp.com/api/stripe/workspace-checkout", { method: "POST" }))).status, 503);
-    process.env.APP_ORIGIN = "https://release-candidate--listord-2.netlify.app";
-    assert.equal((await checkout(new Request("https://listordapp.com/api/stripe/workspace-checkout", { method: "POST" }))).status, 503);
-    assert.equal((await checkout(new Request("https://example.test/api/stripe/workspace-checkout", { method: "POST" }))).status, 401);
-    assert.throws(() => workspaceAccessUntil(new Date("invalid")), /Invalid time value/);
-  } finally { names.forEach((name, i) => { if (old[i] === undefined) delete process.env[name]; else process.env[name] = old[i]; }); }
+test("retired workspace checkout cannot create a new unlimited pass", async () => {
+  assert.equal((await checkout(new Request("https://listordapp.com/api/stripe/workspace-checkout", { method: "POST" }))).status, 410);
 });
 
 test("signed workspace events grant exactly once after a confirmed ledger update; unpaid and mismatched events do not grant", async () => {
@@ -217,6 +200,7 @@ test("paid contact tracking stores a private handoff with the selected worker an
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
     if (url.pathname === "/auth/v1/user") return Response.json({ id: owner, email_confirmed_at: "2026-01-01T00:00:00Z", aud: "authenticated", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" });
+    if (url.pathname === "/rest/v1/rpc/authorize_worker_contact") return Response.json([{ allowed: true, source: "workspace", source_order: orderId, remaining: 0, already_unlocked: true }]);
     if (url.pathname === "/rest/v1/employer_workspace_orders") {
       assert.match(url.searchParams.get("access_until") ?? "", /^gt\./);
       assert.equal(url.searchParams.get("stripe_session_id"), "like.cs\\_test\\_%");
@@ -256,113 +240,6 @@ test("paid contact tracking stores a private handoff with the selected worker an
   }
 });
 
-test("checkout keeps one-time RD$299 terms, per-session Blackthorne branding, and a bound embedded or hosted session", async () => {
-  const names = ["EMPLOYER_WORKSPACE_ENABLED", "STRIPE_SECRET_KEY", "APP_ORIGIN", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
-  const old = names.map(name => process.env[name]);
-  const oldFetch = globalThis.fetch;
-  Object.assign(process.env, { EMPLOYER_WORKSPACE_ENABLED: "true", STRIPE_SECRET_KEY: "sk_test_fixture",
-    APP_ORIGIN: "https://release-candidate--listord-2.netlify.app", NEXT_PUBLIC_SUPABASE_URL: "https://workspace-fixture.example.test",
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_anon", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
-  const stripe = new Stripe("sk_test_fixture");
-  const sessionsPrototype = Object.getPrototypeOf(stripe.checkout.sessions);
-  const originalCreate = sessionsPrototype.create;
-  const originalRetrieve = sessionsPrototype.retrieve;
-  const originalExpire = sessionsPrototype.expire;
-  let created = 0;
-  let expired = 0;
-  let expectedMode: "hosted" | "embedded" = "hosted";
-  let retrievedMode: "hosted" | "embedded" = "hosted";
-  let acknowledgeBinding = true;
-  let activePaidMode: "none" | "test" | "live" = "none";
-  let pendingRow: { id: string; stripe_session_id: string; created_at: string } | null = null;
-  sessionsPrototype.retrieve = async (id: string) => {
-    assert.equal(id, "cs_test_workspace_fixture");
-    return retrievedMode === "embedded"
-      ? { id, status: "open", ui_mode: "embedded_page", client_secret: "cs_test_workspace_fixture_secret_fixture" }
-      : { id, status: "open", ui_mode: "hosted_page", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture" };
-  };
-  sessionsPrototype.expire = async (id: string) => { assert.equal(id, "cs_test_workspace_fixture"); expired++; return { id, status: "expired" }; };
-  sessionsPrototype.create = async (params: Record<string, unknown>, options: { idempotencyKey: string }) => {
-    created++;
-    assert.equal(params.mode, "payment");
-    assert.equal(params.ui_mode, expectedMode === "embedded" ? "embedded_page" : "hosted_page");
-    assert.deepEqual(params.payment_method_types, ["card"]);
-    assert.equal(params.locale, "es");
-    assert.deepEqual(params.branding_settings, { display_name: "BLACKTHORNE INDUSTRIES", background_color: "#FDFCF8", button_color: "#1A3D2B", font_family: "inter" });
-    assert.equal((params.line_items as Array<{price_data:{unit_amount:number;currency:string}}>)[0].price_data.unit_amount, 29_900);
-    assert.equal((params.line_items as Array<{price_data:{unit_amount:number;currency:string}}>)[0].price_data.currency, "dop");
-    assert.equal((params.metadata as Record<string,string>).order_id, orderId);
-    assert.equal((params.metadata as Record<string,string>).owner_user_id, owner);
-    assert.equal(options.idempotencyKey, `workspace:${orderId}`);
-    if (expectedMode === "embedded") {
-      assert.equal(params.return_url, "https://release-candidate--listord-2.netlify.app/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}");
-      assert.equal(params.redirect_on_completion, "if_required");
-      assert.equal(params.success_url, undefined);
-      return { id: "cs_test_workspace_fixture", client_secret: "cs_test_workspace_fixture_secret_fixture" };
-    }
-    assert.equal(params.success_url, "https://release-candidate--listord-2.netlify.app/empleadores/mi-cuenta?checkout=return&session_id={CHECKOUT_SESSION_ID}");
-    assert.equal(params.cancel_url, "https://release-candidate--listord-2.netlify.app/empleadores/mi-cuenta?checkout=cancel");
-    assert.equal(params.return_url, undefined);
-    return { id: "cs_test_workspace_fixture", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture" };
-  };
-  globalThis.fetch = async (input, init) => {
-    const url = new URL(String(input));
-    if (url.pathname === "/auth/v1/user") return Response.json({ id: owner, email_confirmed_at: "2026-01-01T00:00:00Z",
-      aud: "authenticated", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" });
-    assert.equal(url.pathname, "/rest/v1/employer_workspace_orders");
-    if (init?.method === "GET") {
-      if (url.searchParams.get("status") === "eq.pending") return Response.json(pendingRow);
-      assert.equal(url.searchParams.get("status"), "eq.paid");
-      assert.equal(url.searchParams.get("stripe_session_id"), "like.cs\\_test\\_%");
-      assert.match(url.searchParams.get("access_until") ?? "", /^gt\./);
-      return Response.json(activePaidMode === "test" ? [{ id: "existing-paid-order" }] : []);
-    }
-    if (init?.method === "POST") return Response.json({ id: orderId });
-    assert.equal(init?.method, "PATCH");
-    const body = JSON.parse(String(init.body));
-    if (body.stripe_session_id && body.browser_session_id) assert.equal(body.browser_session_id, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
-    if (body.stripe_session_id) return Response.json(acknowledgeBinding ? { id: orderId } : null);
-    return Response.json(null);
-  };
-  const makeRequest = (body?: Record<string, unknown>) => new Request("https://example.test/api/stripe/workspace-checkout", {
-    method: "POST", headers: { Authorization: "Bearer fixture_token_12345678901234567890", ...(body ? { "Content-Type": "application/json" } : {}) },
-    ...(body ? { body: JSON.stringify(body) } : {}) });
-  try {
-    activePaidMode = "test";
-    assert.equal((await checkout(makeRequest())).status, 409, "a current paid order cannot be charged again");
-    activePaidMode = "live";
-    assert.equal((await checkout(makeRequest({ browserSessionId: "forged" }))).status, 400);
-    const success = await checkout(makeRequest({ browserSessionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" }));
-    assert.equal(success.status, 200);
-    assert.deepEqual(await success.json(), { mode: "hosted", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });
-    pendingRow = { id: orderId, stripe_session_id: "cs_test_workspace_fixture", created_at: new Date().toISOString() };
-    const resumed = await checkout(makeRequest());
-    assert.equal(resumed.status, 200);
-    assert.deepEqual(await resumed.json(), { mode: "hosted", url: "https://checkout.stripe.com/c/pay/cs_test_workspace_fixture", sessionId: "cs_test_workspace_fixture" });
-    assert.equal(created, 1);
-    pendingRow = null;
-    acknowledgeBinding = false;
-    assert.equal((await checkout(makeRequest())).status, 503);
-    assert.equal(created, 2);
-    acknowledgeBinding = true;
-    expectedMode = "embedded";
-    retrievedMode = "embedded";
-    const embedded = await checkout(makeRequest({ mode: "embedded" }));
-    assert.equal(embedded.status, 200);
-    assert.deepEqual(await embedded.json(), { mode: "embedded", clientSecret: "cs_test_workspace_fixture_secret_fixture", sessionId: "cs_test_workspace_fixture" });
-    pendingRow = { id: orderId, stripe_session_id: "cs_test_workspace_fixture", created_at: new Date().toISOString() };
-    assert.equal((await checkout(makeRequest({ mode: "embedded" }))).status, 200);
-    assert.equal(created, 3);
-    assert.equal((await checkout(makeRequest({ mode: "hosted" }))).status, 409);
-    expectedMode = "hosted";
-    assert.equal((await checkout(makeRequest({ mode: "hosted", replaceEmbedded: true }))).status, 200);
-    assert.equal(expired, 1);
-    assert.equal(created, 4);
-  } finally {
-    sessionsPrototype.create = originalCreate;
-    sessionsPrototype.retrieve = originalRetrieve;
-    sessionsPrototype.expire = originalExpire;
-    globalThis.fetch = oldFetch;
-    names.forEach((name, i) => { if (old[i] === undefined) delete process.env[name]; else process.env[name] = old[i]; });
-  }
+test("retired workspace checkout remains closed with a verified account", async () => {
+  assert.equal((await checkout(new Request("https://example.test/api/stripe/workspace-checkout", { method: "POST" }))).status, 410);
 });

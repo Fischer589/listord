@@ -10,19 +10,22 @@ test("marketplace HTTP verifies Auth identity, binds RPC actor, protects contact
   const names = ["MARKETPLACE_ENABLED", "STRIPE_SECRET_KEY", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
   const before = names.map(n => process.env[n]); const original = globalThis.fetch;
   Object.assign(process.env, { MARKETPLACE_ENABLED: "true", STRIPE_SECRET_KEY: "sk_test_fixture", NEXT_PUBLIC_SUPABASE_URL: "https://marketplace-fixture.example.test", NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_public", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
-  let confirmed = true; let fail = false; let owns = true; let calls = 0;
+  let confirmed = true; let fail = false; let owns = true; let workerOwned = false; let calls = 0;
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
     if (url.pathname === "/auth/v1/user") return Response.json({ id: actor, email_confirmed_at: confirmed ? "2026-01-01T00:00:00Z" : null });
     if (url.pathname.endsWith("/employer_workspace_orders")) return Response.json([{ id: "paid-fixture" }]);
+    if (url.pathname.endsWith("/authorize_worker_contact")) return Response.json([{ allowed: true, source: "workspace", source_order: "paid-fixture", remaining: 0, already_unlocked: true }]);
+    if (url.pathname.endsWith("/employer_contact_handoffs")) return Response.json(null, { status: 201 });
     if (url.pathname.endsWith("/marketplace_opportunities")) return Response.json({ id });
     if (url.pathname.endsWith("/marketplace_opportunity_owners")) return Response.json(owns ? { opportunity_id: id } : null);
+    if (url.pathname.endsWith("/workers")) return Response.json(workerOwned ? { id } : null);
     calls++;
     assert.equal(init?.method, "POST");
     const body = JSON.parse(String(init?.body)); assert.equal(body.p_actor, actor);
     if (fail) return Response.json({ message: "PRIVATE_DATABASE_DETAIL", code: "XX000" }, { status: 400 });
     if (url.pathname.endsWith("marketplace_contacts_v2")) return Response.json([
-      { name: "Fixture", phone: "18090000111", worker_id: id, worker_name: "Fixture worker" },
+      { name: "Fixture", phone: owns ? "18090000111" : "18090000333", worker_id: id, worker_name: "Fixture worker" },
       { name: "Other", phone: "18090000222", worker_id: "33333333-3333-4333-8333-333333333333", worker_name: "Other worker" }
     ]);
     assert.equal(body.p_decision, "interested");
@@ -43,7 +46,11 @@ test("marketplace HTTP verifies Auth identity, binds RPC actor, protects contact
     assert.equal(message, workerContactMessage("Fixture worker"));
     assert.equal(response.headers.get("cache-control"), "private, no-store");
     owns = false;
-    assert.equal((await contacts(request({ id, workerId: id }))).status, 403, "an interested worker cannot reveal employer contact");
+    assert.equal((await contacts(request({ id, workerId: id }))).status, 403, "an unrelated account cannot reveal a contact");
+    workerOwned = true;
+    const workerResponse = await contacts(request({ id, workerId: id }));
+    assert.equal(workerResponse.status, 200, "an interested worker can contact the employer for free");
+    assert.match((await workerResponse.text()), /wa.me\/18090000333/);
     assert.equal((await GET(new Request("https://example.test/api/marketplace?mine=true"))).status, 401);
   } finally { globalThis.fetch = original; names.forEach((n, i) => { if (before[i] === undefined) delete process.env[n]; else process.env[n] = before[i]; }); }
 });

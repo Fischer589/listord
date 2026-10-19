@@ -51,14 +51,20 @@ const html = await recovery.text();
 assert.ok(html.includes("Solicitar recuperación segura"));
 assert.ok(!html.includes("Abrir enlace de edicion"));
 console.log("Phone-only recovery: support flow, no edit link");
+const recoveryContact = await fetch(base + "/trabajadores/recuperar?whatsapp=8095550100");
+assert.match(await recoveryContact.text(), /wa\.me\/12675160983/);
+const businessContact = await fetch(base + "/soluciones-empresariales");
+assert.match(await businessContact.text(), /wa\.me\/12675160983/);
+assert.match(await readFile(new URL("../netlify.toml", import.meta.url), "utf8"), /NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE = "12675160983"/);
+console.log("Business support links and Netlify production number agree");
 
 const exposedLink = await fetch(base + "/trabajadores/editar?token=22222222-2222-4222-8222-222222222222");
 const exposedHtml = await exposedLink.text();
 assert.match(exposedHtml, /suspendida/);
 assert.doesNotMatch(exposedHtml, /name="edit_token"/);
-for (const route of ["checkout", "worker-checkout", "boost-checkout", "employer-deposit-checkout"]) {
+for (const route of ["checkout", "worker-checkout", "boost-checkout", "employer-deposit-checkout", "contact-credits-checkout"]) {
   const response = await fetch(`${base}/api/stripe/${route}`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
-  assert.equal(response.status, 503, route);
+  assert.equal(response.status, route === "checkout" ? 410 : 503, route);
 }
 const renewal = await fetch(`${base}/api/workers/availability`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
 assert.equal(renewal.status, 400);

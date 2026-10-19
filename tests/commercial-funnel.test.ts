@@ -20,6 +20,12 @@ test("private daily funnel accepts request events, attributes only bound orders 
       "202610141300_direct_contact_orders.sql", "202610181200_commercial_funnel_integrity.sql"]) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8"));
     }
+    await db.exec(`alter table workers add column full_name text, add column is_verified boolean,
+      add column whatsapp_number text;
+      create table premium_access(id uuid primary key,status text,paid_access_until timestamptz,
+        stripe_checkout_session_id text);`);
+    await db.exec(await readFile(new URL("../supabase/migrations/20261019202538_contact_credit_ledger.sql", import.meta.url), "utf8"));
+    await db.exec(await readFile(new URL("../supabase/migrations/20261019202539_contact_credit_funnel.sql", import.meta.url), "utf8"));
     await db.exec("set time zone 'America/New_York'");
     const accepted = ["request_started", "request_preview", "request_abandoned", "request_matches", "request_contact", "directory_search_submitted"];
     for (const event of accepted) await db.query("insert into analytics_events(event_name,metadata,created_at) values($1,$2,$3)",
@@ -54,6 +60,29 @@ test("private daily funnel accepts request events, attributes only bound orders 
       "select refunds,net_collected_cents from commercial_funnel_daily where day='2026-10-20' and product='direct' ")).rows[0];
     assert.equal(Number(secondRefund.refunds), 1);
     assert.equal(Number(secondRefund.net_collected_cents), -5900);
+    const credit = (await db.query<{id:string}>(`insert into employer_contact_credit_orders
+      (owner_user_id,pack_size,amount,status,credits_remaining,stripe_session_id,stripe_payment_intent_id,paid_at,created_at)
+      values($1,5,44500,'paid',5,'cs_test_credit_bound','pi_credit','2026-10-18T02:00:00Z','2026-10-18T01:00:00Z') returning id`, [owner])).rows[0].id;
+    const creditSale = (await db.query<{paid_orders:number;net_collected_cents:number}>(
+      "select paid_orders,net_collected_cents from commercial_funnel_daily where day='2026-10-18' and product='credit'")).rows[0];
+    assert.equal(Number(creditSale.paid_orders), 1);
+    assert.equal(Number(creditSale.net_collected_cents), 44500);
+    await db.query(`insert into employer_payment_reversals(stripe_event_id,order_id,product,kind,cumulative_amount_cents,occurred_at)
+      values('evt_credit_refund',$1,'credit','refund',10000,'2026-10-19T01:00:00Z')`, [credit]);
+    const creditRefund = (await db.query<{refunded_cents:number;net_collected_cents:number}>(
+      "select refunded_cents,net_collected_cents from commercial_funnel_daily where day='2026-10-19' and product='credit'")).rows[0];
+    assert.equal(Number(creditRefund.refunded_cents), 10000);
+    assert.equal(Number(creditRefund.net_collected_cents), -10000);
+    const lostCredit = (await db.query<{id:string}>(`insert into employer_contact_credit_orders
+      (owner_user_id,pack_size,amount,status,credits_remaining,stripe_session_id,stripe_payment_intent_id,paid_at,created_at)
+      values($1,1,10000,'disputed',0,'cs_test_credit_lost','pi_credit_lost','2026-10-21T02:00:00Z','2026-10-21T01:00:00Z') returning id`, [owner])).rows[0].id;
+    await db.query(`insert into employer_payment_reversals(stripe_event_id,order_id,product,kind,dispute_id,cumulative_amount_cents,occurred_at)
+      values('evt_credit_lost',$1,'credit','dispute_lost','dp_credit_lost',10000,'2026-10-22T01:00:00Z')`, [lostCredit]);
+    const lost = (await db.query<{disputes:number;disputed_cents:number;net_collected_cents:number}>(
+      "select disputes,disputed_cents,net_collected_cents from commercial_funnel_daily where day='2026-10-22' and product='credit'")).rows[0];
+    assert.equal(Number(lost.disputes), 1);
+    assert.equal(Number(lost.disputed_cents), 10000);
+    assert.equal(Number(lost.net_collected_cents), -10000);
     await db.exec("set role authenticated");
     await assert.rejects(db.query("select * from commercial_funnel_daily"), /permission denied/);
     await assert.rejects(db.query("select * from employer_contact_handoffs"), /permission denied/);

@@ -5,7 +5,7 @@ import type { getSupabaseAdminClient } from "./supabase-admin";
 export async function recordEmployerReversal(
   db: NonNullable<ReturnType<typeof getSupabaseAdminClient>>,
   event: Stripe.Event,
-  product: "direct" | "workspace",
+  product: "direct" | "workspace" | "credit",
   orderId: string,
   orderAmount: number
 ) {

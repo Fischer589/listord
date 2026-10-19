@@ -96,21 +96,21 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, directReturn, can
   if (!data) return <p role="status" className="workspace-feedback">{error || "Cargando tu espacio..."}</p>;
   if (!data.active) return <section className="workspace-offer" aria-labelledby="workspace-offer-title">
     <div className="workspace-offer__copy">
-      <p className="workspace-eyebrow">Pase de Empleador · 30 días</p>
+      <p className="workspace-eyebrow">Créditos de contacto</p>
       <h2 id="workspace-offer-title">Tu próximo equipo, en orden</h2>
       <p>Guarda candidatos, organiza solicitudes de personal, registra intentos de contacto y vuelve a tus listas.</p>
-      <p className="workspace-offer__fineprint">Explora perfiles gratis. El pase desbloquea el contacto con trabajadores durante 30 días.</p>
+      <p className="workspace-offer__fineprint">Explora perfiles gratis. Un crédito desbloquea a un trabajador nuevo.</p>
     </div>
     <div className="workspace-offer__purchase">
-      <p className="workspace-offer__price">RD$299 <span>/ 30 días</span></p>
+      <p className="workspace-offer__price">Desde RD$100</p>
       <p>Pago único. Sin renovación automática.</p>
       <div className="workspace-actions">
-        <Link className="btn-primary" href={workerToSave ? `/empleadores/pago?worker=${encodeURIComponent(workerToSave)}` : "/empleadores/pago"}>Comprar 30 días · RD$299</Link>
+        <Link className="btn-primary" href={workerToSave ? `/empleadores/contacto?worker=${encodeURIComponent(workerToSave)}` : "/empleadores/contacto"}>Ver saldo y comprar créditos</Link>
         <button type="button" className="btn-secondary" onClick={() => void load()}>Actualizar estado</button>
       </div>
       {returned && <p role="status" className="workspace-feedback">Esperando confirmación del pago por Stripe. El regreso desde Checkout no activa el acceso.</p>}
       {directReturn && <p role="status" className="workspace-feedback">{directTimedOut ? "La confirmación del contacto sigue pendiente. Revisa el perfil más tarde; no vuelvas a pagar mientras Stripe procesa el cobro." : "Esperando la confirmación firmada del contacto directo. El regreso desde Stripe no activa el acceso."}</p>}
-      {directCanceled && workerToSave && <p role="status" className="workspace-feedback">El contacto directo no se activó. <Link href={`/empleadores/contacto?worker=${encodeURIComponent(workerToSave)}`}>Volver a RD$89</Link></p>}
+      {directCanceled && workerToSave && <p role="status" className="workspace-feedback">El contacto aún no está activo. <Link href={`/empleadores/contacto?worker=${encodeURIComponent(workerToSave)}`}>Ver créditos</Link></p>}
       {canceled && !directCanceled && <p role="status" className="workspace-feedback">Volviste del pago. Tu pase solo se activa cuando Stripe confirme el cobro.</p>}
       {error && <p role="alert" className="workspace-feedback workspace-feedback--error">{error}</p>}
     </div>
@@ -120,7 +120,7 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, directReturn, can
       <div>
         <p className="workspace-eyebrow">Pase de Empleador · 30 días</p>
         <h2>Tu pase está activo</h2>
-        <p>Puedes contactar trabajadores durante la vigencia del pase. Confirma su disponibilidad directamente.</p>
+        <p>Conservas el acceso de tu pase ya comprado hasta su vencimiento. Confirma la disponibilidad directamente.</p>
       </div>
       <div className="workspace-pass__date"><span>Válido hasta</span><strong>{new Date(data.accessUntil!).toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" })}</strong></div>
     </header>
@@ -171,7 +171,7 @@ function WorkspaceAccount({ token, selectedWorkerId, returned, directReturn, can
 }
 
 export function EmployerWorkspace({ selectedWorkerId, returned, directReturn = false, canceled, directCanceled = false, featuredReturn = false, featuredCanceled = false, featuredOpportunityId = null, opportunitiesEnabled = false, expressAvailable = false }: { selectedWorkerId: string | null; returned: boolean; directReturn?: boolean; canceled: boolean; directCanceled?: boolean; featuredReturn?: boolean; featuredCanceled?: boolean; featuredOpportunityId?: string | null; opportunitiesEnabled?: boolean; expressAvailable?: boolean }) {
-  return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para comprar y usar tu espacio privado de empleador. La exploración es gratis; el contacto requiere el pase.">
+  return <MarketplaceSession emailRedirectPath="/empleadores/mi-cuenta" description="Verifica tu correo para usar tu espacio privado de empleador. La exploración es gratis; los contactos nuevos requieren créditos.">
     {token => <><WorkspaceAccount token={token} selectedWorkerId={selectedWorkerId} returned={returned} directReturn={directReturn} canceled={canceled} directCanceled={directCanceled} />
       {opportunitiesEnabled && <EmployerOpportunities token={token} featuredReturn={featuredReturn} featuredCanceled={featuredCanceled} featuredOpportunityId={featuredOpportunityId} expressAvailable={expressAvailable} />}</>}
   </MarketplaceSession>;

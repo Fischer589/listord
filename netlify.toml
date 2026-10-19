@@ -1,3 +1,6 @@
 [build]
   command = "npm run build && node scripts/check-public-auth-build.mjs"
   publish = ".next"
+
+[context.production.environment]
+  NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE = "12675160983"

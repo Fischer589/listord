@@ -40,6 +40,10 @@ test("valid ListoRD callback verifies token hash and returns to the saved opport
   await page.route("**/auth/v1/user", route => route.fulfill({ headers: { "Access-Control-Allow-Origin": "*" }, json: { user } }));
   await page.goto("/solicitar");
   await expect(page.getByRole("heading", { name: "¿Qué necesitas? ¿Dónde?" })).toBeVisible();
+  await page.getByLabel("¿Qué necesitas?").selectOption("limpieza");
+  await page.getByLabel("¿Dónde?").fill("Puerto Plata");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(page.getByRole("heading", { name: "Lo esencial para decirte que sí." })).toBeVisible();
   await page.evaluate(value => sessionStorage.setItem("listord-pending-publication-draft-v1", JSON.stringify({ draft: value, savedAt: Date.now() })), draft);
   expect(await page.evaluate(() => sessionStorage.getItem("listord-pending-publication-draft-v1"))).not.toBeNull();
   await page.goto("about:blank");

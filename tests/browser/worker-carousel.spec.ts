@@ -46,7 +46,11 @@ test("profile arrows are visible, keyboard operable, bounded, and keep mobile sw
     }
     await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).toBeGreaterThan(0);
-    await previous.click();
+    for (let step = 0; step < 5 && await previous.isEnabled(); step++) {
+      const before = await carousel.evaluate(element => element.scrollLeft);
+      await previous.click();
+      await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).toBeLessThan(before);
+    }
     await expect(previous).toBeDisabled();
   }
 
@@ -67,54 +71,50 @@ test("profile arrows are visible, keyboard operable, bounded, and keep mobile sw
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("anonymous directory contact offers both products and carries the selected worker", async ({ page }) => {
+test("anonymous directory contact offers three credit packs and carries the selected worker", async ({ page }) => {
   await page.goto("/");
   const firstCard = page.locator(".wc").first();
   await firstCard.getByRole("button", { name: "Contactar trabajador" }).click();
-  const paywall = page.getByRole("dialog", { name: "¿Ya encontraste a quien necesitas?" });
+  const paywall = page.getByRole("dialog", { name: "Desbloquea este contacto" });
   await expect(paywall).toBeVisible();
   await expect(paywall.getByText("Perfil seleccionado: Limpieza · Santiago")).toBeVisible();
-  await expect(paywall.getByText("Elige cómo quieres conectar con los trabajadores de ListoRD.")).toBeVisible();
-  await expect(paywall.getByText("RD$89", { exact: true })).toBeVisible();
-  await expect(paywall.getByText("RD$299 / 30 días")).toBeVisible();
-  await expect(paywall.getByText("4 contactos individuales = RD$356.")).toBeVisible();
-  const direct = paywall.getByRole("link", { name: "Contactar por RD$89" });
-  await expect(direct).toHaveAttribute("href", "/empleadores/contacto?worker=00000000-0000-4000-8000-000000000001");
-  const cta = paywall.getByRole("link", { name: "Desbloquear 30 días — RD$299" });
-  const [directBox, workspaceBox] = await Promise.all([
-    paywall.locator(".contact-paywall__offer").first().boundingBox(),
-    paywall.locator(".contact-paywall__offer").last().boundingBox(),
-  ]);
-  if (page.viewportSize()!.width < 640) expect(workspaceBox!.y).toBeGreaterThan(directBox!.y + directBox!.height);
-  else expect(workspaceBox!.x).toBeGreaterThan(directBox!.x + directBox!.width);
+  for (const price of ["RD$100", "RD$445", "RD$890"]) await expect(paywall.getByText(price, { exact: true })).toBeVisible();
+  const offers = paywall.locator(".contact-paywall__offer");
+  await expect(offers).toHaveCount(3);
+  const [first, second, last] = await Promise.all([offers.first().boundingBox(), offers.nth(1).boundingBox(), offers.last().boundingBox()]);
+  if (page.viewportSize()!.width < 640) {
+    expect(second!.y).toBeGreaterThan(first!.y + first!.height);
+    expect(last!.y).toBeGreaterThan(second!.y + second!.height);
+  } else {
+    expect(second!.x).toBeGreaterThan(first!.x + first!.width);
+    expect(last!.y).toBeGreaterThan(first!.y + first!.height);
+  }
+  const cta = paywall.getByRole("link", { name: "Ver mi saldo y comprar créditos" });
+  await expect(cta).toHaveAttribute("href", "/empleadores/contacto?worker=00000000-0000-4000-8000-000000000001");
   const ctaBox = await cta.boundingBox();
   expect(ctaBox && ctaBox.height >= 44).toBeTruthy();
-  await expect(cta).toHaveAttribute("href", "/empleadores/pago?worker=00000000-0000-4000-8000-000000000001");
   await cta.click();
-  await expect(page).toHaveURL(/\/empleadores\/pago\?worker=00000000-0000-4000-8000-000000000001$/);
-  await expect(page.getByRole("heading", { name: "¿Encontraste a la persona indicada?" })).toBeVisible();
-  await expect(page.getByText("Un solo pago. Acceso a contactos durante 30 días. Sin renovación automática.")).toBeVisible();
+  await expect(page).toHaveURL(/\/empleadores\/contacto\?worker=00000000-0000-4000-8000-000000000001$/);
+  await expect(page.getByRole("heading", { name: "Compra contactos cuando los necesites" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Verifica tu correo" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("RD$89 selection retains the worker through employer verification without opening checkout", async ({ page }) => {
+test("credit selection retains the worker through employer verification without opening checkout", async ({ page }) => {
   await page.goto("/");
   await page.locator(".wc").first().getByRole("button", { name: "Contactar trabajador" }).click();
-  const direct = page.getByRole("dialog", { name: "¿Ya encontraste a quien necesitas?" })
-    .getByRole("link", { name: "Contactar por RD$89" });
-  await direct.scrollIntoViewIfNeeded();
-  const hit = await direct.evaluate(element => {
+  const cta = page.getByRole("dialog", { name: "Desbloquea este contacto" })
+    .getByRole("link", { name: "Ver mi saldo y comprar créditos" });
+  await cta.scrollIntoViewIfNeeded();
+  const hit = await cta.evaluate(element => {
     const box = element.getBoundingClientRect();
     const atPoint = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
     return { direct: atPoint === element, tag: atPoint?.tagName, text: atPoint?.textContent?.slice(0, 90), x: box.x, y: box.y };
   });
   expect(hit, JSON.stringify(hit)).toMatchObject({ direct: true });
-  await direct.click();
+  await cta.click();
   await expect(page).toHaveURL(/\/empleadores\/contacto\?worker=00000000-0000-4000-8000-000000000001$/);
-  await expect(page.getByRole("heading", { name: "¿Ya encontraste a quien necesitas?" })).toBeVisible();
-  await expect(page.getByRole("complementary", { name: "Resumen del contacto directo" }).getByText("RD$89")).toBeVisible();
-  await expect(page.getByText("Un pago. Un contacto. Sin renovación automática.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Compra contactos cuando los necesites" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Verifica tu correo" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

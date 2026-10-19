@@ -64,6 +64,14 @@ test("one paid direct order authorizes only its verified owner and worker across
       return Response.json(null);
     }
     if (url.pathname === "/auth/v1/user") return Response.json({ id: linkedOwner, email_confirmed_at: "2026-01-01T00:00:00Z" });
+    if (url.pathname === "/rest/v1/rpc/authorize_worker_contact") {
+      const input = JSON.parse(String(init?.body));
+      const paidDirect = status === "paid" && mode === "live" && linkedOwner === owner && input.p_worker === worker;
+      const paidWorkspace = workspaceActive && mode === "live";
+      const source = paidWorkspace ? "workspace" : paidDirect ? "direct" : "payment_required";
+      return Response.json([{ allowed: paidWorkspace || paidDirect, source, source_order: paidWorkspace ? "workspace" : paidDirect ? orderId : null,
+        remaining: 0, already_unlocked: paidWorkspace || paidDirect }]);
+    }
     if (url.pathname === "/rest/v1/employer_workspace_orders") return Response.json(workspaceActive ? [{ id: "workspace" }] : []);
     if (url.pathname === "/rest/v1/employer_direct_contact_orders") {
       assert.equal(url.searchParams.get("status"), "eq.paid");
@@ -103,7 +111,7 @@ test("one paid direct order authorizes only its verified owner and worker across
       { order_id: orderId, product: "direct", route: "marketplace" }
     ]);
     const statusRequest = (id: string) => new Request(`https://example.test/api/contact-access?worker=${id}`, { headers: { Authorization: "Bearer fixture_token_12345678901234567890" } });
-    assert.deepEqual(await (await contactStatus(statusRequest(worker))).json(), { active: true });
+    assert.deepEqual(await (await contactStatus(statusRequest(worker))).json(), { active: true, remaining: 0, alreadyUnlocked: true });
     const reads = privateReads;
     assert.equal((await contact(req("/api/workers/contact", { workerId: otherWorker }))).status, 402);
     assert.equal(privateReads, reads, "unpaid worker phone was never queried");
@@ -123,76 +131,9 @@ test("one paid direct order authorizes only its verified owner and worker across
   }
 });
 
-test("direct checkout rejects missing gates, forged requests, unverified employer, and mismatched price", async () => {
-  const names = ["STRIPE_SECRET_KEY", "STRIPE_DIRECT_CONTACT_PRICE_ID", "DIRECT_CONTACT_READ_ENABLED", "DIRECT_CONTACT_CHECKOUT_ENABLED", "DIRECT_CONTACT_LIVE_PAYMENTS_ENABLED", "APP_ORIGIN", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"] as const;
-  const before = names.map(name => process.env[name]);
-  const fetchBefore = globalThis.fetch;
-  Object.assign(process.env, { STRIPE_SECRET_KEY: "sk_test_fixture", STRIPE_DIRECT_CONTACT_PRICE_ID: "price_fixture123",
-    DIRECT_CONTACT_READ_ENABLED: "true", DIRECT_CONTACT_CHECKOUT_ENABLED: "true", APP_ORIGIN: "https://preview.example.test",
-    NEXT_PUBLIC_SUPABASE_URL: "https://direct-fixture.example.test", NEXT_PUBLIC_SUPABASE_ANON_KEY: "fixture_anon", SUPABASE_SERVICE_ROLE_KEY: "fixture_service" });
-  const stripe = new Stripe("sk_test_fixture");
-  const prices = Object.getPrototypeOf(stripe.prices);
-  const sessions = Object.getPrototypeOf(stripe.checkout.sessions);
-  const priceBefore = prices.retrieve;
-  const createBefore = sessions.create;
-  let priceAmount = 8900;
-  let created = 0;
-  prices.retrieve = async (id: string) => { assert.equal(id, "price_fixture123"); return { id, active: true, type: "one_time", currency: "dop", unit_amount: priceAmount, livemode: false }; };
-  sessions.create = async (params: Record<string, unknown>, options: { idempotencyKey: string }) => {
-    created++;
-    assert.equal(params.mode, "payment");
-    assert.deepEqual(params.line_items, [{ price: "price_fixture123", quantity: 1 }]);
-    assert.equal(params.client_reference_id, owner);
-    assert.deepEqual(params.metadata, { purpose: "employer_direct_contact", order_id: orderId, owner_user_id: owner, worker_id: worker });
-    assert.equal(options.idempotencyKey, `direct-contact:${orderId}`);
-    assert.match(String(params.success_url), /worker=22222222-2222-4222-8222-222222222222/);
-    return { id: "cs_test_direct_fixture", url: "https://checkout.stripe.com/c/pay/cs_test_direct_fixture" };
-  };
-  globalThis.fetch = async (input, init) => {
-    const url = new URL(String(input));
-    if (url.pathname === "/auth/v1/user") return Response.json({ id: owner, email_confirmed_at: "2026-01-01T00:00:00Z" });
-    if (url.pathname === "/rest/v1/workers") return Response.json({ id: worker, whatsapp_number: "18095550100" });
-    if (url.pathname === "/rest/v1/employer_workspace_orders") return Response.json([]);
-    assert.equal(url.pathname, "/rest/v1/employer_direct_contact_orders");
-    if (init?.method === "GET") return Response.json(url.searchParams.get("status") === "eq.pending" ? null : []);
-    if (init?.method === "POST") return Response.json({ id: orderId });
-    if (init?.method === "PATCH") {
-      const update = JSON.parse(String(init.body));
-      if (update.stripe_session_id) assert.equal(update.browser_session_id, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
-      return Response.json({ id: orderId });
-    }
-    throw new Error("Unexpected request");
-  };
-  const req = (body: unknown, auth = true) => new Request("https://preview.example.test/api/stripe/direct-contact-checkout", { method: "POST",
-    headers: { "Content-Type": "application/json", ...(auth ? { Authorization: "Bearer fixture_token_12345678901234567890" } : {}) }, body: JSON.stringify(body) });
-  try {
-    delete process.env.DIRECT_CONTACT_CHECKOUT_ENABLED;
-    assert.equal((await checkout(req({ workerId: worker }))).status, 503);
-    process.env.DIRECT_CONTACT_CHECKOUT_ENABLED = "true";
-    assert.equal((await checkout(req({ workerId: worker, amount: 1 }))).status, 400);
-    assert.equal((await checkout(req({ workerId: worker, browserSessionId: "forged" }))).status, 400);
-    assert.equal((await checkout(req({ workerId: "forged" }))).status, 400);
-    assert.equal((await checkout(req({ workerId: worker }, false))).status, 401);
-    priceAmount = 8901;
-    assert.equal((await checkout(req({ workerId: worker }))).status, 503);
-    priceAmount = 8900;
-    const response = await checkout(req({ workerId: worker, browserSessionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" }));
-    assert.equal(response.status, 200);
-    assert.equal((await response.json()).sessionId, "cs_test_direct_fixture");
-    assert.equal(created, 1);
-    process.env.APP_ORIGIN = "https://listordapp.com";
-    assert.equal((await checkout(req({ workerId: worker }))).status, 503, "test key cannot open live checkout");
-    process.env.STRIPE_SECRET_KEY = "sk_live_fixture";
-    process.env.DIRECT_CONTACT_LIVE_PAYMENTS_ENABLED = "true";
-    assert.equal(directContactCheckoutReady("https://6acff705--listord-2.netlify.app/api/stripe/direct-contact-checkout"), true,
-      "a production function may receive Netlify's deployment host");
-    process.env.STRIPE_SECRET_KEY = "sk_test_fixture";
-    assert.equal(directContactCheckoutReady("https://6acff705--listord-2.netlify.app/api/stripe/direct-contact-checkout"), false,
-      "a test key cannot use the production return origin");
-  } finally {
-    prices.retrieve = priceBefore; sessions.create = createBefore; globalThis.fetch = fetchBefore;
-    names.forEach((name, i) => { if (before[i] === undefined) delete process.env[name]; else process.env[name] = before[i]; });
-  }
+test("retired direct checkout never creates a new payment", async () => {
+  const response = await checkout(new Request("https://listordapp.com/api/stripe/direct-contact-checkout", { method: "POST" }));
+  assert.equal(response.status, 410);
 });
 
 test("signed direct payment is idempotent and refund or dispute revokes even after out-of-order events", async () => {

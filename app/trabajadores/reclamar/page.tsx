@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
+import { LISTORD_BUSINESS_WHATSAPP } from "@/lib/business-contact";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Reclamar perfil de trabajador", robots: { index: false, follow: false } };
@@ -10,8 +11,7 @@ export default async function ClaimWorkerPage({ searchParams }: {
   const requested = (await searchParams).perfil ?? "";
   const workerId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requested)
     ? requested : null;
-  const configured = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE?.replace(/\D/g, "") ?? "";
-  const supportPhone = /^\d{10,15}$/.test(configured) && configured !== "18090000000" ? configured : null;
+  const supportPhone = LISTORD_BUSINESS_WHATSAPP;
   const message = workerId
     ? `Hola, quiero solicitar la revisión de titularidad de mi perfil de ListoRD: ${workerId}. Indíquenme cómo verificar mi cuenta y aportar prueba independiente por un canal privado.`
     : "Hola, quiero solicitar la revisión de titularidad de mi perfil de ListoRD. Indíquenme cómo identificar el perfil, verificar mi cuenta y aportar prueba independiente por un canal privado.";

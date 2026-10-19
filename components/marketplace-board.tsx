@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CATEGORIES } from "@/lib/categories";
 import { requestSummary, type RequestDraft } from "@/lib/request-specification";
 import { MarketplaceSession, marketplaceRequest } from "./marketplace-session";
+import { isValidWhatsAppUrl } from "@/lib/whatsapp";
 
 type Opportunity = {
   id: string; category: string; city: string; scope: string; specification: RequestDraft;
@@ -103,6 +104,19 @@ function WorkerInterestPanel({ token, opportunities, selected }: { token: string
     catch (error) { setNotice(error instanceof Error ? error.message : "No se confirmó el reporte."); }
     finally { setBusy(false); }
   }
+  async function contactEmployer(id: string) {
+    setBusy(true); setNotice("");
+    try {
+      const response = await fetch("/api/marketplace/contacts", { method: "POST", cache: "no-store",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ id, workerId: worker }), signal: AbortSignal.timeout(12000) });
+      const result = await response.json() as { contacts?: Array<{ workerId: string; url: string }>; error?: string };
+      if (!response.ok) throw new Error(result.error || "No se pudo abrir el contacto del empleador.");
+      const url = result.contacts?.find(item => item.workerId === worker)?.url;
+      if (!url || !isValidWhatsAppUrl(url)) throw new Error("El contacto del empleador no está disponible.");
+      window.location.assign(url);
+    } catch (error) { setNotice(error instanceof Error ? error.message : "No se pudo abrir el contacto del empleador."); setBusy(false); }
+  }
   async function consent(agree: boolean) {
     setBusy(true); setNotice("");
     try { await marketplaceRequest(token, { action: "consent", workerId: worker, agree }); setNotice(agree ? "Consentimiento para invitaciones Express guardado." : "Consentimiento para invitaciones Express retirado."); }
@@ -122,6 +136,7 @@ function WorkerInterestPanel({ token, opportunities, selected }: { token: string
       return <div key={o.id} className={selected === o.id ? "opportunity-interest__row opportunity-interest__row--selected" : "opportunity-interest__row"}>
         <div><strong>{CATEGORIES.find(c => c.searchKey === o.category)?.label ?? o.category} · {o.city}</strong><span>{interested ? "Interés enviado" : declined ? "Respuesta NO guardada" : "Aún no has respondido"}</span></div>
         <div className="opportunity-interest__actions"><button type="button" className={interested ? "btn-secondary" : "btn-primary"} disabled={busy || !worker} onClick={() => void decide(o.id, interested ? "withdrawn" : "interested")}>{interested ? "Retirar interés" : "Me interesa"}</button>
+          {interested && <button type="button" className="btn-primary" disabled={busy} onClick={() => void contactEmployer(o.id)}>Contactar empleador gratis</button>}
           {!interested && <button type="button" className="btn-secondary" disabled={busy || !worker || declined} onClick={() => void decide(o.id, "declined")}>No me interesa</button>}
           <button type="button" className="btn-secondary" disabled={busy} onClick={() => void report(o.id)}>Reportar datos privados</button></div>
       </div>;

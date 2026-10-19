@@ -120,7 +120,8 @@ test("default-off legacy gates reject sales and exposed edit capabilities withou
       import("../app/api/stripe/checkout/route"), import("../app/api/stripe/worker-checkout/route"),
       import("../app/api/stripe/boost-checkout/route"), import("../app/api/stripe/employer-deposit-checkout/route")
     ]);
-    for (const { POST } of routes) assert.equal((await POST(request("{}"))).status, 503);
+    assert.equal((await routes[0].POST(request("{}"))).status, 410);
+    for (const { POST } of routes.slice(1)) assert.equal((await POST(request("{}"))).status, 503);
     assert.equal(calls, 0);
   } finally {
     globalThis.fetch = oldFetch;

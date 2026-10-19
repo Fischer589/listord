@@ -19,7 +19,7 @@ export default async function EmployerAccountPage({ searchParams }: { searchPara
       <div>
         <p className="workspace-eyebrow">Espacio para empleadores</p>
         <h1>Mi cuenta</h1>
-        <p>Organiza tus candidatos y solicitudes en un solo lugar. Explorar perfiles es gratis; el pase desbloquea el contacto durante 30 días.</p>
+        <p>Organiza tus candidatos y solicitudes en un solo lugar. Explorar perfiles es gratis; los contactos nuevos se desbloquean con créditos prepagados.</p>
       </div>
       <Link className="btn-secondary" href="/solicitar">Buscar trabajadores gratis</Link>
     </header>

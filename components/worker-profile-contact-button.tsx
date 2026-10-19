@@ -23,7 +23,7 @@ export function WorkerProfileContactButton({ workerId, primarySkill, city }: { w
         Contactar
       </p>
       <p className="mt-2 text-sm font-bold text-ink/65">
-        Explora perfiles gratis. El contacto se desbloquea con el pase de empleador.
+        Explora perfiles gratis. Usa un crédito para desbloquear un trabajador nuevo.
       </p>
 
       <button

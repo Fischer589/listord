@@ -63,7 +63,7 @@ export function RequestMatches({ draft }: { draft: RequestDraft }) {
   }
   return <section className="request-matches" aria-label="Trabajadores compatibles">
     <h2>Encuentra a quién contactar.</h2>
-    <p>Buscar y revisar perfiles es gratis. El contacto requiere el pase de empleador.</p>
+    <p>Buscar y revisar perfiles es gratis. Cada trabajador nuevo requiere un crédito de contacto.</p>
     <button className="btn-primary" disabled={loading || contacting !== null} onClick={search}>{loading ? "Verificando perfiles…" : result ? "Actualizar resultados" : "Buscar trabajadores compatibles"}</button>
     <div aria-live="polite" aria-busy={loading}>
       {error && <p role="alert">{error}</p>}

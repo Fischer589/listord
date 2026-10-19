@@ -20,7 +20,7 @@ const fixture = {
   workers: [1, 2].map(id => ({ id: `00000000-0000-4000-8000-00000000000${id}`, name: `Perfil de prueba ${id}`, city: "Puerto Plata", reasons: ["Oficio en su perfil", "Misma ciudad", "Disponibilidad declarada"], scopeEvidence: ["Pisos"] })),
 };
 
-test("free matching shows the RD$299 gate on contact and editing resets matches", async ({ page }) => {
+test("free matching shows contact credits while Express stays separate, and editing resets matches", async ({ page }) => {
   let searches = 0;
   let contacts = 0;
   await page.route("**/api/requests/matches", async route => {
@@ -38,11 +38,13 @@ test("free matching shows the RD$299 gate on contact and editing resets matches"
   await expect(page.getByRole("button", { name: "ENCONTRAR PERSONAL AHORA" })).toBeDisabled();
   await expect(page.getByText(/No han confirmado interés/)).toBeVisible();
   await page.getByRole("button", { name: "Contactar trabajador" }).first().click();
-  const paywall = page.getByRole("dialog", { name: "¿Ya encontraste a quien necesitas?" });
+  const paywall = page.getByRole("dialog", { name: "Desbloquea este contacto" });
   await expect(paywall).toBeVisible();
   await expect(paywall.getByText("Perfil seleccionado: Puerto Plata")).toBeVisible();
-  await expect(paywall.getByRole("link", { name: "Contactar por RD$89" })).toHaveAttribute("href", `/empleadores/contacto?worker=${fixture.workers[0].id}`);
-  await expect(paywall.getByRole("link", { name: "Desbloquear 30 días — RD$299" })).toHaveAttribute("href", `/empleadores/pago?worker=${fixture.workers[0].id}`);
+  await expect(paywall.getByText("RD$100", { exact: true })).toBeVisible();
+  await expect(paywall.getByText("RD$445", { exact: true })).toBeVisible();
+  await expect(paywall.getByText("RD$890", { exact: true })).toBeVisible();
+  await expect(paywall.getByRole("link", { name: "Ver mi saldo y comprar créditos" })).toHaveAttribute("href", `/empleadores/contacto?worker=${fixture.workers[0].id}`);
   expect(contacts).toBe(0); expect(searches).toBe(1);
   await page.getByRole("button", { name: "Seguir explorando" }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

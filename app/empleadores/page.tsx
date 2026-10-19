@@ -39,7 +39,7 @@ export default function EmployersPage() {
             </h1>
             <p className="mt-4 max-w-xl leading-7 text-ink/70">
               Describe el servicio que necesitas y revisa perfiles compatibles gratis.
-              El pase de RD$299 desbloquea el contacto por 30 días. Confirma directamente la disponibilidad
+              Compra créditos desde RD$100 para desbloquear contactos individuales. Confirma directamente la disponibilidad
               y los requisitos con cada persona.
             </p>
 
@@ -52,7 +52,7 @@ export default function EmployersPage() {
               <HowStep number={2} text="Revisa perfiles publicados tras revisión" />
               <HowStep
                 number={3}
-                text="Desbloquea el contacto por RD$299 / 30 días"
+                text="Elige un contacto y usa un crédito prepagado"
               />
             </div>
           </div>
@@ -66,11 +66,11 @@ export default function EmployersPage() {
 
         {workspaceEnabled() && (
           <section className="mt-10 rounded-2xl border border-hoja/30 bg-white p-6 shadow-soft" aria-labelledby="employer-pass-title">
-            <p className="text-sm font-black uppercase tracking-wide text-hoja">Pase de Empleador</p>
-            <h2 id="employer-pass-title" className="mt-2 text-2xl font-black text-ink">Organiza tu búsqueda durante 30 días</h2>
-            <p className="mt-3 max-w-2xl leading-7 text-ink/70">Guarda candidatos, ordena solicitudes privadas y contacta trabajadores durante 30 días. Explorar perfiles y publicar oportunidades sigue siendo gratis.</p>
-            <p className="mt-3 font-black text-ink">RD$299 · pago único · sin renovación automática</p>
-            <Link href="/empleadores/mi-cuenta" className="tap-target mt-5 inline-flex items-center justify-center rounded-xl bg-hoja px-6 py-3 font-black text-white">Ver el pase y mi cuenta →</Link>
+            <p className="text-sm font-black uppercase tracking-wide text-hoja">Créditos de contacto</p>
+            <h2 id="employer-pass-title" className="mt-2 text-2xl font-black text-ink">Paga solo por trabajadores nuevos</h2>
+            <p className="mt-3 max-w-2xl leading-7 text-ink/70">Guarda candidatos y organiza solicitudes privadas. Cada trabajador nuevo usa un crédito; los ya desbloqueados siguen disponibles.</p>
+            <p className="mt-3 font-black text-ink">1 por RD$100 · 5 por RD$445 · 10 por RD$890</p>
+            <Link href="/empleadores/contacto" className="tap-target mt-5 inline-flex items-center justify-center rounded-xl bg-hoja px-6 py-3 font-black text-white">Ver saldo y comprar créditos →</Link>
           </section>
         )}
 
@@ -83,8 +83,8 @@ export default function EmployersPage() {
           />
           <TrustCard
             icon="🎁"
-            title="Contacto con pase"
-            text="Un pase de RD$299 te permite contactar trabajadores durante 30 días."
+            title="Contacto con créditos"
+            text="Cada trabajador nuevo usa un crédito. Volver a contactar a uno ya desbloqueado no gasta otro."
           />
           <TrustCard
             icon="✅"

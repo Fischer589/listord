@@ -3,7 +3,7 @@ import { matchWorker, MATCH_COLUMNS, parseMatchRequest } from "@/lib/request-mat
 import { MATCH_HEADERS, readMatchBody } from "@/lib/request-match-server";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildWorkerContactWhatsAppUrl } from "@/lib/whatsapp";
-import { contactAccessResponse, recordAuthorizedHandoff, requireWorkspaceContact } from "@/lib/workspace-contact-access";
+import { contactAccessResponse, preflightWorkerContact, recordAuthorizedHandoff, requireWorkspaceContact } from "@/lib/workspace-contact-access";
 
 /** Matching is free; the private handoff requires the employer's paid pass. */
 export async function POST(request: Request) {
@@ -12,8 +12,7 @@ export async function POST(request: Request) {
   const id = body?.workerId;
   const reply = (error: string, status: number) => NextResponse.json({ error }, { status, headers: MATCH_HEADERS });
   if (!draft || typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return reply("Revisa tu solicitud y el perfil elegido.", 400);
-  let access: Awaited<ReturnType<typeof requireWorkspaceContact>>;
-  try { access = await requireWorkspaceContact(request, id); }
+  try { await preflightWorkerContact(request, id); }
   catch (error) { return contactAccessResponse(error, MATCH_HEADERS); }
   try {
     const client = getSupabaseAdminClient();
@@ -32,6 +31,9 @@ export async function POST(request: Request) {
     if (!matchWorker({ ...data, availability_confirmed_at: confirmedAt }, draft, new Date(), "confirmed")) return reply("Este perfil ya no cumple los criterios. Actualiza los resultados.", 409);
     const url = buildWorkerContactWhatsAppUrl(data.whatsapp_number, data.full_name);
     if (!url) return reply("Este perfil no tiene un contacto disponible.", 404);
+    let access: Awaited<ReturnType<typeof requireWorkspaceContact>>;
+    try { access = await requireWorkspaceContact(request, id); }
+    catch (error) { return contactAccessResponse(error, MATCH_HEADERS); }
     await recordAuthorizedHandoff(access, "request");
     return NextResponse.json({ url }, { headers: MATCH_HEADERS });
   } catch { return reply("No pudimos preparar el contacto. Intenta de nuevo.", 503); }

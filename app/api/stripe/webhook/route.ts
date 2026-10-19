@@ -7,6 +7,8 @@ import { FEATURED_PURPOSE } from "@/lib/marketplace-featured";
 import { recordFeaturedPayment, revokeFeaturedPayment } from "@/lib/marketplace-featured-payment";
 import { DIRECT_CONTACT_PURPOSE } from "@/lib/direct-contact";
 import { recordDirectContactPayment, revokeDirectContactPayment } from "@/lib/direct-contact-payment";
+import { CONTACT_CREDIT_PURPOSE } from "@/lib/contact-credits";
+import { settleContactCreditSession, reverseContactCreditPayment } from "@/lib/contact-credit-payment";
 import { readBoundedText } from "@/lib/http-json";
 import {
   getPaidAccessUntil,
@@ -75,15 +77,23 @@ export async function POST(request: Request) {
   }
 
   if (["charge.dispute.created", "charge.dispute.funds_withdrawn", "charge.dispute.funds_reinstated", "charge.dispute.closed"].includes(event.type)) {
+    const credit = await reverseContactCreditPayment(event, stripe);
+    if (credit) return credit;
     return (await revokeDirectContactPayment(event, stripe)) ?? revokeWorkspacePayment(event, stripe);
   }
   if (event.type === "charge.refunded" &&
       (event.data.object as Stripe.Charge).payment_intent) {
+    const credit = await reverseContactCreditPayment(event, stripe);
+    if (credit) return credit;
     const direct = await revokeDirectContactPayment(event, stripe);
     if (direct) return direct;
     const featured = await revokeFeaturedPayment(event, stripe);
     if (featured) return featured;
     return revokeWorkspacePayment(event, stripe);
+  }
+  if (["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired"].includes(event.type) &&
+      (event.data.object as Stripe.Checkout.Session).metadata?.purpose === CONTACT_CREDIT_PURPOSE) {
+    return settleContactCreditSession(event);
   }
   if (["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired"].includes(event.type) &&
       (event.data.object as Stripe.Checkout.Session).metadata?.purpose === FEATURED_PURPOSE) {

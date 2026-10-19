@@ -238,7 +238,7 @@ export default async function AdminDashboardPage() {
             >
               Trabajadores
             </Link>
-            <Link
+            <a
               href="/admin/marketplace"
               style={{
                 color: "rgba(255,255,255,0.5)",
@@ -248,7 +248,7 @@ export default async function AdminDashboardPage() {
               }}
             >
               Oportunidades
-            </Link>
+            </a>
             <Link
               href="/admin/employer-requests"
               style={{

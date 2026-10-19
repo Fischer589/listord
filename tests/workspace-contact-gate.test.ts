@@ -29,13 +29,19 @@ test("all contact endpoints deny anonymous, unpaid, mismatched, expired and refu
   globalThis.fetch = async input => {
     const url = new URL(String(input));
     if (url.pathname === "/auth/v1/user") return Response.json({ id: employer, email_confirmed_at: "2026-01-01T00:00:00Z" });
+    if (url.pathname === "/rest/v1/rpc/authorize_worker_contact") {
+      const paid = status === "paid" && linkedOwner === employer && paidSessionMode === "live";
+      return Response.json([{ allowed: paid, source: paid ? "workspace" : "payment_required",
+        source_order: paid ? "paid-order" : null, remaining: 0, already_unlocked: paid }]);
+    }
     if (url.pathname === "/rest/v1/employer_workspace_orders") {
       assert.equal(url.searchParams.get("owner_user_id"), `eq.${employer}`);
       assert.equal(url.searchParams.get("status"), "eq.paid");
       assert.equal(url.searchParams.get("stripe_session_id"), "like.cs\\_live\\_%");
       return Response.json(status === "paid" && linkedOwner === employer && paidSessionMode === "live" ? [{ id: "paid-order" }] : []);
     }
-    contactReads++;
+    if (url.pathname === "/rest/v1/rpc/marketplace_contacts_v2" ||
+        (url.pathname === "/rest/v1/workers" && url.searchParams.get("select")?.includes("whatsapp_number"))) contactReads++;
     if (url.pathname === "/rest/v1/workers") return Response.json({ id: worker, full_name: "Ana", city: "Puerto Plata", skills: ["Limpieza"],
       whatsapp_number: "18095550100", owner_user_id: profileOwner, is_verified: true, available_now: true, created_at: new Date().toISOString(), desired_income: 1200, income_type: "daily" });
     if (url.pathname === "/rest/v1/worker_availability") {

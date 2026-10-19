@@ -117,6 +117,28 @@ test("verified worker responds, withdraws, and controls Express consent without 
   await expect(page.getByRole("heading", { name: "ListoRD Express" })).toHaveCount(0);
 });
 
+test("interested worker can initiate employer WhatsApp contact for free", async ({ page }) => {
+  let decision = "";
+  let purchases = 0;
+  await page.route("**/api/stripe/**", route => { purchases++; return route.abort(); });
+  await page.route(/\/api\/marketplace(?:\?.*)?$/, route => {
+    const request = route.request();
+    if (request.method() === "POST") { decision = request.postDataJSON().decision; return route.fulfill({ json: { saved: true } }); }
+    if (request.url().includes("mine=true")) return route.fulfill({ json: { owned: [], workers: [{ id: workerId, full_name: "Perfil fixture" }], decisions: decision ? [{ opportunity_id: id, worker_id: workerId, decision }] : [], applicants: [] } });
+    return route.fulfill({ json: { opportunities: [opportunity] } });
+  });
+  await page.route("**/api/marketplace/contacts", route => {
+    expect(route.request().postDataJSON()).toEqual({ id, workerId });
+    return route.fulfill({ json: { contacts: [{ workerId, url: "https://wa.me/18090000333" }] } });
+  });
+  await page.route("https://wa.me/**", route => route.fulfill({ contentType: "text/html", body: "<h1>Employer WhatsApp fixture</h1>" }));
+  await page.goto("/oportunidades"); await login(page);
+  await page.locator(".opportunity-interest").getByRole("button", { name: "Me interesa", exact: true }).click();
+  await page.getByRole("button", { name: "Contactar empleador gratis" }).click();
+  await expect(page.getByRole("heading", { name: "Employer WhatsApp fixture" })).toBeVisible();
+  expect(purchases).toBe(0);
+});
+
 test("worker invitation accepts only a profile owned by the authenticated account", async ({ page }) => {
   await page.route(/\/api\/marketplace(?:\?.*)?$/, route => route.fulfill({ json: route.request().url().includes("mine=true")
     ? { owned: [], workers: [{ id: workerId, full_name: "Perfil fixture" }], decisions: [], applicants: [] }

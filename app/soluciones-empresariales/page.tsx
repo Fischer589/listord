@@ -2,10 +2,10 @@
 
 import { AppHeader } from "@/components/app-header";
 import { trackEvent } from "@/lib/analytics";
+import { LISTORD_BUSINESS_WHATSAPP } from "@/lib/business-contact";
 
-const WA_PHONE = "12675160983";
 const WA_MESSAGE = "Hola, necesito ayuda encontrando personal para mi negocio.";
-const WA_URL = `https://wa.me/${WA_PHONE}?text=${encodeURIComponent(WA_MESSAGE)}`;
+const WA_URL = `https://wa.me/${LISTORD_BUSINESS_WHATSAPP}?text=${encodeURIComponent(WA_MESSAGE)}`;
 
 function WhatsAppButton({ size = "default" }: { size?: "default" | "large" }) {
   function handleClick() {

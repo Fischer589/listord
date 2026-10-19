@@ -272,7 +272,7 @@ export default async function Home({
               <span className="trust-item-icon">💬</span>
               <h3 className="trust-item-title">Directo a WhatsApp</h3>
               <p className="trust-item-body">
-                Exploras perfiles gratis. El pase de empleador desbloquea el contacto por 30 días.
+                Exploras perfiles gratis. Usa un crédito prepagado para desbloquear cada trabajador nuevo.
               </p>
             </div>
             <div className="trust-item">

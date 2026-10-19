@@ -19,7 +19,8 @@ test("employer deposit stays separate from legacy sales and fails closed before 
     process.env.EMPLOYER_DEPOSIT_ENABLED = "true";
     process.env.LEGACY_CHECKOUT_ENABLED = "false";
     process.env.STRIPE_SECRET_KEY = "sk_test_fixture";
-    for (const route of [premiumCheckout, workerCheckout, boostCheckout]) {
+    assert.equal((await premiumCheckout(new Request("https://example.test/api/stripe/other-checkout", { method: "POST" }))).status, 410);
+    for (const route of [workerCheckout, boostCheckout]) {
       assert.equal((await route(new Request("https://example.test/api/stripe/other-checkout", { method: "POST" }))).status, 503);
     }
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -1,7 +1,7 @@
 // Local, read-only release checks. Findings identify files, never secret values.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import nextConfig from "../next.config.mjs";
 
 assert.equal(nextConfig.images.unoptimized, true, "Global optimizer bypass is required");
@@ -10,7 +10,7 @@ assert.equal(manifest.images.unoptimized, true, "Built optimizer bypass is requi
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 assert.equal(pkg.engines.node, "24.x");
 assert.equal(process.versions.node.split(".")[0], "24", "Verify on Node 24");
-const tracked = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" }).split("\0").filter(Boolean);
+const tracked = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" }).split("\0").filter(file => file && existsSync(file));
 const browser = [];
 function walk(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
