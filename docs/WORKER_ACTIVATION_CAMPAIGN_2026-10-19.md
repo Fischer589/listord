@@ -1,7 +1,7 @@
 # Worker activation campaign — prepared, sending closed
 
 This change prepares a private queue for every worker row. It does not infer
-ownership, availability, invitation permission, WhatsApp/SMS job notification
+ownership, availability, invitation permission, WhatsApp job notification
 consent, delivery, or payment from registration. It makes no outbound request.
 
 ## Data and access
@@ -16,14 +16,14 @@ consent, delivery, or payment from registration. It makes no outbound request.
   counts. It refuses a truncated audit. The response contains worker IDs, channel
   availability flags and status, never numbers, tokens or evidence references.
   Only the service role can read campaign tables.
-- A telephone field is merely a candidate WhatsApp/SMS channel. It does not
+- A telephone field is merely a candidate WhatsApp channel. It does not
   prove reachability or permission. Shared numbers, invalid numbers, pending
   profiles, suppressions, opt-outs and prior batch recipients cannot enter the
   routine draft. Admins record a restricted case reference only after reviewing
-  explicit permission for the *activation invitation* on the chosen channel.
+  explicit permission for the *activation invitation* on WhatsApp.
   Registration and Express job notification consent are not this permission.
-- The first draft is limited to ten from the admin UI; the database permits at
-  most twenty per draft, atomically deduplicates worker IDs and normalized phone
+- The first draft and database are limited to ten workers per batch, atomically
+  deduplicate worker IDs and normalized phone
   fingerprints, and enforces a cost ceiling. A draft has no sender. Suppression
   and self-service opt-out cancel unsent draft recipients. Provider failures can
   be recorded as suppressed/unreachable without automatically retrying.
@@ -36,9 +36,13 @@ consent, delivery, or payment from registration. It makes no outbound request.
   Each explicit yes/no availability decision is recorded in the private ledger;
   a new confirmation lasts seven days and can be renewed. It rotates any old
   availability bearer token.
-- Future WhatsApp and SMS job notices each have their own revocable
-  `jobs-v1` consent. Availability never writes this consent. The activation
+- Future WhatsApp job notices have their own revocable `jobs-v1` consent.
+  Availability never writes this consent. The activation
   invitation has separate permission and opt-out fields.
+- Each invitation renders an HTTPS URL with the worker ID as a selection hint.
+  The URL carries no bearer authority: fresh verified Auth and linked ownership
+  are checked before any profile action. Unlinked claimants need independent
+  ownership review. Keep invitation URLs out of public logs.
 - Unlinked legacy profiles need independent ownership proof. An old edit token,
   phone possession, public profile facts or a newly verified email alone cannot
   auto-link one. Shared or disputed cases remain in manual review. An approved
@@ -51,11 +55,22 @@ consent, delivery, or payment from registration. It makes no outbound request.
    count with worker count. Review channel, ownership, invitation permission,
    consent, suppression, availability and prior delivery counts. This workspace
    cannot currently perform that live audit because Netlify masks the service
-   credential; do not substitute public listing counts.
-2. Confirm an approved WhatsApp Business or SMS provider, approved Spanish
+   credential and the named auditor connection has no password. Run
+   `supabase/audit_worker_activation_read_only.sql` through that connection,
+   reconcile the migration with its catalog output, then after an approved
+   migration run `supabase/audit_worker_activation_queue_read_only.sql`.
+   Do not substitute public listing counts.
+2. Confirm an approved WhatsApp Business Platform provider, approved Spanish
    template, recipient and channel policy, unit cost and total batch ceiling,
    signed delivery/opt-out webhooks, rate limits, quiet hours, and the operator
-   accountable for manual exceptions. No provider or cost has been approved here.
+   accountable for manual exceptions. Meta Cloud API is the simplest direct
+   candidate; WhatsApp Business Express is excluded. Submit the invitation as a
+   marketing template for Meta review, with the worker-specific URL variable.
+   Meta charges by delivered message and recipient market/category. A published
+   2026 rate card lists US$0.074 per delivered marketing message for Rest of
+   Latin America (indicative US$0.74 for ten deliveries), but the current Meta
+   account rate and any provider fees must be confirmed before approval. No
+   provider or cost has been approved here.
 3. Independently verify and record invitation permission per worker. Mark invalid,
    disputed or opted-out contacts as suppressed. Resolve shared numbers manually.
    Review the first ten eligible records and save only a draft batch.
@@ -74,3 +89,9 @@ after the reviewed migration and deployment. The unlinked legacy base and outbou
 campaign remain gated on independent identity and communication controls. Paid
 employer contact still requires the existing verified account, paid order and
 fresh worker eligibility checks.
+
+Pricing and policy references: Meta's [Business Platform pricing](https://whatsappbusiness.com/products/platform-pricing/)
+and [messaging policy](https://business.whatsapp.com/policy/preview?lang=es_LA);
+the [January 2026 USD rate card hosted by Gupshup](https://www.gupshup.ai/resources/wp-content/uploads/2025/12/USD_Jan2026.pdf)
+provides the indicative Rest of Latin America marketing rate. Reconfirm the
+current account rate and classification in Meta before setting a cost ceiling.

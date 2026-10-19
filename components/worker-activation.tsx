@@ -4,13 +4,15 @@ import Link from "next/link";
 import { MarketplaceSession } from "@/components/marketplace-session";
 
 type Profile = { id: string; approved: boolean; available: boolean; confirmedAt: string | null;
-  notifications: { whatsapp: boolean; sms: boolean }; activationOptedOut: boolean };
+  notifications: { whatsapp: boolean }; activationOptedOut: boolean };
 
 function ActivationProfiles({ token }: { token: string }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [requestedProfile, setRequestedProfile] = useState<string | null>(null);
+  useEffect(() => { setRequestedProfile(new URLSearchParams(window.location.search).get("perfil")); }, []);
   const load = useCallback(async () => {
     const response = await fetch("/api/workers/activation", { cache: "no-store",
       headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(12000) });
@@ -39,13 +41,14 @@ function ActivationProfiles({ token }: { token: string }) {
     finally { setBusy(false); }
   }
   if (loading) return <p role="status">Cargando tus perfiles…</p>;
-  if (!profiles.length) return <section className="request-builder"><h2>Verifica la titularidad de tu perfil</h2>
+  const visibleProfiles = requestedProfile ? profiles.filter(profile => profile.id === requestedProfile) : profiles;
+  if (!visibleProfiles.length) return <section className="request-builder"><h2>Verifica la titularidad de tu perfil</h2>
     <p>Tu cuenta está verificada, pero todavía no está vinculada a un perfil. Por seguridad, un número compartido o un enlace antiguo no basta para vincularlo.</p>
     <Link className="btn-primary" href="/trabajadores/recuperar">Solicitar revisión de titularidad</Link>
     {notice && <p role="alert">{notice}</p>}</section>;
   return <section className="request-builder"><h2>Tus perfiles verificados</h2>
-    <p>La disponibilidad dura 7 días desde tu confirmación. Elegir avisos por WhatsApp o SMS es una decisión separada.</p>
-    {profiles.map(profile => <article key={profile.id} className="rounded-xl border border-black/10 bg-white p-4">
+    <p>La disponibilidad dura 7 días desde tu confirmación. Elegir avisos por WhatsApp es una decisión separada.</p>
+    {visibleProfiles.map(profile => <article key={profile.id} className="rounded-xl border border-black/10 bg-white p-4">
       <h3 className="font-black">Perfil {profile.id.slice(0, 8)}</h3>
       <p>{profile.approved ? profile.available ? "Disponible ahora" : "Disponibilidad sin confirmar o vencida" : "Pendiente de aprobación"}</p>
       {profile.approved && <>
@@ -54,11 +57,11 @@ function ActivationProfiles({ token }: { token: string }) {
           <button className="btn-secondary" disabled={busy} onClick={() => void save(profile.id, "availability", { available: false })}>Ahora no estoy disponible</button>
         </div>
         <fieldset className="mt-4"><legend className="font-bold">Avisos futuros de oportunidades</legend>
-          {(["whatsapp", "sms"] as const).map(channel => <label key={channel} className="mt-2 flex items-center gap-2">
-            <input type="checkbox" checked={profile.notifications[channel]} disabled={busy}
-              onChange={event => void save(profile.id, "notification_consent", { channel, agree: event.target.checked })} />
-            Recibir avisos por {channel === "whatsapp" ? "WhatsApp" : "SMS"}
-          </label>)}
+          <label className="mt-2 flex items-center gap-2">
+            <input type="checkbox" checked={profile.notifications.whatsapp} disabled={busy}
+              onChange={event => void save(profile.id, "notification_consent", { channel: "whatsapp", agree: event.target.checked })} />
+            Recibir avisos por WhatsApp
+          </label>
           <p className="text-sm">Puedes retirar cada permiso cuando quieras. Confirmar disponibilidad no activa estos avisos.</p>
         </fieldset>
         {!profile.activationOptedOut && <button className="btn-secondary" disabled={busy}

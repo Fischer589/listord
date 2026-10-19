@@ -8,7 +8,7 @@ create table public.worker_activation_queue (
   worker_id uuid primary key references public.workers(id) on delete restrict,
   invitation_permission_at timestamptz,
   invitation_evidence text,
-  invitation_channel text check(invitation_channel in ('whatsapp','sms')),
+  invitation_channel text check(invitation_channel = 'whatsapp'),
   suppressed_at timestamptz,
   suppression_reason text,
   opted_out_at timestamptz,
@@ -33,7 +33,7 @@ create trigger worker_activation_enqueue after insert on public.workers
 create table public.worker_notification_consent (
   worker_id uuid not null references public.workers(id) on delete restrict,
   owner_user_id uuid not null references auth.users(id) on delete restrict,
-  channel text not null check(channel in ('whatsapp','sms')),
+  channel text not null check(channel = 'whatsapp'),
   consent_version text not null check(consent_version='jobs-v1'),
   consented_at timestamptz not null,
   revoked_at timestamptz,
@@ -42,7 +42,7 @@ create table public.worker_notification_consent (
 create table public.worker_activation_permission_events (
   id uuid primary key default gen_random_uuid(),
   worker_id uuid not null references public.workers(id) on delete restrict,
-  channel text not null check(channel in ('whatsapp','sms')),
+  channel text not null check(channel = 'whatsapp'),
   evidence_reference text not null check(evidence_reference ~ '^[A-Za-z0-9:_-]{5,160}$'),
   recorded_at timestamptz not null default now()
 );
@@ -50,8 +50,8 @@ create table public.worker_activation_permission_events (
 create table public.worker_activation_batches (
   id uuid primary key default gen_random_uuid(),
   status text not null default 'review' check(status in ('review','cancelled','approved','closed')),
-  channel text not null check(channel in ('whatsapp','sms')),
-  max_recipients integer not null check(max_recipients between 1 and 20),
+  channel text not null check(channel = 'whatsapp'),
+  max_recipients integer not null check(max_recipients between 1 and 10),
   cost_ceiling_cents integer not null check(cost_ceiling_cents between 0 and 1000000),
   created_at timestamptz not null default now(),
   approved_at timestamptz
@@ -112,7 +112,7 @@ create function public.worker_activation_notification_consent(
   p_actor uuid,p_worker uuid,p_channel text,p_agree boolean)
 returns void language plpgsql security invoker set search_path = '' as $$
 begin
-  if p_actor is null or p_worker is null or p_channel not in ('whatsapp','sms') or p_agree is null then
+  if p_actor is null or p_worker is null or p_channel <> 'whatsapp' or p_channel is null or p_agree is null then
     raise exception 'INVALID_CONSENT';
   end if;
   perform 1 from public.workers w where w.id=p_worker and w.owner_user_id=p_actor
@@ -136,7 +136,7 @@ create function public.worker_activation_record_permission(
   p_worker uuid,p_channel text,p_evidence text)
 returns void language plpgsql security invoker set search_path = '' as $$
 begin
-  if p_worker is null or p_channel is null or p_channel not in ('whatsapp','sms')
+  if p_worker is null or p_channel is null or p_channel <> 'whatsapp'
     or p_evidence is null or p_evidence !~ '^[A-Za-z0-9:_-]{5,160}$' then raise exception 'INVALID_PERMISSION'; end if;
   update public.worker_activation_queue set invitation_permission_at=now(),
     invitation_channel=p_channel,invitation_evidence=p_evidence
@@ -163,8 +163,8 @@ create function public.worker_activation_prepare_batch(
 returns uuid language plpgsql security invoker set search_path = '' as $$
 declare prepared uuid; selected_count integer;
 begin
-  if p_channel not in ('whatsapp','sms') or p_cost_ceiling is null or p_cost_ceiling<0
-    or p_cost_ceiling>1000000 or cardinality(p_workers) not between 1 and 20
+  if p_channel is null or p_channel <> 'whatsapp' or p_cost_ceiling is null or p_cost_ceiling<0
+    or p_cost_ceiling>1000000 or cardinality(p_workers) not between 1 and 10
     or (select count(distinct id) from unnest(p_workers) id)<>cardinality(p_workers) then
     raise exception 'INVALID_BATCH';
   end if;

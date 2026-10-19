@@ -56,7 +56,7 @@ export async function POST(request: Request) {
   if (!db) return reply({ error: "Cola no disponible." }, 503);
   try {
     if (input.action === "permission" && uuid(input.workerId) &&
-      (input.channel === "whatsapp" || input.channel === "sms") && input.evidenceVerified === true &&
+      input.channel === "whatsapp" && input.evidenceVerified === true &&
       typeof input.evidence === "string" && /^[A-Za-z0-9:_-]{5,160}$/.test(input.evidence)) {
       const result = await db.rpc("worker_activation_record_permission", {
         p_worker: input.workerId, p_channel: input.channel, p_evidence: input.evidence
@@ -72,9 +72,9 @@ export async function POST(request: Request) {
       return reply({ saved: true });
     }
     if (input.action === "prepare_batch" && Array.isArray(input.workerIds) &&
-      input.workerIds.length >= 1 && input.workerIds.length <= 20 &&
+      input.workerIds.length >= 1 && input.workerIds.length <= 10 &&
       input.workerIds.every(uuid) && new Set(input.workerIds).size === input.workerIds.length &&
-      (input.channel === "whatsapp" || input.channel === "sms") &&
+      input.channel === "whatsapp" &&
       Number.isInteger(input.costCeilingCents) && Number(input.costCeilingCents) >= 0 &&
       Number(input.costCeilingCents) <= 1000000) {
       const result = await db.rpc("worker_activation_prepare_batch", {

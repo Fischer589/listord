@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { PGlite } from "@electric-sql/pglite";
-import { ACTIVATION_INVITATION, buildActivationQueue, type CampaignWorker } from "../lib/activation-campaign";
+import { ACTIVATION_INVITATION, buildActivationQueue, workerActivationInvitation, type CampaignWorker } from "../lib/activation-campaign";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const first = "22222222-2222-4222-8222-222222222222";
@@ -32,6 +32,10 @@ test("campaign inventory includes every profile, suppresses shared phones and ke
   assert.equal(report.rows.find(row => row.id === first)?.futureJobNotifications.whatsapp, true);
   assert.doesNotMatch(JSON.stringify(report), /8095550100|whatsapp_number|invitation_evidence/);
   assert.match(ACTIVATION_INVITATION, /\[ENLACE PERSONAL\]/);
+  const invitation = workerActivationInvitation("https://listord.example", first);
+  assert.match(invitation, new RegExp(`https://listord\\.example/trabajadores/activar\\?perfil=${first}`));
+  assert.doesNotMatch(invitation, /8095550100/);
+  assert.throws(() => workerActivationInvitation("http://listord.example", first));
 });
 
 test("private migration creates a full queue, seven-day SQL guards and atomic owner confirmation", async () => {
@@ -90,6 +94,8 @@ test("private migration creates a full queue, seven-day SQL guards and atomic ow
     await db.query("update workers set owner_user_id=$1 where id=$2", [owner,first]);
     await assert.rejects(db.query("select worker_activation_prepare_batch(array[$1]::uuid[],'whatsapp',100)", [first]), /BATCH_NOT_ELIGIBLE/);
     await db.query("select worker_activation_record_permission($1,'whatsapp','case_12345')", [first]);
+    await assert.rejects(db.query("select worker_activation_record_permission($1,'sms','case_12345')", [first]), /INVALID_PERMISSION/);
+    await assert.rejects(db.query("select worker_activation_prepare_batch(array[$1]::uuid[],'sms',100)", [first]), /INVALID_BATCH/);
     assert.equal((await db.query("select * from worker_activation_permission_events")).rows.length, 1);
     await assert.rejects(db.query("select worker_activation_prepare_batch(array[$1]::uuid[],'whatsapp',100)", [first]), /BATCH_NOT_ELIGIBLE/,
       "shared contacts require review");

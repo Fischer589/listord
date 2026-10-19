@@ -4,9 +4,9 @@ import { ACTIVATION_INVITATION, type QueueReason } from "@/lib/activation-campai
 
 type Row = {
   id: string; approved: boolean; ownerVerified: boolean; available: boolean;
-  contactChannels: { whatsappCandidate: boolean; smsCandidate: boolean };
-  sharedContact: boolean; invitationPermission: boolean; invitationChannel: "whatsapp" | "sms" | null;
-  futureJobNotifications: { whatsapp: boolean; sms: boolean }; deliveryStatus: string | null; reason: QueueReason;
+  contactChannels: { whatsappCandidate: boolean };
+  sharedContact: boolean; invitationPermission: boolean; invitationChannel: "whatsapp" | null;
+  futureJobNotifications: { whatsapp: boolean }; deliveryStatus: string | null; reason: QueueReason;
 };
 type Data = { asOf: string; totals: Record<string, number>; rows: Row[];
   batches: { id: string; status: string; channel: string; max_recipients: number; cost_ceiling_cents: number; created_at: string }[] };
@@ -24,7 +24,6 @@ export function AdminActivationQueue() {
   const [filter, setFilter] = useState<QueueReason | "all">("all");
   const [page, setPage] = useState(0);
   const [evidence, setEvidence] = useState<Record<string, string>>({});
-  const [channel, setChannel] = useState<"whatsapp" | "sms">("whatsapp");
   const [costCeiling, setCostCeiling] = useState("0");
   const load = useCallback(async () => {
     const response = await fetch("/api/admin/activation", { cache: "no-store", signal: AbortSignal.timeout(20000) });
@@ -48,7 +47,7 @@ export function AdminActivationQueue() {
   }
   const rows = (data?.rows ?? []).filter(row => filter === "all" || row.reason === filter);
   const visible = rows.slice(page * 50, (page + 1) * 50);
-  const firstBatch = data?.rows.filter(row => row.reason === "eligible" && row.invitationChannel === channel).slice(0, 10) ?? [];
+  const firstBatch = data?.rows.filter(row => row.reason === "eligible" && row.invitationChannel === "whatsapp").slice(0, 10) ?? [];
   return <section className="request-builder">
     <h1>Cola de activación de trabajadores</h1>
     <p>Incluye todos los perfiles. Los teléfonos permanecen privados. La existencia de un número no acredita permiso para invitar, titularidad ni disponibilidad.</p>
@@ -60,13 +59,12 @@ export function AdminActivationQueue() {
       <section className="mt-5 rounded-lg border p-4">
         <h2>Primer lote controlado</h2>
         <p>Vista previa: {firstBatch.length} perfiles con permiso de invitación registrado, teléfono único y sin supresión. Máximo 10. Preparar solo guarda un borrador; no envía mensajes.</p>
-        <label>Canal <select value={channel} onChange={event => setChannel(event.target.value as "whatsapp" | "sms")}>
-          <option value="whatsapp">WhatsApp</option><option value="sms">SMS</option></select></label>
+        <p>Canal: WhatsApp</p>
         <label>Tope de costo en centavos <input type="number" min="0" max="1000000" value={costCeiling}
           onChange={event => setCostCeiling(event.target.value)} /></label>
         <button className="btn-primary" disabled={busy || !firstBatch.length || !/^\d+$/.test(costCeiling)}
           onClick={() => void act({ action: "prepare_batch", workerIds: firstBatch.map(row => row.id),
-            channel, costCeilingCents: Number(costCeiling) })}>Guardar lote para revisión</button>
+            channel: "whatsapp", costCeilingCents: Number(costCeiling) })}>Guardar lote para revisión</button>
         <details><summary>Texto de invitación aprobado para revisión</summary><pre className="whitespace-pre-wrap">{ACTIVATION_INVITATION}</pre></details>
         {data.batches.length > 0 && <div className="mt-4"><h3>Lotes guardados</h3>
           <ul>{data.batches.map(batch => <li key={batch.id}>{batch.id} · {batch.status} · {batch.channel} · {batch.max_recipients} perfiles · tope {batch.cost_ceiling_cents} centavos</li>)}</ul>
@@ -80,15 +78,15 @@ export function AdminActivationQueue() {
       <div className="grid gap-3">{visible.map(row => <article key={row.id} className="rounded-lg border p-4">
         <p className="font-black">Perfil {row.id}</p>
         <p>{reasonText[row.reason]} · {row.ownerVerified ? "Titular vinculado" : "Titular sin verificar"} · {row.available ? "Disponible" : "No disponible confirmado"}</p>
-        <p>Canales posibles: {row.contactChannels.whatsappCandidate ? "WhatsApp/SMS (entrega sin verificar)" : "ninguno"}.
-          Permiso de avisos futuros: {row.futureJobNotifications.whatsapp ? "WhatsApp " : ""}{row.futureJobNotifications.sms ? "SMS" : ""}{!row.futureJobNotifications.whatsapp && !row.futureJobNotifications.sms ? "ninguno" : ""}.</p>
+        <p>Canal posible: {row.contactChannels.whatsappCandidate ? "WhatsApp (entrega sin verificar)" : "ninguno"}.
+          Permiso de avisos futuros: {row.futureJobNotifications.whatsapp ? "WhatsApp" : "ninguno"}.</p>
         {row.deliveryStatus && <p>Entrega: {row.deliveryStatus}</p>}
         {!row.invitationPermission && row.reason !== "opted_out" && row.reason !== "suppressed" &&
           <div className="mt-2 flex flex-wrap gap-2"><input aria-label={`Referencia de permiso ${row.id}`}
             placeholder="Referencia privada de permiso explícito" value={evidence[row.id] ?? ""}
             onChange={event => setEvidence(current => ({ ...current, [row.id]: event.target.value }))} />
             <button className="btn-secondary" disabled={busy || !/^[A-Za-z0-9:_-]{5,160}$/.test(evidence[row.id] ?? "")}
-              onClick={() => void act({ action: "permission", workerId: row.id, channel, evidence: evidence[row.id], evidenceVerified: true })}>Registrar permiso revisado</button></div>}
+              onClick={() => void act({ action: "permission", workerId: row.id, channel: "whatsapp", evidence: evidence[row.id], evidenceVerified: true })}>Registrar permiso revisado</button></div>}
         {row.reason !== "suppressed" && row.reason !== "opted_out" && <button className="btn-secondary"
           disabled={busy} onClick={() => void act({ action: "suppress", workerId: row.id, reason: "operator_hold" })}>Poner en espera</button>}
       </article>)}</div>

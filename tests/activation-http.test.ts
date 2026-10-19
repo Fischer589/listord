@@ -48,6 +48,11 @@ test("admin queue audits every profile privately and requires an admin session",
         body: JSON.stringify({ action: "permission", workerId: worker, channel: "whatsapp",
           evidenceVerified: false, evidence: "case_12345" }) }));
       assert.equal(invalid.status, 400, "registration never becomes campaign permission");
+      const sms = await POST(new Request("https://listord.example/api/admin/activation", { method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "permission", workerId: worker, channel: "sms",
+          evidenceVerified: true, evidence: "case_12345" }) }));
+      assert.equal(sms.status, 400, "activation invitations use WhatsApp only");
     });
   } finally {
     globalThis.fetch = originalFetch;

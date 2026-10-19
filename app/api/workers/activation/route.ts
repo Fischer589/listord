@@ -40,8 +40,7 @@ export async function GET(request: Request) {
       return { id: worker.id, approved: worker.is_verified, available: current,
         confirmedAt: state?.confirmed_at ?? null,
         notifications: {
-          whatsapp: Boolean(consent.data?.some(row => row.worker_id === worker.id && row.channel === "whatsapp" && !row.revoked_at)),
-          sms: Boolean(consent.data?.some(row => row.worker_id === worker.id && row.channel === "sms" && !row.revoked_at))
+          whatsapp: Boolean(consent.data?.some(row => row.worker_id === worker.id && row.channel === "whatsapp" && !row.revoked_at))
         },
         activationOptedOut: Boolean(queue.data?.some(row => row.worker_id === worker.id && row.opted_out_at)) };
     }) });
@@ -65,7 +64,7 @@ export async function POST(request: Request) {
       return reply({ saved: true, available: data[0].available,
         confirmedAt: data[0].confirmed_at, fresh: isFreshAvailability(data[0].available, data[0].confirmed_at) });
     }
-    if (input.action === "notification_consent" && (input.channel === "whatsapp" || input.channel === "sms") &&
+    if (input.action === "notification_consent" && input.channel === "whatsapp" &&
         typeof input.agree === "boolean") {
       const { error } = await db.rpc("worker_activation_notification_consent",
         { p_actor: actor, p_worker: input.workerId, p_channel: input.channel, p_agree: input.agree })

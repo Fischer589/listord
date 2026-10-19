@@ -7,13 +7,13 @@ export type CampaignWorker = {
 };
 export type CampaignQueueRecord = {
   worker_id: string; invitation_permission_at: string | null;
-  invitation_channel: "whatsapp" | "sms" | null; suppressed_at: string | null;
+  invitation_channel: "whatsapp" | null; suppressed_at: string | null;
   opted_out_at: string | null; unreachable_at: string | null;
 };
 export type CampaignAvailability = {
   worker_id: string; available: boolean; confirmed_at: string | null; access_expires_at: string;
 };
-export type CampaignNotificationConsent = { worker_id: string; channel: "whatsapp" | "sms"; revoked_at: string | null };
+export type CampaignNotificationConsent = { worker_id: string; channel: "whatsapp"; revoked_at: string | null };
 export type CampaignDelivery = { worker_id: string; status: string };
 export type QueueReason = "eligible" | "pending_approval" | "no_contact" | "shared_contact" |
   "no_permission" | "suppressed" | "opted_out" | "unreachable" | "already_batched";
@@ -30,6 +30,20 @@ Confirma tu perfil y actualiza tu disponibilidad aquí:
 También podrás elegir si deseas recibir avisos de oportunidades por mensaje.
 
 Tú decides. Puedes cambiar tus preferencias cuando quieras.`;
+
+/** The profile ID selects a page only; verified Auth and linked ownership authorize every action. */
+export function workerActivationPath(workerId: string) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(workerId))
+    throw new Error("invalid worker id");
+  return `/trabajadores/activar?perfil=${encodeURIComponent(workerId)}`;
+}
+
+export function workerActivationInvitation(origin: string, workerId: string) {
+  const base = new URL(origin);
+  if (base.protocol !== "https:" || base.username || base.password || base.search || base.hash)
+    throw new Error("invalid activation origin");
+  return ACTIVATION_INVITATION.replace("[ENLACE PERSONAL]", new URL(workerActivationPath(workerId), base).toString());
+}
 
 /** Classify every profile privately. Contact numbers never leave this function. */
 export function buildActivationQueue(
@@ -61,17 +75,16 @@ export function buildActivationQueue(
     else if (!worker.is_verified) reason = "pending_approval";
     else if (!phone) reason = "no_contact";
     else if ((phoneCounts.get(phone) ?? 0) > 1) reason = "shared_contact";
-    else if (!record?.invitation_permission_at || !record.invitation_channel) reason = "no_permission";
+    else if (!record?.invitation_permission_at || record.invitation_channel !== "whatsapp") reason = "no_permission";
     return {
       id: worker.id, approved: worker.is_verified === true, ownerVerified, available,
       availabilityConfirmedAt: state?.confirmed_at ?? null,
-      contactChannels: { whatsappCandidate: Boolean(phone), smsCandidate: Boolean(phone) },
+      contactChannels: { whatsappCandidate: Boolean(phone) },
       sharedContact: Boolean(phone && (phoneCounts.get(phone) ?? 0) > 1),
       invitationPermission: Boolean(record?.invitation_permission_at),
       invitationChannel: record?.invitation_channel ?? null,
       futureJobNotifications: {
-        whatsapp: notificationConsent.some(consent => consent.worker_id === worker.id && consent.channel === "whatsapp" && !consent.revoked_at),
-        sms: notificationConsent.some(consent => consent.worker_id === worker.id && consent.channel === "sms" && !consent.revoked_at)
+        whatsapp: notificationConsent.some(consent => consent.worker_id === worker.id && consent.channel === "whatsapp" && !consent.revoked_at)
       },
       deliveryStatus: delivery?.status ?? null, reason
     };
