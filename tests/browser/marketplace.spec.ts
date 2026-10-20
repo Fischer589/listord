@@ -162,7 +162,7 @@ test("unpaid employer sees interested workers and can close a listing without wo
   await expect(page.getByRole("heading", { name: "Mis oportunidades" })).toBeVisible();
   await expect(page.getByText("Perfil interesado")).toBeVisible();
   await expect(page.getByRole("button", { name: "Elegir y contactar" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Tu próximo equipo, en orden" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tu búsqueda, en un solo lugar" })).toBeVisible();
   await page.getByRole("button", { name: "Cerrar oportunidad" }).click();
   await expect(page.getByText("Oportunidad retirada. Ya no acepta respuestas.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Elegir y contactar" })).toHaveCount(0);
