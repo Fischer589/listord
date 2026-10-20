@@ -25,3 +25,13 @@
 3. Recheck the current protected Netlify deploy, effective environment, production worker/entitlement aggregates, and outstanding Supabase security-advisor finding before any live change. Then verify and activate the existing exact live DOP prices, add missing dispute webhook events, configure Netlify gates, apply only the two credit migrations, and deploy the tested commit in the order specified by [the release runbook](CONTACT_CREDITS_RELEASE_2026-10-19.md). Stop if any financial, data, or security gate fails.
 
 The previous readiness assessment remains a historical record of its 2026-10-19 audit. This document records subsequent evidence and supersedes its statements that no fresh dump or production-data migration rehearsal existed. It does **not** authorize deployment by itself.
+
+## Stripe test connection follow-up — 2026-10-20
+
+The Blackthorne Industries Stripe account is now connected in **both** live and test contexts. The test context is accessible for authenticated API reads, but the provider-hosted credit Checkout gate is still **not complete**:
+
+- The only active DOP test price returned by Stripe was a **recurring RD$199 historical workspace price** (`price_1TQdfgDcsfbyUKoSPPMCLfpE`). There were no active or inactive DOP test prices for the new 1/5/10 contact-credit packs. That workspace price was not used as a credit price.
+- The sole test-mode webhook endpoint points to `https://release-candidate--listord-2.netlify.app/api/stripe/webhook` and subscribes to `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Its public homepage still shows earlier ListoRD positioning, so it is not evidence of an isolated current credit release candidate.
+- This workspace has no local test Stripe secret key, test webhook signing secret, Stripe CLI, or isolated current Supabase app/API environment configured. The connected Stripe API context permits account operations but does not supply credentials to run this repository's Checkout and webhook routes locally. No test Checkout session was created, no test payment was made, and no Stripe product, price, or webhook endpoint was changed.
+
+To resume, provision an isolated current app/database and supply its test key and webhook signing secret through an ignored, access-restricted secret configuration (never in chat or Git). Then create/verify exact active one-time DOP test prices, configure the isolated checkout and signed-event delivery, and run the real hosted Checkout through credit allocation, unlock, and WhatsApp URL handoff. The backup gate and all live changes remain closed.
