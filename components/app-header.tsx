@@ -72,13 +72,13 @@ export function AppHeader() {
           <span className="site-logo-text max-[360px]:sr-only">ListoRD</span>
         </Link>
 
-        {/* ── Desktop nav (640px+) — unchanged ── */}
+        {/* ── Desktop nav (640px+) ── */}
         <nav className="hidden items-center gap-1.5 sm:flex sm:gap-2">
           <Link
             href="/oportunidades"
             className="tap-target btn-ghost text-xs sm:text-sm px-3 py-2 sm:px-4"
           >
-            Busco trabajo
+            Oportunidades
           </Link>
           <Link
             href="/soluciones-empresariales"
@@ -137,7 +137,7 @@ export function AppHeader() {
                   onClick={() => setMenuOpen(false)}
                   className="tap-target rounded-xl px-3 py-3 text-sm font-bold text-[var(--ink)] hover:bg-[var(--surface)]"
                 >
-                  Busco trabajo
+                  Oportunidades
                 </Link>
                 <Link
                   href="/soluciones-empresariales"

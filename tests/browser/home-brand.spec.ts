@@ -55,3 +55,28 @@ test("category discovery keeps free browsing and the contact price clear", async
   await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /confirma la disponibilidad directamente/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test("workers can explore opportunities or open the existing registration form in one click", async ({ page }) => {
+  await page.goto("/");
+  const header = page.getByRole("banner");
+  const mobile = page.viewportSize()!.width < 640;
+  if (mobile) await header.getByRole("button", { name: "Abrir menú" }).click();
+  const opportunities = mobile
+    ? header.getByRole("menuitem", { name: "Oportunidades" })
+    : header.getByRole("link", { name: "Oportunidades" });
+  await expect(opportunities).toHaveAttribute("href", "/oportunidades");
+  await opportunities.click();
+  await expect(page).toHaveURL(/\/oportunidades$/);
+  await expect(page.getByRole("heading", { name: "Oportunidades de trabajo" })).toBeVisible();
+  await expect(page.getByLabel("Servicio")).toBeVisible();
+
+  await page.getByRole("link", { name: "Registrarme para trabajar" }).click();
+  await expect(page).toHaveURL(/\/trabajadores\/registro$/);
+  await expect(page.getByLabel("Nombre completo")).toBeVisible();
+  await expect(page.getByLabel("Número de WhatsApp")).toBeVisible();
+
+  await page.goto("/");
+  await page.locator(".hero").getByRole("link", { name: "Busco trabajo" }).click();
+  await expect(page).toHaveURL(/\/trabajadores\/registro$/);
+  await expect(page.getByLabel("Nombre completo")).toBeVisible();
+});
