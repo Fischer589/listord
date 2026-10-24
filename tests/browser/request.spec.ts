@@ -2,6 +2,20 @@ import { expect, test } from "@playwright/test";
 import { CATEGORIES } from "../../lib/categories";
 import { REQUEST_SCHEMAS } from "../../lib/request-specification";
 
+test("employer hero makes both hiring paths clear", async ({ page }) => {
+  await page.goto("/solicitar");
+  const hero = page.locator(".request-hero");
+  await expect(hero.getByRole("heading", { level: 1, name: "¡Encontramos a tu próximo trabajador!" })).toBeVisible();
+  await expect(hero).toContainText("🇩🇴 HECHO PARA NEGOCIOS EN REPÚBLICA DOMINICANA");
+  await expect(hero).toContainText("El personal que necesitas. Sin tantas vueltas.");
+  await expect(hero).toContainText("RD$100");
+  await expect(hero.getByRole("link", { name: "Encuentra tu próximo trabajador" })).toHaveAttribute("href", "/#descubre");
+  await hero.getByRole("link", { name: "Publicar y esperar" }).click();
+  await expect(page).toHaveURL(/#publicar-vacante$/);
+  await expect(page.getByRole("heading", { level: 2, name: "¿Qué necesitas? ¿Dónde?" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("anonymous request, validation, keyboard focus, preview and editing", async ({ page, context }, testInfo) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   const errors: string[] = [];
@@ -15,7 +29,7 @@ test("anonymous request, validation, keyboard focus, preview and editing", async
   await page.getByLabel(/^¿Qué necesitas\?/).selectOption("limpieza");
   await page.getByLabel(/^¿Dónde\?/).fill("Puerto Plata");
   await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+  await expect(page.getByRole("heading", { level: 2, name: "Lo esencial para decirte que sí." })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.getByLabel("¿Qué espacio necesitas limpiar?")).toBeFocused();
   await page.getByLabel("¿Qué espacio necesitas limpiar?").selectOption("Casa");
@@ -29,7 +43,7 @@ test("anonymous request, validation, keyboard focus, preview and editing", async
   await page.getByRole("button", { name: "Ver mi solicitud" }).click();
   const preview = page.getByRole("article", { name: "Resumen de la solicitud" });
   await expect(preview).toContainText("LIMPIEZA");
-  await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
+  await expect(page.getByRole("heading", { level: 2, name: "Así se verá tu solicitud." })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("preview.png"), fullPage: true });
   await expect(preview).toContainText("Presupuesto: RD$1,500 por trabajo");
   await expect(preview).toContainText("No incluye: Cocinar ni lavar ropa");
