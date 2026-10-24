@@ -1,4 +1,5 @@
 import { AdminAvailabilityAccess } from "@/components/admin-availability-access";
+import { PendingWorkerCard, RejectWorkerButton } from "@/components/admin-pending-worker-card";
 import { requireAdmin } from "@/lib/admin-auth";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import Image from "next/image";
@@ -21,25 +22,9 @@ async function approveWorker(formData: FormData) {
   const { error } = await supabase
     .from("workers")
     .update({ is_verified: true })
-    .eq("id", workerId);
-  if (error) console.warn("Worker approval failed.", { code: error.code, workerId });
-  revalidatePath("/admin/workers");
-  revalidatePath("/");
-}
-
-async function rejectWorker(formData: FormData) {
-  "use server";
-  await requireAdmin();
-  // Only deletes unverified (pending) workers — safety guard
-  const workerId = String(formData.get("worker_id") || "").trim();
-  const supabase = getSupabaseAdminClient();
-  if (!workerId || !supabase) return;
-  const { error } = await supabase
-    .from("workers")
-    .delete()
     .eq("id", workerId)
-    .eq("is_verified", false);
-  if (error) console.warn("Worker rejection failed.", { code: error.code, workerId });
+    .is("rejected_at", null);
+  if (error) console.warn("Worker approval failed.", { code: error.code, workerId });
   revalidatePath("/admin/workers");
   revalidatePath("/");
 }
@@ -53,7 +38,8 @@ async function deactivateWorker(formData: FormData) {
   const { error } = await supabase
     .from("workers")
     .update({ is_verified: false })
-    .eq("id", workerId);
+    .eq("id", workerId)
+    .is("rejected_at", null);
   if (error) console.warn("Worker deactivation failed.", { code: error.code, workerId });
   revalidatePath("/admin/workers");
   revalidatePath("/");
@@ -80,13 +66,14 @@ async function approveLocalTestWorker() {
     .from("workers")
     .select("id")
     .eq("whatsapp_number", testWorker.whatsapp_number)
+    .is("rejected_at", null)
     .maybeSingle();
   if (lookupError) {
     console.warn("Local test worker lookup failed.", { code: lookupError.code });
     return;
   }
   const response = existingWorker?.id
-    ? await supabase.from("workers").update(testWorker).eq("id", existingWorker.id)
+    ? await supabase.from("workers").update(testWorker).eq("id", existingWorker.id).is("rejected_at", null)
     : await supabase.from("workers").insert(testWorker);
   if (response.error) {
     console.warn("Local test worker approval failed.", { code: response.error.code });
@@ -127,17 +114,20 @@ async function getAdminWorkers(): Promise<AdminWorkersResult> {
       owner_user_id,
       created_at
     `)
+    .is("rejected_at", null)
     .order("created_at", { ascending: false });
 
   const pendingQ = supabase
     .from("workers")
     .select("id", { count: "exact", head: true })
-    .eq("is_verified", false);
+    .eq("is_verified", false)
+    .is("rejected_at", null);
 
   const approvedQ = supabase
     .from("workers")
     .select("id", { count: "exact", head: true })
-    .eq("is_verified", true);
+    .eq("is_verified", true)
+    .is("rejected_at", null);
 
   try {
     const [{ data, error }, { count: pc }, { count: ac }] = await Promise.all([
@@ -302,11 +292,8 @@ export default async function AdminWorkersPage({
                   : null;
                 const profileSlug = worker.id;
 
-                return (
-                  <article
-                    key={worker.id}
-                    className="rounded-xl border border-black/10 bg-white p-4 shadow-soft"
-                  >
+                const cardContent = (
+                  <>
                     <div className="flex gap-4">
 
                       {/* Photo */}
@@ -413,15 +400,7 @@ export default async function AdminWorkersPage({
                               Aprobar
                             </button>
                           </form>
-                          <form action={rejectWorker} className="inline">
-                            <input type="hidden" name="worker_id" value={worker.id} />
-                            <button
-                              type="submit"
-                              className="tap-target rounded-md border border-red-200 bg-red-50 px-4 py-2 text-xs font-black text-red-700 hover:bg-red-100"
-                            >
-                              Rechazar y eliminar
-                            </button>
-                          </form>
+                          <RejectWorkerButton />
                         </>
                       ) : (
                         <form action={deactivateWorker} className="inline">
@@ -435,7 +414,14 @@ export default async function AdminWorkersPage({
                         </form>
                       )}
                     </div>
-                  </article>
+                  </>
+                );
+                return worker.is_verified ? (
+                  <article key={worker.id} className="rounded-xl border border-black/10 bg-white p-4 shadow-soft">{cardContent}</article>
+                ) : (
+                  <PendingWorkerCard key={worker.id} workerId={worker.id} workerName={worker.full_name || "Sin nombre"}>
+                    {cardContent}
+                  </PendingWorkerCard>
                 );
               })}
             </div>

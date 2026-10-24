@@ -91,6 +91,7 @@ async function findWorkerByEditToken(token?: string) {
       boost_cooldown_until
     `)
     .eq("edit_token", editToken)
+    .is("rejected_at", null)
     .maybeSingle();
 
   if (error) {
@@ -227,6 +228,7 @@ async function updateWorkerProfile(formData: FormData) {
     .update(updatePayload)
     .eq("id", currentWorker.id)
     .eq("edit_token", editToken)
+    .is("rejected_at", null)
     .select("id")
     .maybeSingle();
 
