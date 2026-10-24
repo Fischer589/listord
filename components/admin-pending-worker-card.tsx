@@ -34,20 +34,20 @@ export function PendingWorkerCard({ workerId, workerName, children }: {
         method: "POST",
         cache: "no-store",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reject", workerId, confirmId: workerId }),
+        body: JSON.stringify({ action: "delete", workerId, confirmId: workerId }),
         signal: AbortSignal.timeout(12000)
       });
       if (response.redirected) throw new Error("La sesión de administración venció. Inicia sesión de nuevo.");
       const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.error || "No se pudo rechazar el registro.");
-      if (result?.saved !== true || result.workerId !== workerId) {
+      if (!response.ok) throw new Error(result?.error || "No se pudo eliminar el registro.");
+      if (result?.deleted !== true || result.workerId !== workerId) {
         throw new Error("La eliminación no fue confirmada. Actualiza la página.");
       }
       setRemoved(true);
       router.refresh();
     } catch (cause) {
       setConfirmOpen(false);
-      setError(cause instanceof Error ? cause.message : "No se pudo rechazar el registro.");
+      setError(cause instanceof Error ? cause.message : "No se pudo eliminar el registro.");
     } finally {
       setBusy(false);
     }
@@ -63,9 +63,9 @@ export function PendingWorkerCard({ workerId, workerName, children }: {
           aria-describedby={`reject-description-${workerId}`}
           onKeyDown={event => { if (event.key === "Escape" && !busy) setConfirmOpen(false); }}
           className="w-full max-w-md rounded-xl bg-white p-6 shadow-lift">
-          <h2 id={`reject-title-${workerId}`} className="text-xl font-black text-ink">¿Rechazar este registro?</h2>
+          <h2 id={`reject-title-${workerId}`} className="text-xl font-black text-ink">¿Eliminar definitivamente este registro?</h2>
           <p id={`reject-description-${workerId}`} className="mt-3 text-sm text-black/70">
-            {workerName} dejará de aparecer en la revisión. El perfil y cualquier historial relacionado se conservarán.
+            Se eliminarán permanentemente el registro pendiente de {workerName} y su entrada de activación sin actividad. Esta acción no se puede deshacer. Si hay historial protegido, no se eliminará nada.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <button type="button" disabled={busy} onClick={() => void reject()}

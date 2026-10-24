@@ -33,13 +33,13 @@ test("pending worker rejection confirms, handles failure, and persists without t
   await expect(selectedCard).toBeVisible();
   await expect(otherCard).toBeVisible();
   await openConfirmation();
-  await expect(page.getByRole("dialog")).toContainText("El perfil y cualquier historial relacionado se conservarán.");
+  await expect(page.getByRole("dialog")).toContainText("Se eliminarán permanentemente el registro pendiente");
   await press(page.getByRole("button", { name: "Cancelar" }));
   await expect(selectedCard).toBeVisible();
 
   await openConfirmation();
   await press(page.getByRole("button", { name: "Sí, rechazar y eliminar" }));
-  await expect(selectedCard.getByRole("alert")).toContainText("No se pudo rechazar el registro");
+  await expect(selectedCard.getByRole("alert")).toContainText("No se pudo eliminar el registro");
   await expect(selectedCard).toBeVisible();
   await expect(otherCard).toBeVisible();
 
@@ -49,6 +49,14 @@ test("pending worker rejection confirms, handles failure, and persists without t
   await expect(otherCard).toBeVisible();
   await page.reload();
   await expect(selectedCard).toHaveCount(0);
+  await expect(otherCard).toBeVisible();
+  const protectedButton = otherCard.getByRole("button", { name: "Rechazar y eliminar" });
+  await protectedButton.evaluate(button => button.scrollIntoView({ block: "center", behavior: "instant" }));
+  await press(protectedButton);
+  await press(page.getByRole("button", { name: "Sí, rechazar y eliminar" }));
+  await expect(otherCard.getByRole("alert")).toContainText("historial de pagos");
+  await expect(otherCard).toBeVisible();
+  await page.reload();
   await expect(otherCard).toBeVisible();
   await page.goto("http://localhost:3188/admin/workers?status=approved");
   await expect(page.getByRole("heading", { name: "Perfil aprobado" })).toBeVisible();

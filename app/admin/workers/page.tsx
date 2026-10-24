@@ -22,8 +22,7 @@ async function approveWorker(formData: FormData) {
   const { error } = await supabase
     .from("workers")
     .update({ is_verified: true })
-    .eq("id", workerId)
-    .is("rejected_at", null);
+    .eq("id", workerId);
   if (error) console.warn("Worker approval failed.", { code: error.code, workerId });
   revalidatePath("/admin/workers");
   revalidatePath("/");
@@ -38,8 +37,7 @@ async function deactivateWorker(formData: FormData) {
   const { error } = await supabase
     .from("workers")
     .update({ is_verified: false })
-    .eq("id", workerId)
-    .is("rejected_at", null);
+    .eq("id", workerId);
   if (error) console.warn("Worker deactivation failed.", { code: error.code, workerId });
   revalidatePath("/admin/workers");
   revalidatePath("/");
@@ -66,14 +64,13 @@ async function approveLocalTestWorker() {
     .from("workers")
     .select("id")
     .eq("whatsapp_number", testWorker.whatsapp_number)
-    .is("rejected_at", null)
     .maybeSingle();
   if (lookupError) {
     console.warn("Local test worker lookup failed.", { code: lookupError.code });
     return;
   }
   const response = existingWorker?.id
-    ? await supabase.from("workers").update(testWorker).eq("id", existingWorker.id).is("rejected_at", null)
+    ? await supabase.from("workers").update(testWorker).eq("id", existingWorker.id)
     : await supabase.from("workers").insert(testWorker);
   if (response.error) {
     console.warn("Local test worker approval failed.", { code: response.error.code });
@@ -114,20 +111,17 @@ async function getAdminWorkers(): Promise<AdminWorkersResult> {
       owner_user_id,
       created_at
     `)
-    .is("rejected_at", null)
     .order("created_at", { ascending: false });
 
   const pendingQ = supabase
     .from("workers")
     .select("id", { count: "exact", head: true })
-    .eq("is_verified", false)
-    .is("rejected_at", null);
+    .eq("is_verified", false);
 
   const approvedQ = supabase
     .from("workers")
     .select("id", { count: "exact", head: true })
-    .eq("is_verified", true)
-    .is("rejected_at", null);
+    .eq("is_verified", true);
 
   try {
     const [{ data, error }, { count: pc }, { count: ac }] = await Promise.all([
