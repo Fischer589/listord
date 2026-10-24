@@ -25,6 +25,9 @@ test("admin soft deletion closes every status, rejects repeats, keeps paid histo
       (opportunity_id,owner_user_id,idempotency_key,contact_name,whatsapp_number,publication_consent_at)
       values($1,$2,'33333333-3333-4333-8333-333333333333','Employer','18091234567',now())`, [id, owner]);
     await db.query("update marketplace_opportunities set status='open' where id=$1", [id]);
+    const untouched = (await db.query<{ id: string }>(`insert into marketplace_opportunities
+      (category,city,scope,compensation_kind,expires_at,status,moderation_status,timing_note,duration_note)
+      values ('limpieza','Santiago','Otra solicitud pendiente','negotiable',now()+interval '30 days','draft','pending','Flexible','Una semana') returning id`)).rows[0].id;
     const order = (await db.query<{ marketplace_featured_reserve: string }>("select marketplace_featured_reserve($1,$2)", [owner, id])).rows[0].marketplace_featured_reserve;
     await db.query("update marketplace_featured_orders set status='failed' where id=$1", [order]);
     await db.query(`insert into marketplace_featured_orders(opportunity_id,owner_user_id,status,paid_at,featured_until,stripe_session_id)
@@ -39,6 +42,9 @@ test("admin soft deletion closes every status, rejects repeats, keeps paid histo
     const state = (await db.query<{ status: string; deleted_at: Date }>("select status,deleted_at from marketplace_opportunities where id=$1", [id])).rows[0];
     assert.equal(state.status, "closed");
     assert.ok(state.deleted_at);
+    assert.deepEqual((await db.query<{ status: string; deleted_at: Date | null }>(
+      "select status,deleted_at from marketplace_opportunities where id=$1", [untouched])).rows,
+      [{ status: "draft", deleted_at: null }]);
     assert.equal((await db.query("select id from marketplace_featured_orders where opportunity_id=$1 and status='paid'", [id])).rows.length, 1);
     assert.equal((await db.query<{ kind: string }>("select kind from marketplace_events where opportunity_id=$1", [id])).rows[0].kind, "admin_deleted");
     for (const status of ["draft", "closed", "filled", "expired"]) {
@@ -49,6 +55,17 @@ test("admin soft deletion closes every status, rejects repeats, keeps paid histo
       assert.equal((await db.query<{marketplace_soft_delete: boolean}>("select marketplace_soft_delete($1)", [another])).rows[0].marketplace_soft_delete, true);
       assert.equal((await db.query<{status: string}>("select status from marketplace_opportunities where id=$1", [another])).rows[0].status, "closed");
     }
+    await assert.rejects(db.query("select marketplace_soft_delete($1)", ["99999999-9999-4999-8999-999999999999"]), /NOT_FOUND/);
+    await db.exec("reset role");
+    await db.exec(`create function public.fail_admin_deleted_event() returns trigger language plpgsql as $$
+      begin if new.kind = 'admin_deleted' then raise exception 'EVENT_WRITE_FAILED'; end if; return new; end $$;
+      create trigger fail_admin_deleted_event before insert on public.marketplace_events
+      for each row execute function public.fail_admin_deleted_event();`);
+    await db.exec("set role service_role");
+    await assert.rejects(db.query("select marketplace_soft_delete($1)", [untouched]), /EVENT_WRITE_FAILED/);
+    assert.deepEqual((await db.query<{ status: string; deleted_at: Date | null }>(
+      "select status,deleted_at from marketplace_opportunities where id=$1", [untouched])).rows,
+      [{ status: "draft", deleted_at: null }]);
     await db.exec("reset role; set role anon");
     assert.equal((await db.query("select id from marketplace_opportunities where id=$1", [id])).rows.length, 0);
   } finally { await db.close(); }

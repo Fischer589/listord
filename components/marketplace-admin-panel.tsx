@@ -63,11 +63,20 @@ export function MarketplaceAdminPanel({ expressAvailable }: { expressAvailable: 
     void action("marketplace", { id, approve, ...(approve ? { privacyReviewed: true } : {}) }, approve ? "Oportunidad aprobada y publicada." : "Oportunidad rechazada.");
     setChecked(current => ({ ...current, [id]: false }));
   }
-  function removeOpportunity() {
+  async function removeOpportunity() {
     if (!deleteConfirm) return;
-    const id = deleteConfirm.id;
+    const { id, moderation_status } = deleteConfirm;
     setDeleteConfirm(null);
-    void action("marketplace", { action: "delete", id, confirmId: id }, "Oportunidad eliminada. Se conservaron los pagos y el historial.");
+    setBusy(true); setNotice("");
+    try {
+      const result = await adminRequest("marketplace", { action: "delete", id, confirmId: id });
+      if (result.saved !== true) throw new Error("La eliminación no fue confirmada. Actualiza antes de reintentar.");
+      setReviews(current => current.filter(review => review.id !== id));
+      setCounts(current => ({ ...current, [moderation_status]: Math.max(0, current[moderation_status] - 1) }));
+      setError(false); setNotice("Oportunidad eliminada. Se conservaron los pagos y el historial.");
+    } catch (e) {
+      setError(true); setNotice(e instanceof Error ? e.message : "No se pudo eliminar la oportunidad.");
+    } finally { setBusy(false); }
   }
   function payment(e: FormEvent<HTMLFormElement>, id: string) {
     e.preventDefault(); const f = new FormData(e.currentTarget);
@@ -98,6 +107,6 @@ export function MarketplaceAdminPanel({ expressAvailable }: { expressAvailable: 
       <form className="request-fields" onSubmit={e => payment(e, o.id)}><label>Operación<select name="action"><option value="transfer_paid">Confirmar transferencia recibida</option><option value="refund_recorded">Registrar reembolso completado</option></select></label><label>Responsable<input name="operator" pattern="[A-Za-z0-9_-]{3,60}" required /></label><label>Referencia externa única<input name="reference" pattern="[A-Za-z0-9:_-]{5,160}" required /></label><label>Monto recibido en centavos DOP<input name="amount" type="number" min="29900" max="29900" defaultValue="29900" required /></label><label><input name="evidence" type="checkbox" required /> Verifiqué la evidencia externa y el monto completo.</label><button disabled={busy}>Registrar evidencia</button></form>
     </article>)}</section>}
     {confirm && <div className="moderation-modal-backdrop"><div role="dialog" aria-modal="true" aria-labelledby="moderation-confirm-title" aria-describedby="moderation-confirm-text" onKeyDown={e => { if (e.key === "Escape") setConfirm(null); }} className="moderation-modal"><p className="moderation-eyebrow">Confirmar decisión</p><h2 id="moderation-confirm-title">{confirm.approve ? "¿Publicar esta oportunidad?" : "¿Rechazar esta oportunidad?"}</h2><p id="moderation-confirm-text">{confirm.approve ? "La oportunidad quedará visible en el mercado después de confirmar. Asegúrate de que no incluya datos privados." : "La oportunidad se cerrará y no aparecerá en el mercado."}</p><div className="moderation-card__actions"><button type="button" className={confirm.approve ? "btn-primary" : "moderation-reject"} onClick={moderate}>{confirm.approve ? "Sí, aprobar y publicar" : "Sí, rechazar"}</button><button type="button" className="btn-secondary" autoFocus onClick={() => setConfirm(null)}>Cancelar</button></div></div></div>}
-    {deleteConfirm && <div className="moderation-modal-backdrop"><div role="dialog" aria-modal="true" aria-labelledby="delete-opportunity-title" aria-describedby="delete-opportunity-text" onKeyDown={e => { if (e.key === "Escape") setDeleteConfirm(null); }} className="moderation-modal"><p className="moderation-eyebrow">Confirmar eliminación</p><h2 id="delete-opportunity-title">¿Eliminar esta oportunidad?</h2><p id="delete-opportunity-text">{CATEGORIES.find(c => c.searchKey === deleteConfirm.category)?.label ?? deleteConfirm.category} en {deleteConfirm.city} · #{deleteConfirm.id}. Dejará de aparecer y no podrá comprarse ni destacarse. Los pagos y el historial se conservarán.</p><div className="moderation-card__actions"><button type="button" className="moderation-reject" onClick={removeOpportunity}>Sí, eliminar</button><button type="button" className="btn-secondary" autoFocus onClick={() => setDeleteConfirm(null)}>Cancelar</button></div></div></div>}
+    {deleteConfirm && <div className="moderation-modal-backdrop"><div role="dialog" aria-modal="true" aria-labelledby="delete-opportunity-title" aria-describedby="delete-opportunity-text" onKeyDown={e => { if (e.key === "Escape") setDeleteConfirm(null); }} className="moderation-modal"><p className="moderation-eyebrow">Confirmar eliminación</p><h2 id="delete-opportunity-title">¿Eliminar esta oportunidad?</h2><p id="delete-opportunity-text">{CATEGORIES.find(c => c.searchKey === deleteConfirm.category)?.label ?? deleteConfirm.category} en {deleteConfirm.city} · #{deleteConfirm.id}. Dejará de aparecer y no podrá comprarse ni destacarse. Los pagos y el historial se conservarán.</p><div className="moderation-card__actions"><button type="button" className="moderation-reject" onClick={() => void removeOpportunity()}>Sí, eliminar</button><button type="button" className="btn-secondary" autoFocus onClick={() => setDeleteConfirm(null)}>Cancelar</button></div></div></div>}
   </div>;
 }

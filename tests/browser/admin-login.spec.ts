@@ -31,6 +31,7 @@ test("moderation cards, filters, confirmations and feedback work on desktop and 
   const base = { category: "limpieza", city: "Santiago", scope: "Limpieza de cocina y baños.", specification: { answers: { property: "Casa", tasks: "Cocina y baños" }, requirements: "Traer guantes" }, timing_note: "Sábado por la mañana", duration_note: "4 horas", compensation_kind: "budget", compensation_min: 1500, compensation_max: null, compensation_unit: "task", created_at: now, expires_at: "2026-11-13T12:00:00Z", starts_at: null, duration_minutes: null };
   const rows = [{ ...base, id: first, status: "draft", moderation_status: "pending" }, { ...base, id: second, status: "draft", moderation_status: "pending" }];
   let fail = true;
+  let deleteFail = true;
   const posts: { id: string; approve?: boolean; privacyReviewed?: boolean; action?: string; confirmId?: string }[] = [];
   await page.route("**/api/admin/marketplace", route => {
     if (route.request().method() === "GET") return route.fulfill({ json: { opportunities: rows, counts: { pending: rows.filter(r => r.moderation_status === "pending").length, approved: rows.filter(r => r.moderation_status === "approved").length, rejected: rows.filter(r => r.moderation_status === "rejected").length }, reports: [] } });
@@ -38,7 +39,8 @@ test("moderation cards, filters, confirmations and feedback work on desktop and 
     posts.push(body);
     if (body.action === "delete") {
       expect(body.confirmId).toBe(body.id);
-      rows.splice(rows.findIndex(row => row.id === body.id), 1);
+      if (deleteFail) { deleteFail = false; return route.fulfill({ status: 503, json: { error: "No se pudo eliminar la oportunidad de forma segura." } }); }
+      // Keep GET deliberately stale: the selected card must disappear as soon as POST confirms deletion.
       return route.fulfill({ json: { saved: true } });
     }
     if (fail) { fail = false; return route.fulfill({ status: 409, json: { error: "No se confirmó la revisión. Recarga antes de reintentar." } }); }
@@ -87,9 +89,54 @@ test("moderation cards, filters, confirmations and feedback work on desktop and 
   await expect(page.locator(".moderation-card")).toHaveCount(1);
   await page.locator(".moderation-card").getByRole("button", { name: `Eliminar oportunidad ${second}` }).click();
   await page.getByRole("button", { name: "Sí, eliminar" }).click();
+  await expect(page.locator(".moderation-notice--error")).toContainText("No se pudo eliminar");
+  await expect(page.locator(".moderation-card")).toHaveCount(1);
+  await page.locator(".moderation-card").getByRole("button", { name: `Eliminar oportunidad ${second}` }).click();
+  await page.getByRole("button", { name: "Sí, eliminar" }).click();
   await expect(page.locator(".moderation-card")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Rechazadas 0/ })).toBeVisible();
+  await expect(page.locator(".moderation-notice:not(.moderation-notice--error)")).toContainText("Oportunidad eliminada");
   await expect(page.getByRole("heading", { name: "Verificación de cuentas" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Reportes" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("pending request deletion affects only the confirmed request", async ({ page }) => {
+  const first = "11111111-1111-4111-8111-111111111111";
+  const second = "22222222-2222-4222-8222-222222222222";
+  const rows = [first, second].map(id => ({ id, category: "limpieza", city: "Santiago",
+    scope: "Limpieza de cocina y baños.", specification: {}, timing_note: "Flexible", duration_note: "Un día",
+    compensation_kind: "negotiable", compensation_min: null, compensation_max: null, compensation_unit: null,
+    created_at: "2026-10-13T12:00:00Z", expires_at: "2026-11-13T12:00:00Z", starts_at: null,
+    duration_minutes: null, status: "draft", moderation_status: "pending" }));
+  const posts: string[] = [];
+  let fail = true;
+  await page.route("**/api/admin/marketplace", route => {
+    if (route.request().method() === "GET") return route.fulfill({ json: {
+      opportunities: rows, counts: { pending: 2, approved: 0, rejected: 0 }, reports: [] } });
+    const body = route.request().postDataJSON();
+    posts.push(body.id);
+    expect(body).toMatchObject({ action: "delete", id: first, confirmId: first });
+    if (fail) { fail = false; return route.fulfill({ status: 503, json: { error: "No se pudo eliminar la oportunidad de forma segura." } }); }
+    return route.fulfill({ json: { saved: true } });
+  });
+  await page.goto("http://localhost:3188/admin/login");
+  await page.getByLabel("Usuario").fill("owner-browser-fixture");
+  await page.getByLabel("Contraseña").fill("password-browser-fixture");
+  await page.getByRole("button", { name: /entrar/i }).click();
+  await page.goto("http://localhost:3188/admin/marketplace");
+  await expect(page.locator(".moderation-card")).toHaveCount(2);
+  await page.getByRole("button", { name: `Eliminar oportunidad ${first}` }).click();
+  await page.getByRole("button", { name: "Cancelar" }).click();
+  expect(posts).toHaveLength(0);
+  await page.getByRole("button", { name: `Eliminar oportunidad ${first}` }).click();
+  await page.getByRole("button", { name: "Sí, eliminar" }).click();
+  await expect(page.locator(".moderation-notice--error")).toContainText("No se pudo eliminar");
+  await expect(page.locator(".moderation-card")).toHaveCount(2);
+  await page.getByRole("button", { name: `Eliminar oportunidad ${first}` }).click();
+  await page.getByRole("button", { name: "Sí, eliminar" }).click();
+  await expect(page.getByRole("button", { name: `Eliminar oportunidad ${first}` })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: `Eliminar oportunidad ${second}` })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Pendientes 1/ })).toBeVisible();
+  expect(posts).toEqual([first, first]);
 });

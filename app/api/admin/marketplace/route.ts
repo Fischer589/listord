@@ -74,8 +74,14 @@ export async function POST(request: Request) {
         }
       }
       const deleted = await admin.rpc("marketplace_soft_delete", { p_id: b.id }).abortSignal(AbortSignal.timeout(8000));
-      rpcFailure(deleted.error);
-      return NextResponse.json({ saved: true, alreadyDeleted: deleted.data === false }, { headers });
+      if (deleted.error) {
+        if (deleted.error.message.includes("NOT_FOUND")) return NextResponse.json({ error: "La oportunidad no existe. Actualiza los registros." }, { status: 404, headers });
+        if (deleted.error.message.includes("CHECKOUT_STILL_OPEN")) return NextResponse.json({ error: "Hay un pago pendiente. Actualiza antes de reintentar." }, { status: 409, headers });
+        throw deleted.error;
+      }
+      if (deleted.data === false) return NextResponse.json({ error: "La oportunidad ya fue eliminada. Actualiza los registros." }, { status: 409, headers });
+      if (deleted.data !== true) throw new Error("Deletion was not confirmed by the database");
+      return NextResponse.json({ saved: true }, { headers });
     } catch (error) {
       const conflict = error instanceof Error && /NOT_FOUND|CHECKOUT_STILL_OPEN/.test(error.message);
       return NextResponse.json({ error: conflict ? "La oportunidad ya fue eliminada o tiene un pago pendiente. Actualiza antes de reintentar." : "No se pudo eliminar la oportunidad de forma segura." }, { status: conflict ? 409 : 503, headers });

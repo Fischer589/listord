@@ -35,7 +35,7 @@ test("admin opportunity review is private, counted by status, and requires priva
     }
     if (url.pathname.endsWith("/rpc/marketplace_soft_delete")) {
       mutations.push(JSON.parse(String(init?.body)));
-      return new Response(null, { status: 204 });
+      return Response.json(true);
     }
     throw new Error("Unexpected fixture request");
   };
@@ -66,6 +66,46 @@ test("admin opportunity review is private, counted by status, and requires priva
       assert.equal((await POST(body({ action: "delete", id, confirmId: id }))).status, 200);
       assert.deepEqual(mutations, [{ p_id: id, p_approve: true }, { p_id: id, p_approve: false }, { p_id: id }]);
     });
+  } finally {
+    globalThis.fetch = originalFetch;
+    keys.forEach((key, i) => { if (previous[i] === undefined) delete process.env[key]; else process.env[key] = previous[i]; });
+  }
+});
+
+test("admin deletion reports missing, repeated, and failed database results without claiming success", async () => {
+  const previous = keys.map(key => process.env[key]);
+  const originalFetch = globalThis.fetch;
+  Object.assign(process.env, { ADMIN_SESSION_SECRET: "moderation-fixture-secret", MARKETPLACE_ENABLED: "true",
+    NEXT_PUBLIC_SUPABASE_URL: "https://marketplace-fixture.example.test", SUPABASE_SERVICE_ROLE_KEY: "fixture-service" });
+  let result: "missing" | "repeated" | "empty" | "failure" = "missing";
+  const mutations: unknown[] = [];
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/marketplace_featured_orders")) return Response.json([]);
+    if (url.pathname.endsWith("/rpc/marketplace_soft_delete")) {
+      mutations.push(JSON.parse(String(init?.body)));
+      if (result === "missing") return Response.json({ code: "P0001", message: "NOT_FOUND" }, { status: 400 });
+      if (result === "repeated") return Response.json(false);
+      if (result === "empty") return new Response(null, { status: 204 });
+      return Response.json({ code: "XX000", message: "database failure" }, { status: 500 });
+    }
+    throw new Error("Unexpected fixture request");
+  };
+  const request = () => new Request("https://listord.example/api/admin/marketplace", { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", id, confirmId: id }) });
+  try {
+    const token = await createAdminSession("moderation-fixture-secret");
+    await withAdminCookie(undefined, async () => { await assert.rejects(POST(request()), /NEXT_REDIRECT/); });
+    assert.equal(mutations.length, 0);
+    await withAdminCookie(token, async () => {
+      for (const [scenario, status] of [["missing", 404], ["repeated", 409], ["empty", 503], ["failure", 503]] as const) {
+        result = scenario;
+        const response = await POST(request());
+        assert.equal(response.status, status);
+        assert.equal((await response.json()).saved, undefined);
+      }
+    });
+    assert.deepEqual(mutations, [{ p_id: id }, { p_id: id }, { p_id: id }, { p_id: id }]);
   } finally {
     globalThis.fetch = originalFetch;
     keys.forEach((key, i) => { if (previous[i] === undefined) delete process.env[key]; else process.env[key] = previous[i]; });
