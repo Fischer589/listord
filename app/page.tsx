@@ -2,10 +2,19 @@ import { AppHeader } from "@/components/app-header";
 import { FilterBar } from "@/components/filter-bar";
 import { WorkerDiscovery } from "@/components/worker-discovery";
 import { getWorkersResult } from "@/lib/workers";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const metadata: Metadata = {
+  title: "¡Encontramos a tu próximo trabajador!",
+  description: "Explora trabajadores gratis en República Dominicana y conecta directamente con el perfil que necesitas por RD$100, o publica tu vacante.",
+  openGraph: {
+    title: "¡Encontramos a tu próximo trabajador! | ListoRD",
+    description: "Explora trabajadores gratis y conecta directamente por RD$100, o publica tu vacante.",
+  },
+};
 
 const CATEGORY_ITEMS = [
   { emoji: "🧹", label: "Limpieza",      slug: "limpiadora"   },
@@ -38,19 +47,6 @@ function isFilterActive(searchParams: {
   );
 }
 
-function extractCities(workers: Array<{ city?: string | null }>): string[] {
-  const seen: Record<string, boolean> = {};
-  const result: string[] = [];
-  for (let i = 0; i < workers.length; i++) {
-    const c = workers[i].city?.trim();
-    if (c && !seen[c]) {
-      seen[c] = true;
-      result.push(c);
-    }
-  }
-  return result.slice(0, 5);
-}
-
 export default async function Home({
   searchParams: searchParamsPromise,
 }: {
@@ -69,9 +65,6 @@ export default async function Home({
   const filterActive = isFilterActive(searchParams);
   const showingFiltered = filterActive && workersResult.ok;
 
-  const socialProofCount =
-    totalVerified >= 5 ? Math.floor(totalVerified / 5) * 5 : totalVerified;
-  const activeCities = extractCities(workers);
   const filterLabel =
     searchParams.skill?.trim() || searchParams.city?.trim() || undefined;
 
@@ -89,49 +82,43 @@ export default async function Home({
               <div className="hero-inner">
 
               <p className="hero-eyebrow">
-                <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--green)", marginRight: "0.5rem", opacity: 0.85 }} />
-                Solo en República Dominicana 🇩🇴
+                🇩🇴 HECHO PARA REPÚBLICA DOMINICANA
               </p>
 
-              <h1 className="hero-title">
-                ¿Buscas personal?<br />
-                Tu búsqueda puede terminar aquí.
+              <h1 className="hero-title text-balance">
+                ¡ENCONTRAMOS A TU PRÓXIMO TRABAJADOR!
               </h1>
 
-              <p className="hero-body">
-                <strong>Por solo RD$100, conecta directamente con el talento que tu negocio necesita.</strong><br />
-                Nosotros facilitamos la búsqueda. Tú eliges a quién contratar.<br />
-                Sin comisiones sobre salarios. Sin intermediarios. Sin complicaciones.
+              <p className="mb-5 text-xl font-bold leading-snug text-[var(--ink)] sm:text-2xl">
+                El personal que necesitas. Sin tantas vueltas.
               </p>
 
-              {totalVerified > 0 && (
-                <p className="hero-stats">
-                  <span className="hero-stat-num">
-                    {socialProofCount > 0 ? `${socialProofCount}+` : totalVerified}
-                  </span>
-                  <span className="hero-stat-sep">trabajadores</span>
-                  <span className="hero-stat-sep">·</span>
-                  <span>Explora gratis</span>
-                  {activeCities.length > 0 && (
-                    <>
-                      <span className="hero-stat-sep">·</span>
-                      <span style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                        <span className="hero-cities-dot" aria-hidden="true" />
-                        {activeCities[0]}{activeCities.length > 1 ? ` · ${activeCities[1]}` : ""}
-                      </span>
-                    </>
-                  )}
-                </p>
-              )}
-
               <div className="hero-actions">
-                <Link href="/solicitar" className="btn-primary tap-target">
-                  Encontrar mi próximo empleado
+                <Link href="#descubre" className="btn-primary tap-target min-h-12 w-full text-center whitespace-normal sm:w-auto">
+                  ENCUENTRA TU TRABAJADOR
                 </Link>
-                <Link href="/trabajadores/registro" className="btn-secondary tap-target">
-                  Busco trabajo
+                <Link href="/solicitar#publicar-vacante" className="btn-secondary tap-target min-h-12 w-full text-center whitespace-normal sm:w-auto">
+                  PUBLICA Y ESPERA
                 </Link>
               </div>
+
+              <div className="hero-body mb-5 mt-6 space-y-3">
+                <p>¿Necesitas personal para tu negocio o tu hogar? Explora trabajadores disponibles y conecta directamente con el perfil que necesitas por solo RD$100.</p>
+                <p>¿Prefieres esperar? Publica tu vacante y recibe candidatos interesados.</p>
+              </div>
+
+              <p className="hero-stats">
+                {workersResult.ok && (
+                  <>
+                    <span className="hero-stat-num">{totalVerified}</span>
+                    <span>trabajadores</span>
+                    <span className="hero-stat-sep">·</span>
+                  </>
+                )}
+                <span>Explora gratis</span>
+                <span className="hero-stat-sep">·</span>
+                <span>Conexión directa RD$100</span>
+              </p>
 
               </div>
               <aside className="hero-brand-statement" aria-label="La visión de ListoRD">
